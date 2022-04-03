@@ -31,6 +31,8 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import java.util.*
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
@@ -161,6 +163,13 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
                 notifyItemRemoved(position)
                 notifyItemRangeChanged(position, tracklist.tracklistElements.size)
             }
+        }
+    }
+
+    /* Suspend function: Wrapper for removeTrackAtPosition */
+    suspend fun removeTrackAtPositionSuspended(context: Context, position: Int) {
+        return suspendCoroutine { cont ->
+            cont.resume(removeTrackAtPosition(context, position))
         }
     }
 

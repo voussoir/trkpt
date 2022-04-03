@@ -31,10 +31,11 @@ import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.Main
-import kotlinx.coroutines.launch
+import org.y20k.trackbook.core.Tracklist
 import org.y20k.trackbook.core.TracklistElement
+import org.y20k.trackbook.helpers.FileHelper
 import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.TrackHelper
 import org.y20k.trackbook.helpers.UiHelper
@@ -109,17 +110,25 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
 
     /* Overrides onYesNoDialog from YesNoDialogListener */
     override fun onYesNoDialog(type: Int, dialogResult: Boolean, payload: Int, payloadString: String) {
-        when (type) {
-            Keys.DIALOG_DELETE_TRACK -> {
-                when (dialogResult) {
-                    // user tapped remove track
-                    true -> {
-                        toggleOnboardingLayout()
-                        tracklistAdapter.removeTrackAtPosition(activity as Context, payload)
-                    }
-                    // user tapped cancel
-                    false -> {
-                        tracklistAdapter.notifyItemChanged(payload)
+        CoroutineScope(Dispatchers.IO).launch {
+            when (type) {
+                Keys.DIALOG_DELETE_TRACK -> {
+                    when (dialogResult) {
+                        // user tapped remove track
+                        true -> {
+                            toggleOnboardingLayout()
+                            val deferred: Deferred<Unit> = async { tracklistAdapter.removeTrackAtPositionSuspended(activity as Context, payload) }
+                            // wait for result and store in tracklist
+                            withContext(Main) {
+                                deferred.await()
+                                toggleOnboardingLayout()
+                            }
+
+                        }
+                        // user tapped cancel
+                        false -> {
+                            tracklistAdapter.notifyItemChanged(payload)
+                        }
                     }
                 }
             }
