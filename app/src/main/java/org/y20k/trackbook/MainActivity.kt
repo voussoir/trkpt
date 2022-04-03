@@ -31,7 +31,6 @@ import org.y20k.trackbook.helpers.AppThemeHelper
 import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.PreferencesHelper
 
-
 /*
  * MainActivity class
  */
@@ -69,6 +68,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         navHostFragment  = supportFragmentManager.findFragmentById(R.id.main_container) as NavHostFragment
         bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation_view)
+        // Prevents the UI from flickering when clicking the tab that you are already on.
+        // Problem: clicking the Tracks nav while looking at a track should bring you back to the
+        // list of tracks.
+        // bottomNavigationView.setOnItemReselectedListener { null }
         bottomNavigationView.setupWithNavController(navController = navHostFragment.navController)
 
         // listen for navigation changes
