@@ -157,21 +157,6 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
             return@setOnPreferenceClickListener true
         }
 
-        // set up "Report Issue" preference
-        val preferenceReportIssue: Preference = Preference(context)
-        preferenceReportIssue.title = getString(R.string.pref_report_issue_title)
-        preferenceReportIssue.setIcon(R.drawable.ic_bug_report_24dp)
-        preferenceReportIssue.summary = getString(R.string.pref_report_issue_summary)
-        preferenceReportIssue.setOnPreferenceClickListener {
-            // open web browser
-            val intent = Intent().apply {
-                action = Intent.ACTION_VIEW
-                data = Uri.parse("https://github.com/y20k/trackbook/issues")
-            }
-            startActivity(intent)
-            return@setOnPreferenceClickListener true
-        }
-
         // set preference categories
         val preferenceCategoryGeneral: PreferenceCategory = PreferenceCategory(activity as Context)
         preferenceCategoryGeneral.title = getString(R.string.pref_general_title)
@@ -190,7 +175,6 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         val preferenceCategoryAbout: PreferenceCategory = PreferenceCategory(context)
         preferenceCategoryAbout.title = getString(R.string.pref_about_title)
         preferenceCategoryAbout.contains(preferenceAppVersion)
-        preferenceCategoryAbout.contains(preferenceReportIssue)
 
         // setup preference screen
         screen.addPreference(preferenceCategoryGeneral)
@@ -205,7 +189,6 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         screen.addPreference(preferenceResetAdvanced)
         screen.addPreference(preferenceCategoryAbout)
         screen.addPreference(preferenceAppVersion)
-        screen.addPreference(preferenceReportIssue)
         preferenceScreen = screen
     }
 
