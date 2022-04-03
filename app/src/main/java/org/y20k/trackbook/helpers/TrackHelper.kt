@@ -41,7 +41,7 @@ object TrackHelper {
     private val TAG: String = LogHelper.makeLogTag(TrackHelper::class.java)
 
     /* Adds given locatiom as waypoint to track */
-    fun addWayPointToTrack(track: Track, location: Location, accuracyMultiplier: Int, resumed: Boolean): Pair<Boolean, Track> {
+    fun addWayPointToTrack(track: Track, location: Location, omitRests: Boolean, resumed: Boolean): Pair<Boolean, Track> {
         // Step 1: Get previous location
         val previousLocation: Location?
         var numberOfWayPoints: Int = track.wayPoints.size
@@ -68,9 +68,11 @@ object TrackHelper {
         track.recordingStop = now
 
         // Step 3: Add waypoint, ifrecent and accurate and different enough
-        val shouldBeAdded: Boolean = (LocationHelper.isRecentEnough(location) &&
-                                      LocationHelper.isAccurateEnough(location, Keys.DEFAULT_THRESHOLD_LOCATION_ACCURACY) &&
-                                      LocationHelper.isDifferentEnough(previousLocation, location, accuracyMultiplier))
+        val shouldBeAdded: Boolean = (
+            LocationHelper.isRecentEnough(location) &&
+            LocationHelper.isAccurateEnough(location, Keys.DEFAULT_THRESHOLD_LOCATION_ACCURACY) &&
+            LocationHelper.isDifferentEnough(previousLocation, location, omitRests)
+        )
         if (shouldBeAdded) {
             // Step 3.1: Update distance (do not update if resumed -> we do not want to add values calculated during a recording pause)
             if (!resumed) {

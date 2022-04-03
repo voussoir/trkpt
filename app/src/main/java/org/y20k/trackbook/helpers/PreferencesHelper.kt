@@ -101,15 +101,9 @@ object PreferencesHelper {
 //        return sharedPreferences.getBoolean(Keys.PREF_RECORDING_ACCURACY_HIGH, false)
 //    }
 
-
-    /* Loads current accuracy multiplier */
-    fun loadAccuracyMultiplier(): Int {
-        // load current setting
-        val recordingAccuracyHigh: Boolean = sharedPreferences.getBoolean(Keys.PREF_RECORDING_ACCURACY_HIGH, false)
-        // return multiplier based on state
-        return if (recordingAccuracyHigh) 2 else 1
+    fun loadOmitRests(): Boolean {
+        return sharedPreferences.getBoolean(Keys.PREF_OMIT_RESTS, true)
     }
-
 
 //    /* Load altitude smoothing value */
 //    fun loadAltitudeSmoothingValue(): Int {

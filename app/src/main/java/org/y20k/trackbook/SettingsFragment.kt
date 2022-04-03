@@ -65,6 +65,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
 
         // set up "Restrict to GPS" preference
         val preferenceGpsOnly: SwitchPreferenceCompat = SwitchPreferenceCompat(activity as Context)
+        preferenceGpsOnly.isSingleLineTitle = false
         preferenceGpsOnly.title = getString(R.string.pref_gps_only_title)
         preferenceGpsOnly.setIcon(R.drawable.ic_gps_24dp)
         preferenceGpsOnly.key = Keys.PREF_GPS_ONLY
@@ -74,6 +75,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
 
         // set up "Use Imperial Measurements" preference
         val preferenceImperialMeasurementUnits: SwitchPreferenceCompat = SwitchPreferenceCompat(activity as Context)
+        preferenceImperialMeasurementUnits.isSingleLineTitle = false
         preferenceImperialMeasurementUnits.title = getString(R.string.pref_imperial_measurement_units_title)
         preferenceImperialMeasurementUnits.setIcon(R.drawable.ic_square_foot_24px)
         preferenceImperialMeasurementUnits.key = Keys.PREF_USE_IMPERIAL_UNITS
@@ -110,13 +112,15 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         }
 
         // set up "Recording Accuracy" preference
-        val preferenceRecordingAccuracy: SwitchPreferenceCompat = SwitchPreferenceCompat(activity as Context)
-        preferenceRecordingAccuracy.title = getString(R.string.pref_recording_accuracy_title)
-        preferenceRecordingAccuracy.setIcon(R.drawable.ic_timeline_24dp)
-        preferenceRecordingAccuracy.key = Keys.PREF_RECORDING_ACCURACY_HIGH
-        preferenceRecordingAccuracy.summaryOn = getString(R.string.pref_recording_accuracy_summary_high)
-        preferenceRecordingAccuracy.summaryOff = getString(R.string.pref_recording_accuracy_summary_default)
-        preferenceRecordingAccuracy.setDefaultValue(false)
+        val DEFAULT_OMIT_RESTS = true
+        val preferenceOmitRests: SwitchPreferenceCompat = SwitchPreferenceCompat(activity as Context)
+        preferenceOmitRests.isSingleLineTitle = false
+        preferenceOmitRests.title = getString(R.string.pref_omit_rests_title)
+        preferenceOmitRests.setIcon(R.drawable.ic_timeline_24dp)
+        preferenceOmitRests.key = Keys.PREF_OMIT_RESTS
+        preferenceOmitRests.summaryOn = getString(R.string.pref_omit_rests_on)
+        preferenceOmitRests.summaryOff = getString(R.string.pref_omit_rests_off)
+        preferenceOmitRests.setDefaultValue(DEFAULT_OMIT_RESTS)
 
         // set up "Altitude Smoothing" preference
 //        val preferenceAltitudeSmoothingValue: SeekBarPreference = SeekBarPreference(activity as Context)
@@ -136,8 +140,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         preferenceResetAdvanced.setIcon(R.drawable.ic_undo_24dp)
         preferenceResetAdvanced.summary = getString(R.string.pref_reset_advanced_summary)
         preferenceResetAdvanced.setOnPreferenceClickListener{
-            // reset "Recording Accuracy" preference
-            preferenceRecordingAccuracy.isChecked = false
+            preferenceOmitRests.isChecked = DEFAULT_OMIT_RESTS
 //            preferenceAltitudeSmoothingValue.value = Keys.DEFAULT_ALTITUDE_SMOOTHING_VALUE
             return@setOnPreferenceClickListener true
         }
@@ -168,7 +171,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
 
         val preferenceCategoryAdvanced: PreferenceCategory = PreferenceCategory(activity as Context)
         preferenceCategoryAdvanced.title = getString(R.string.pref_advanced_title)
-        preferenceCategoryAdvanced.contains(preferenceRecordingAccuracy)
+        preferenceCategoryAdvanced.contains(preferenceOmitRests)
 //        preferenceCategoryAdvanced.contains(preferenceAltitudeSmoothingValue)
         preferenceCategoryAdvanced.contains(preferenceResetAdvanced)
 
@@ -184,7 +187,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         screen.addPreference(preferenceCategoryMaintenance)
         screen.addPreference(preferenceDeleteNonStarred)
         screen.addPreference(preferenceCategoryAdvanced)
-        screen.addPreference(preferenceRecordingAccuracy)
+        screen.addPreference(preferenceOmitRests)
 //        screen.addPreference(preferenceAltitudeSmoothingValue)
         screen.addPreference(preferenceResetAdvanced)
         screen.addPreference(preferenceCategoryAbout)

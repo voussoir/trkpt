@@ -96,9 +96,9 @@
     <string name="pref_imperial_measurement_units_summary_metric">Currently using metric units (Kilometer, Meter).</string>
     <string name="pref_imperial_measurement_units_summary_imperial">Currently using imperial units (Miles, Feet).</string>
     <string name="pref_imperial_measurement_units_title">Use Imperial Measurements</string>
-    <string name="pref_recording_accuracy_summary_high">Waypoints have higher accuracy but are less frequent.</string>
-    <string name="pref_recording_accuracy_summary_default">Waypoints have lower accuracy but are more frequent.</string>
-    <string name="pref_recording_accuracy_title">Recording Accuracy</string>
+    <string name="pref_omit_rests_on">Waypoints will not be recorded if they are too close to the previous waypoint.</string>
+    <string name="pref_omit_rests_off">All waypoints will be recorded, even while standing still.</string>
+    <string name="pref_omit_rests_title">Omit points during rests</string>
     <string name="pref_report_issue_summary">Report bugs and suggest improvements on GitHub.</string>
     <string name="pref_report_issue_title">Report Issue</string>
     <string name="pref_reset_advanced_summary">Reset advanced settings to defaults.</string>

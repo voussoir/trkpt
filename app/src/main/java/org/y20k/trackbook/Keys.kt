@@ -56,7 +56,7 @@ object Keys {
     const val PREF_TRACKING_STATE: String = "prefTrackingState"
     const val PREF_USE_IMPERIAL_UNITS: String = "prefUseImperialUnits"
     const val PREF_GPS_ONLY: String = "prefGpsOnly"
-    const val PREF_RECORDING_ACCURACY_HIGH: String = "prefRecordingAccuracyHigh"
+    const val PREF_OMIT_RESTS: String = "prefOmitRests"
     const val PREF_ALTITUDE_SMOOTHING_VALUE: String = "prefAltitudeSmoothingValue"
     const val PREF_LOCATION_ACCURACY_THRESHOLD: String = "prefLocationAccuracyThreshold"
     const val PREF_LOCATION_AGE_THRESHOLD: String = "prefLocationAgeThreshold"

@@ -178,10 +178,17 @@ object LocationHelper {
 
 
     /* Checks if given location is different enough compared to previous location */
-    fun isDifferentEnough(previousLocation: Location?, location: Location, accuracyMultiplier: Int): Boolean {
+    fun isDifferentEnough(previousLocation: Location?, location: Location, omitRests: Boolean): Boolean {
         // check if previous location is (not) available
-        if (previousLocation == null) return true
+        if (previousLocation == null)
+        {
+            return true
+        }
 
+        if (! omitRests)
+        {
+            return true
+        }
         // location.accuracy is given as 1 standard deviation, with a 68% chance
         // that the true position is within a circle of this radius.
         // These formulas determine if the difference between the last point and
@@ -194,7 +201,7 @@ object LocationHelper {
         // With 1*accuracyDelta we have 68% confidence that the points are
         // different. We can multiply this number to increase confidence but
         // decrease point recording frequency if needed.
-        return distance > accuracyDelta * accuracyMultiplier
+        return distance > accuracyDelta
     }
 
 

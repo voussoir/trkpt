@@ -57,7 +57,7 @@ class TrackerService: Service(), SensorEventListener {
     var networkProviderActive: Boolean = false
     var useImperial: Boolean = false
     var gpsOnly: Boolean = false
-    var accuracyMultiplier: Int = 1
+    var omitRests: Boolean = true
     var currentBestLocation: Location = LocationHelper.getDefaultLocation()
     var lastSave: Date = Keys.DEFAULT_DATE
     var stepCountOffset: Float = 0f
@@ -81,7 +81,7 @@ class TrackerService: Service(), SensorEventListener {
         super.onCreate()
         gpsOnly = PreferencesHelper.loadGpsOnly()
         useImperial = PreferencesHelper.loadUseImperialUnits()
-        accuracyMultiplier = PreferencesHelper.loadAccuracyMultiplier()
+        omitRests = PreferencesHelper.loadOmitRests()
 
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         sensorManager = this.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -438,8 +438,8 @@ class TrackerService: Service(), SensorEventListener {
                     useImperial = PreferencesHelper.loadUseImperialUnits()
                 }
                 // preference "Recording Accuracy"
-                Keys.PREF_RECORDING_ACCURACY_HIGH -> {
-                    accuracyMultiplier = PreferencesHelper.loadAccuracyMultiplier()
+                Keys.PREF_OMIT_RESTS -> {
+                    omitRests = PreferencesHelper.loadOmitRests()
                 }
             }
         }
@@ -463,7 +463,7 @@ class TrackerService: Service(), SensorEventListener {
     private val periodicTrackUpdate: Runnable = object : Runnable {
         override fun run() {
             // add waypoint to track - step count is continuously updated in onSensorChanged
-            val result: Pair<Boolean, Track> = TrackHelper.addWayPointToTrack(track, currentBestLocation, accuracyMultiplier, resumed)
+            val result: Pair<Boolean, Track> = TrackHelper.addWayPointToTrack(track, currentBestLocation, omitRests, resumed)
             // get results
             val successfullyAdded: Boolean = result.first
             track = result.second
