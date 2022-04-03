@@ -167,7 +167,7 @@ object FileHelper {
 
     /* Creates Uri for json track file */
     fun getTrackFileUri(context: Context, track: Track): Uri {
-        val fileName: String = track.id.toString() + Keys.TRACKBOOK_FILE_EXTENSION
+        val fileName: String = DateTimeHelper.convertToSortableDateString(track.recordingStart) + Keys.TRACKBOOK_FILE_EXTENSION
         return File(context.getExternalFilesDir(Keys.FOLDER_TRACKS), fileName).toUri()
     }
 
