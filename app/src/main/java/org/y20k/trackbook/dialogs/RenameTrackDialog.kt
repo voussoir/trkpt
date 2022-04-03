@@ -56,6 +56,7 @@ class RenameTrackDialog (private var renameTrackListener: RenameTrackListener) {
         inputField.setText(trackName, TextView.BufferType.EDITABLE)
         inputField.setSelection(trackName.length)
         inputField.inputType = InputType.TYPE_CLASS_TEXT
+        inputField.requestFocus()
 
         // set dialog view
         builder.setView(view)
