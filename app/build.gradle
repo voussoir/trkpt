@@ -7,7 +7,7 @@ android {
     compileSdkVersion 31
 
     defaultConfig {
-        applicationId 'org.y20k.trackbook'
+        applicationId 'net.voussoir.trackbook'
         minSdkVersion 25
         targetSdkVersion 31
         versionCode 50
