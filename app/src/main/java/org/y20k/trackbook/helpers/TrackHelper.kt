@@ -109,118 +109,48 @@ object TrackHelper {
 
     /* Creates GPX string for given track */
     fun createGpxString(track: Track): String {
-        var gpxString: String
+        val gpxString = StringBuilder("")
 
-        // add header
-        gpxString = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n" +
-                    "<gpx version=\"1.1\" creator=\"Trackbook App (Android)\"\n" +
-                    "     xmlns=\"http://www.topografix.com/GPX/1/1\"\n" +
-                    "     xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
-                    "     xsi:schemaLocation=\"http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd\">\n"
+        // Header
+        gpxString.appendLine("""
+        <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+        <gpx
+            version="1.1" creator="Trackbook App (Android)"
+            xmlns="http://www.topografix.com/GPX/1/1"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd"
+        >
+        """.trimIndent())
+        gpxString.appendLine("\t<metadata>")
+        gpxString.appendLine("\t\t<name>Trackbook Recording: ${track.name}</name>")
+        gpxString.appendLine("\t</metadata>")
 
-        // add name
-        gpxString += createGpxName(track)
-
-        // add POIs
-        gpxString += createGpxPois(track)
-
-        // add track
-        gpxString += createGpxTrk(track)
-
-        // add closing tag
-        gpxString += "</gpx>\n"
-
-        return gpxString
-    }
-
-
-    /* Creates name for GPX file */
-    private fun createGpxName(track: Track): String {
-        val gpxName = StringBuilder("")
-        gpxName.append("\t<metadata>\n")
-        gpxName.append("\t\t<name>")
-        gpxName.append("Trackbook Recording: ${track.name}")
-        gpxName.append("</name>\n")
-        gpxName.append("\t</metadata>\n")
-        return gpxName.toString()
-    }
-
-
-    /* Creates GPX formatted points of interest */
-    private fun createGpxPois(track: Track): String {
-        val gpxPois = StringBuilder("")
+        // POIs
         val poiList: List<WayPoint> =  track.wayPoints.filter { it.starred }
         poiList.forEach { poi ->
-            gpxPois.append("\t<wpt lat=\"")
-            gpxPois.append(poi.latitude)
-            gpxPois.append("\" lon=\"")
-            gpxPois.append(poi.longitude)
-            gpxPois.append("\">\n")
-
-            // add name to waypoint
-            gpxPois.append("\t\t<name>")
-            gpxPois.append("Point of interest")
-            gpxPois.append("</name>\n")
-
-            // add altitude
-            gpxPois.append("\t\t<ele>")
-            gpxPois.append(poi.altitude)
-            gpxPois.append("</ele>\n")
-
-            // add closing tag
-            gpxPois.append("\t</wpt>\n")
+            gpxString.appendLine("\t<wpt lat=\"${poi.latitude}\" lon=\"${poi.longitude}\">")
+            gpxString.appendLine("\t\t<name>Point of interest</name>")
+            gpxString.appendLine("\t\t<ele>${poi.altitude}</ele>")
+            gpxString.appendLine("\t</wpt>")
         }
-        return gpxPois.toString()
-    }
 
-
-    /* Creates GPX formatted track */
-    private fun createGpxTrk(track: Track): String {
-        val gpxTrack = StringBuilder("")
+        // TRK
         val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
         dateFormat.timeZone = TimeZone.getTimeZone("UTC")
-
-        // add opening track tag
-        gpxTrack.append("\t<trk>\n")
-
-        // add name to track
-        gpxTrack.append("\t\t<name>")
-        gpxTrack.append("Track")
-        gpxTrack.append("</name>\n")
-
-        // add opening track segment tag
-        gpxTrack.append("\t\t<trkseg>\n")
-
-        // add route point
+        gpxString.appendLine("\t<trk>")
+        gpxString.appendLine("\t\t<name>${track.name}</name>")
+        gpxString.appendLine("\t\t<trkseg>")
         track.wayPoints.forEach { wayPoint ->
-            // add longitude and latitude
-            gpxTrack.append("\t\t\t<trkpt lat=\"")
-            gpxTrack.append(wayPoint.latitude)
-            gpxTrack.append("\" lon=\"")
-            gpxTrack.append(wayPoint.longitude)
-            gpxTrack.append("\">\n")
-
-            // add altitude
-            gpxTrack.append("\t\t\t\t<ele>")
-            gpxTrack.append(wayPoint.altitude)
-            gpxTrack.append("</ele>\n")
-
-            // add time
-            gpxTrack.append("\t\t\t\t<time>")
-            gpxTrack.append(dateFormat.format(Date(wayPoint.time)))
-            gpxTrack.append("</time>\n")
-
-            // add closing tag
-            gpxTrack.append("\t\t\t</trkpt>\n")
+            gpxString.appendLine("\t\t\t<trkpt lat=\"${wayPoint.latitude}\" lon=\"${wayPoint.longitude}\">")
+            gpxString.appendLine("\t\t\t\t<ele>${wayPoint.altitude}</ele>")
+            gpxString.appendLine("\t\t\t\t<time>${dateFormat.format(Date(wayPoint.time))}</time>")
+            gpxString.appendLine("\t\t\t</trkpt>")
         }
+        gpxString.appendLine("\t\t</trkseg>")
+        gpxString.appendLine("\t</trk>")
+        gpxString.appendLine("</gpx>")
 
-        // add closing track segment tag
-        gpxTrack.append("\t\t</trkseg>\n")
-
-        // add closing track tag
-        gpxTrack.append("\t</trk>\n")
-
-        return gpxTrack.toString()
+        return gpxString.toString()
     }
 
     /* Toggles starred flag for given position */
