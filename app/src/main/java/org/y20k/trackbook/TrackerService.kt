@@ -32,7 +32,6 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.Manifest
 import android.os.*
-import android.util.Log
 import androidx.core.content.ContextCompat
 import java.util.*
 import kotlinx.coroutines.*
@@ -47,8 +46,8 @@ import org.y20k.trackbook.helpers.*
 /*
  * TrackerService class
  */
-class TrackerService: Service(), SensorEventListener {
-
+class TrackerService: Service(), SensorEventListener
+{
     /* Define log tag */
     private val TAG: String = LogHelper.makeLogTag(TrackerService::class.java)
 
@@ -80,7 +79,8 @@ class TrackerService: Service(), SensorEventListener {
     private lateinit var networkLocationListener: LocationListener
 
     /* Overrides onCreate from Service */
-    override fun onCreate() {
+    override fun onCreate()
+    {
         super.onCreate()
         gpsOnly = PreferencesHelper.loadGpsOnly()
         useImperial = PreferencesHelper.loadUseImperialUnits()
@@ -197,7 +197,8 @@ class TrackerService: Service(), SensorEventListener {
     }
 
     /* Resume tracking after stop/pause */
-    fun resumeTracking() {
+    fun resumeTracking()
+    {
         // load temp track - returns an empty track if there is no temp file.
         track = load_temp_track(this)
         // try to mark last waypoint as stopover
@@ -228,10 +229,10 @@ class TrackerService: Service(), SensorEventListener {
         startForeground(Keys.TRACKER_SERVICE_NOTIFICATION_ID, displayNotification())
     }
 
-    /* Stop tracking location */
-    fun stopTracking() {
+    fun stopTracking()
+    {
         track.recordingStop = GregorianCalendar.getInstance().time
-        val context: Context = this as Context
+        val context: Context = this
         CoroutineScope(IO).launch { track.save_temp_suspended(context) }
 
         trackingState = Keys.STATE_TRACKING_STOPPED

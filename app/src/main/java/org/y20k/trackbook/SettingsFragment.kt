@@ -217,7 +217,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
 
     /* Removes track and track files for given position - used by TracklistFragment */
     private fun deleteNonStarred(context: Context) {
-        var tracklist: Tracklist = load_tracklist(context)
+        val tracklist: Tracklist = load_tracklist(context)
         tracklist.delete_non_starred(context)
     }
 

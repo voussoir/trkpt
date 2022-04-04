@@ -166,7 +166,7 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
             arguments?.putLong(Keys.ARG_TRACK_ID, -1L)
             if (deleteTrackId == -1L)
             {
-                return;
+                return
             }
             CoroutineScope(Main). launch {
                 tracklistAdapter.delete_track_by_id(this@TracklistFragment.activity as Context, deleteTrackId)

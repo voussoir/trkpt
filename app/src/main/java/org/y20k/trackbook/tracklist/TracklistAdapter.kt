@@ -112,14 +112,14 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
         {
             // CASE STATISTICS ELEMENT
             is ElementStatisticsViewHolder -> {
-                val elementStatisticsViewHolder: ElementStatisticsViewHolder = holder as ElementStatisticsViewHolder
+                val elementStatisticsViewHolder: ElementStatisticsViewHolder = holder
                 elementStatisticsViewHolder.totalDistanceView.text = LengthUnitHelper.convertDistanceToString(tracklist.get_total_distance(), useImperial)
             }
 
             // CASE TRACK ELEMENT
             is ElementTrackViewHolder -> {
                 val positionInTracklist: Int = position - 1 // Element 0 is the statistics element.
-                val elementTrackViewHolder: ElementTrackViewHolder = holder as ElementTrackViewHolder
+                val elementTrackViewHolder: ElementTrackViewHolder = holder
                 elementTrackViewHolder.trackNameView.text = tracklist.tracks[positionInTracklist].name
                 elementTrackViewHolder.trackDataView.text = createTrackDataString(positionInTracklist)
                 when (tracklist.tracks[positionInTracklist].starred) {

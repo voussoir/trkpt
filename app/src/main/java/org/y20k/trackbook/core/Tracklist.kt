@@ -76,7 +76,7 @@ data class Tracklist (
 fun load_tracklist(context: Context): Tracklist {
     Log.i("VOUSSOIR", "Loading tracklist.")
     val folder = context.getExternalFilesDir("tracks")
-    var tracklist: Tracklist = Tracklist()
+    val tracklist: Tracklist = Tracklist()
     if (folder == null)
     {
         return tracklist
