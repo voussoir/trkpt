@@ -144,6 +144,7 @@ object TrackHelper {
             gpxString.appendLine("\t\t\t<trkpt lat=\"${wayPoint.latitude}\" lon=\"${wayPoint.longitude}\">")
             gpxString.appendLine("\t\t\t\t<ele>${wayPoint.altitude}</ele>")
             gpxString.appendLine("\t\t\t\t<time>${dateFormat.format(Date(wayPoint.time))}</time>")
+            gpxString.appendLine("\t\t\t\t<sat>${wayPoint.numberSatellites}</sat>")
             gpxString.appendLine("\t\t\t</trkpt>")
         }
         gpxString.appendLine("\t\t</trkseg>")
