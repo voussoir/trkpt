@@ -34,6 +34,7 @@ import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.y20k.trackbook.core.Tracklist
+import org.y20k.trackbook.core.load_tracklist
 import org.y20k.trackbook.helpers.AppThemeHelper
 import org.y20k.trackbook.helpers.FileHelper
 import org.y20k.trackbook.helpers.LengthUnitHelper
@@ -216,12 +217,8 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
 
     /* Removes track and track files for given position - used by TracklistFragment */
     private fun deleteNonStarred(context: Context) {
-        CoroutineScope(IO).launch  {
-            var tracklist: Tracklist = FileHelper.readTracklist(context)
-            val deferred: Deferred<Tracklist> = async { FileHelper.deleteNonStarredSuspended(context, tracklist) }
-            // wait for result and store in tracklist
-            tracklist = deferred.await()
-        }
+        var tracklist: Tracklist = load_tracklist(context)
+        tracklist.delete_non_starred(context)
     }
 
 

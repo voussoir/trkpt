@@ -28,6 +28,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.CoroutineScope
@@ -36,10 +37,8 @@ import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.y20k.trackbook.core.Track
-import org.y20k.trackbook.core.TracklistElement
 import org.y20k.trackbook.helpers.*
 import org.y20k.trackbook.ui.MapFragmentLayoutHolder
-
 
 /*
  * MapFragment class
@@ -48,7 +47,6 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
 
     /* Define log tag */
     private val TAG: String = LogHelper.makeLogTag(MapFragment::class.java)
-
 
     /* Main class variables */
     private var bound: Boolean = false
@@ -217,7 +215,7 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
     override fun onMarkerTapped(latitude: Double, longitude: Double) {
         super.onMarkerTapped(latitude, longitude)
         if (bound) {
-            track = TrackHelper.toggleStarred(activity as Context, track, latitude, longitude)
+            TrackHelper.toggle_waypoint_starred(activity as Context, track, latitude, longitude)
             layout.overlayCurrentTrack(track, trackingState)
             trackerService.track = track
         }
@@ -298,16 +296,12 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
         else
         {
             CoroutineScope(IO).launch {
-                // step 1: create and store filenames for json and gpx files
-                track.trackUriString = FileHelper.getTrackFileUri(activity as Context, track).toString()
-                track.gpxUriString = FileHelper.getGpxFileUri(activity as Context, track).toString()
-                // step 2: save track
-                FileHelper.saveTrackSuspended(track, saveGpxToo = true)
-                // step 3: clear track
+                track.save_json(activity as Context)
+                track.save_gpx(activity as Context)
                 trackerService.clearTrack()
-                // step 4: open track in TrackFragement
                 withContext(Main) {
-                    openTrack(track.toTracklistElement(activity as Context))
+                    // step 4: open track in TrackFragement
+                    openTrack(track)
                 }
             }
         }
@@ -315,12 +309,12 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
 
 
     /* Opens a track in TrackFragment */
-    private fun openTrack(tracklistElement: TracklistElement) {
+    private fun openTrack(track: Track) {
         val bundle: Bundle = Bundle()
-        bundle.putString(Keys.ARG_TRACK_TITLE, tracklistElement.name)
-        bundle.putString(Keys.ARG_TRACK_FILE_URI, tracklistElement.trackUriString)
-        bundle.putString(Keys.ARG_GPX_FILE_URI, tracklistElement.gpxUriString)
-        bundle.putLong(Keys.ARG_TRACK_ID, tracklistElement.id)
+        bundle.putString(Keys.ARG_TRACK_TITLE, track.name)
+        bundle.putString(Keys.ARG_TRACK_FILE_URI, track.get_json_file(activity as Context).toUri().toString())
+        bundle.putString(Keys.ARG_GPX_FILE_URI, track.get_gpx_file(activity as Context).toUri().toString())
+        bundle.putLong(Keys.ARG_TRACK_ID, track.id)
         findNavController().navigate(R.id.fragment_track, bundle)
     }
 

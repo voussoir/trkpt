@@ -17,54 +17,79 @@
 
 package org.y20k.trackbook.core
 
+import android.content.Context
 import android.os.Parcelable
+import android.util.Log
 import androidx.annotation.Keep
 import com.google.gson.annotations.Expose
+import java.io.File
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 import kotlinx.parcelize.Parcelize
 import org.y20k.trackbook.Keys
-import org.y20k.trackbook.helpers.TrackHelper
-import java.util.*
-
 
 /*
  * Tracklist data class
  */
 @Keep
 @Parcelize
-data class Tracklist (@Expose val tracklistFormatVersion: Int = Keys.CURRENT_TRACKLIST_FORMAT_VERSION,
-                      @Expose val tracklistElements: MutableList<TracklistElement> = mutableListOf<TracklistElement>()): Parcelable {
-
-    /* Return trackelement for given track id */
-    fun getTrackElement(trackId: Long): TracklistElement? {
-        tracklistElements.forEach { tracklistElement ->
-            if (tracklistElement.id == trackId) {
-                return tracklistElement
+data class Tracklist (
+    @Expose val tracklistFormatVersion: Int = Keys.CURRENT_TRACKLIST_FORMAT_VERSION,
+    @Expose val tracks: MutableList<Track> = mutableListOf<Track>()
+): Parcelable
+{
+    fun delete_non_starred(context: Context)
+    {
+        val to_delete: List<Track> = this.tracks.filter{! it.starred}
+        to_delete.forEach { track ->
+            if (!track.starred)
+            {
+                track.delete(context)
             }
         }
-        return null
+        this.tracks.removeIf{! it.starred}
+    }
+    suspend fun delete_non_starred_suspended(context: Context)
+    {
+        return suspendCoroutine { cont ->
+            cont.resume(this.delete_non_starred(context))
+        }
     }
 
-    fun get_total_distance(): Float
+    fun get_total_distance(): Double
     {
-        var total: Float = 0F
-        tracklistElements.forEach { tracklist_element ->
-            total += tracklist_element.distance
-        }
-        return total
+        return this.tracks.sumOf {it.distance.toDouble()}
     }
 
     fun get_total_duration(): Long
     {
-        var total: Long = 0L
-        tracklistElements.forEach { tracklist_element ->
-            total += tracklist_element.duration
-        }
-        return total
+        return this.tracks.sumOf {it.duration}
     }
 
-    /* Create a deep copy */
-    fun deepCopy(): Tracklist {
-        return Tracklist(tracklistFormatVersion, mutableListOf<TracklistElement>().apply { addAll(tracklistElements) })
+    fun deepCopy(): Tracklist
+    {
+        return Tracklist(tracklistFormatVersion, mutableListOf<Track>().apply { addAll(tracks) })
     }
 
+}
+
+fun load_tracklist(context: Context): Tracklist {
+    Log.i("VOUSSOIR", "Loading tracklist.")
+    val folder = context.getExternalFilesDir("tracks")
+    var tracklist: Tracklist = Tracklist()
+    if (folder == null)
+    {
+        return tracklist
+    }
+    folder.walk().filter{ f: File -> f.isFile }.forEach{ json_file ->
+        val track = track_from_file(context, json_file)
+        tracklist.tracks.add(track)
+    }
+    tracklist.tracks.sortByDescending {it.recordingStart}
+    return tracklist
+}
+
+suspend fun load_tracklist_suspended(context: Context): Tracklist
+{
+    return suspendCoroutine {cont -> cont.resume(load_tracklist(context))}
 }

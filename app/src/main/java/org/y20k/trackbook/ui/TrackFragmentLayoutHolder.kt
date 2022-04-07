@@ -187,7 +187,7 @@ data class TrackFragmentLayoutHolder(private var context: Context, private var m
             mapView.overlays.add(trackSpecialMarkersOverlay)
         }
         // save track
-        CoroutineScope(Dispatchers.IO).launch { FileHelper.saveTrackSuspended(track, true) }
+        CoroutineScope(Dispatchers.IO).launch { track.save_both_suspended(context) }
     }
 
 
@@ -196,7 +196,7 @@ data class TrackFragmentLayoutHolder(private var context: Context, private var m
     {
         if (track.latitude != 0.0 && track.longitude != 0.0)
         {
-            CoroutineScope(Dispatchers.IO).launch { FileHelper.saveTrackSuspended(track, false) }
+            CoroutineScope(Dispatchers.IO).launch { track.save_json_suspended(context) }
         }
     }
 

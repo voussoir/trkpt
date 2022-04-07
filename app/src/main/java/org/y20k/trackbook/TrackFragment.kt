@@ -33,6 +33,7 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.core.content.FileProvider
 import androidx.core.net.toFile
+import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -40,7 +41,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.y20k.trackbook.core.Track
+import org.y20k.trackbook.core.track_from_file
 import org.y20k.trackbook.dialogs.RenameTrackDialog
+import org.y20k.trackbook.helpers.DateTimeHelper
 import org.y20k.trackbook.helpers.FileHelper
 import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.MapOverlayHelper
@@ -60,7 +63,8 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
 
 
     /* Overrides onCreate from Fragment */
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
         trackFileUriString = arguments?.getString(Keys.ARG_TRACK_FILE_URI, String()) ?: String()
     }
@@ -70,8 +74,9 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         // initialize layout
         val track: Track
-        if (this::trackFileUriString.isInitialized && trackFileUriString.isNotBlank()) {
-            track = FileHelper.readTrack(activity as Context, Uri.parse(trackFileUriString))
+        if (this::trackFileUriString.isInitialized && trackFileUriString.isNotBlank())
+        {
+            track = track_from_file(activity as Context, Uri.parse(trackFileUriString).toFile())
         } else {
             track = Track()
         }
@@ -107,13 +112,15 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
 
 
     /* Overrides onResume from Fragment */
-    override fun onResume() {
+    override fun onResume()
+    {
         super.onResume()
     }
 
 
     /* Overrides onPause from Fragment */
-    override fun onPause() {
+    override fun onPause()
+    {
         super.onPause()
         // save zoom level and map center
         layout.saveViewStateToTrack()
@@ -125,15 +132,18 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
 
 
     /* Pass the activity result */
-    private fun requestSaveGpxResult(result: ActivityResult) {
+    private fun requestSaveGpxResult(result: ActivityResult)
+    {
         // save GPX file to result file location
-        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
-            val sourceUri: Uri = Uri.parse(layout.track.gpxUriString)
+        if (result.resultCode == Activity.RESULT_OK && result.data != null)
+        {
+            val sourceUri: Uri = layout.track.get_gpx_file(activity as Context).toUri()
             val targetUri: Uri? = result.data?.data
-            if (targetUri != null) {
+            if (targetUri != null)
+            {
                 // copy file async (= fire & forget - no return value needed)
                 CoroutineScope(Dispatchers.IO).launch {
-                    FileHelper.saveCopyOfFileSuspended(activity as  Context, originalFileUri = sourceUri, targetFileUri = targetUri)
+                    FileHelper.saveCopyOfFileSuspended(activity as Context, originalFileUri = sourceUri, targetFileUri = targetUri)
                 }
                 Toast.makeText(activity as Context, R.string.toast_message_save_gpx, Toast.LENGTH_LONG).show()
             }
@@ -142,7 +152,8 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
 
 
     /* Overrides onRenameTrackDialog from RenameTrackDialog */
-    override fun onRenameTrackDialog(textInput: String) {
+    override fun onRenameTrackDialog(textInput: String)
+    {
         // rename track async (= fire & forget - no return value needed)
         CoroutineScope(Dispatchers.IO).launch  { FileHelper.renameTrackSuspended(activity as Context, layout.track, textInput) }
         // update name in layout
@@ -152,10 +163,13 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
 
 
     /* Overrides onYesNoDialog from YesNoDialogListener */
-    override fun onYesNoDialog(type: Int, dialogResult: Boolean, payload: Int, payloadString: String) {
-        when (type) {
+    override fun onYesNoDialog(type: Int, dialogResult: Boolean, payload: Int, payloadString: String)
+    {
+        when (type)
+        {
             Keys.DIALOG_DELETE_TRACK -> {
-                when (dialogResult) {
+                when (dialogResult)
+                {
                     // user tapped remove track
                     true -> {
                         // switch to TracklistFragment and remove track there
@@ -169,25 +183,31 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
 
 
     /* Overrides onMarkerTapped from MarkerListener */
-    override fun onMarkerTapped(latitude: Double, longitude: Double) {
+    override fun onMarkerTapped(latitude: Double, longitude: Double)
+    {
         super.onMarkerTapped(latitude, longitude)
-        // update track display
-        layout.track = TrackHelper.toggleStarred(activity as Context, layout.track, latitude, longitude)
+        TrackHelper.toggle_waypoint_starred(activity as Context, layout.track, latitude, longitude)
         layout.updateTrackOverlay()
     }
 
 
     /* Opens up a file picker to select the save location */
-    private fun openSaveGpxDialog() {
+    private fun openSaveGpxDialog()
+    {
+        val context = this.activity as Context
+        val export_name: String = DateTimeHelper.convertToSortableDateString(layout.track.recordingStart) + Keys.GPX_FILE_EXTENSION
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = Keys.MIME_TYPE_GPX
-            putExtra(Intent.EXTRA_TITLE, FileHelper.getGpxFileName(layout.track))
+            putExtra(Intent.EXTRA_TITLE, export_name)
         }
         // file gets saved in the ActivityResult
-        try {
+        try
+        {
             requestSaveGpxLauncher.launch(intent)
-        } catch (e: Exception) {
+        }
+        catch (e: Exception)
+        {
             LogHelper.e(TAG, "Unable to save GPX.")
             Toast.makeText(activity as Context, R.string.toast_message_install_file_helper, Toast.LENGTH_LONG).show()
         }
@@ -195,8 +215,9 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
 
 
     /* Share track as GPX via share sheet */
-    private fun shareGpxTrack() {
-        val gpxFile = Uri.parse(layout.track.gpxUriString).toFile()
+    private fun shareGpxTrack()
+    {
+        val gpxFile = layout.track.get_gpx_file(this.activity as Context)
         val gpxShareUri = FileProvider.getUriForFile(this.activity as Context, "${requireActivity().applicationContext.packageName}.provider", gpxFile)
         val shareIntent: Intent = Intent.createChooser(Intent().apply {
             action = Intent.ACTION_SEND
@@ -208,9 +229,12 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
 
         // show share sheet - if file helper is available
         val packageManager: PackageManager? = activity?.packageManager
-        if (packageManager != null && shareIntent.resolveActivity(packageManager) != null) {
+        if (packageManager != null && shareIntent.resolveActivity(packageManager) != null)
+        {
             startActivity(shareIntent)
-        } else {
+        }
+        else
+        {
             Toast.makeText(activity, R.string.toast_message_install_file_helper, Toast.LENGTH_LONG).show()
         }
     }

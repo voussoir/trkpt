@@ -24,6 +24,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -33,11 +34,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.Main
-import org.y20k.trackbook.core.Tracklist
-import org.y20k.trackbook.core.TracklistElement
-import org.y20k.trackbook.helpers.FileHelper
+import org.y20k.trackbook.core.Track
 import org.y20k.trackbook.helpers.LogHelper
-import org.y20k.trackbook.helpers.TrackHelper
 import org.y20k.trackbook.helpers.UiHelper
 import org.y20k.trackbook.tracklist.TracklistAdapter
 
@@ -95,18 +93,16 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
         return rootView
     }
 
-
     /* Overrides onTrackElementTapped from TracklistElementAdapterListener */
-    override fun onTrackElementTapped(tracklistElement: TracklistElement) {
+    override fun onTrackElementTapped(track: Track) {
         val bundle: Bundle = bundleOf(
-            Keys.ARG_TRACK_TITLE to tracklistElement.name,
-            Keys.ARG_TRACK_FILE_URI to tracklistElement.trackUriString,
-            Keys.ARG_GPX_FILE_URI to tracklistElement.gpxUriString,
-            Keys.ARG_TRACK_ID to tracklistElement.id
+            Keys.ARG_TRACK_TITLE to track.name,
+            Keys.ARG_TRACK_FILE_URI to track.get_json_file(activity as Context).toUri().toString(),
+            Keys.ARG_GPX_FILE_URI to track.get_gpx_file(activity as Context).toUri().toString(),
+            Keys.ARG_TRACK_ID to track.id
         )
         findNavController().navigate(R.id.fragment_track, bundle)
     }
-
 
     /* Overrides onYesNoDialog from YesNoDialogListener */
     override fun onYesNoDialog(type: Int, dialogResult: Boolean, payload: Int, payloadString: String) {
@@ -117,7 +113,7 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
                         // user tapped remove track
                         true -> {
                             toggleOnboardingLayout()
-                            val deferred: Deferred<Unit> = async { tracklistAdapter.removeTrackAtPositionSuspended(activity as Context, payload) }
+                            val deferred: Deferred<Unit> = async { tracklistAdapter.delete_track_at_position_suspended(activity as Context, payload) }
                             // wait for result and store in tracklist
                             withContext(Main) {
                                 deferred.await()
@@ -173,7 +169,7 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
                 return;
             }
             CoroutineScope(Main). launch {
-                tracklistAdapter.removeTrackById(this@TracklistFragment.activity as Context, deleteTrackId)
+                tracklistAdapter.delete_track_by_id(this@TracklistFragment.activity as Context, deleteTrackId)
                 toggleOnboardingLayout()
             }
         }
