@@ -201,30 +201,39 @@ data class MapFragmentLayoutHolder(private var context: Context, private var mar
         }
     }
 
-
     /* Update live statics */
     fun updateLiveStatics(distance: Float, duration: Long, trackingState: Int) {
         // toggle visibility
-        val trackingActive: Boolean = trackingState != Keys.STATE_TRACKING_NOT_STARTED
-        liveStatisticsDistanceView.isVisible = trackingActive
-        liveStatisticsDurationView.isVisible = trackingActive
-        // update distance and duration (and add outline)
-        val distanceString: String = LengthUnitHelper.convertDistanceToString(distance, useImperial)
-        liveStatisticsDistanceView.text = distanceString
-        liveStatisticsDistanceOutlineView.text = distanceString
-        liveStatisticsDistanceOutlineView.paint.strokeWidth = 5f
-        liveStatisticsDistanceOutlineView.paint.style = Paint.Style.STROKE
-        val durationString: String = DateTimeHelper.convertToReadableTime(context, duration, compactFormat = true)
-        liveStatisticsDurationView.text = durationString
-        liveStatisticsDurationOutlineView.text = durationString
-        liveStatisticsDurationOutlineView.paint.strokeWidth = 5f
-        liveStatisticsDurationOutlineView.paint.style = Paint.Style.STROKE
-
+        if (trackingState == Keys.STATE_TRACKING_NOT_STARTED)
+        {
+            liveStatisticsDistanceView.isGone = true
+            liveStatisticsDurationView.isGone = true
+            liveStatisticsDistanceOutlineView.isGone = true
+            liveStatisticsDurationOutlineView.isGone = true
+        }
+        else
+        {
+            liveStatisticsDistanceView.isVisible = true
+            liveStatisticsDurationView.isVisible = true
+            liveStatisticsDistanceOutlineView.isVisible = true
+            liveStatisticsDurationOutlineView.isVisible = true
+            // update distance and duration (and add outline)
+            val distanceString: String = LengthUnitHelper.convertDistanceToString(distance, useImperial)
+            liveStatisticsDistanceView.text = distanceString
+            liveStatisticsDistanceOutlineView.text = distanceString
+            liveStatisticsDistanceOutlineView.paint.strokeWidth = 5f
+            liveStatisticsDistanceOutlineView.paint.style = Paint.Style.STROKE
+            val durationString: String = DateTimeHelper.convertToReadableTime(context, duration, compactFormat = true)
+            liveStatisticsDurationView.text = durationString
+            liveStatisticsDurationOutlineView.text = durationString
+            liveStatisticsDurationOutlineView.paint.strokeWidth = 5f
+            liveStatisticsDurationOutlineView.paint.style = Paint.Style.STROKE
+        }
     }
 
-
     /* Toggles state of main button and additional buttons (save & resume) */
-    fun updateMainButton(trackingState: Int) {
+    fun updateMainButton(trackingState: Int)
+    {
         when (trackingState) {
             Keys.STATE_TRACKING_NOT_STARTED -> {
                 mainButton.setIconResource(R.drawable.ic_fiber_manual_record_inactive_24dp)

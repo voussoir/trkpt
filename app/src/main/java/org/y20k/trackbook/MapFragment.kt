@@ -90,10 +90,19 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
             saveTrack()
         }
         layout.clearButton.setOnClickListener {
-            if (track.wayPoints.isNotEmpty()) {
-                YesNoDialog(this as YesNoDialog.YesNoDialogListener).show(context = activity as Context, type = Keys.DIALOG_DELETE_CURRENT_RECORDING, message = R.string.dialog_delete_current_recording_message, yesButton = R.string.dialog_delete_current_recording_button_discard)
-            } else {
+            if (track.wayPoints.isEmpty())
+            {
+                // This might seem useless since it's already empty, but there are other UI updates
+                // that occur as part of cleartrack so we may as well take advantage of those.
                 trackerService.clearTrack()
+            }
+            else {
+                YesNoDialog(this as YesNoDialog.YesNoDialogListener).show(
+                    context=activity as Context,
+                    type = Keys.DIALOG_DELETE_CURRENT_RECORDING,
+                    message = R.string.dialog_delete_current_recording_message,
+                    yesButton = R.string.dialog_delete_current_recording_button_discard
+                )
             }
         }
 
