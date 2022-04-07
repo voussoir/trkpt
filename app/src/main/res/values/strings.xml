@@ -52,6 +52,7 @@
     <string name="marker_description_time">Time</string>
     <string name="marker_description_accuracy">Accuracy</string>
     <!-- Statistics Sheet -->
+    <string name="statistics_sheet_p_trackid">Track ID:</string>
     <string name="statistics_sheet_p_distance">Total distance:</string>
     <string name="statistics_sheet_p_steps">Steps taken:</string>
     <string name="statistics_sheet_p_steps_no_pedometer">pedometer not available</string>

@@ -22,6 +22,7 @@ import android.database.Cursor
 import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.util.Log
 import androidx.core.net.toFile
 import androidx.core.net.toUri
 import com.google.gson.Gson
@@ -89,7 +90,6 @@ object FileHelper {
         }
     }
 
-
     /* Clears given folder - keeps given number of files */
     fun clearFolder(folder: File?, keep: Int, deleteFolder: Boolean = false) {
         if (folder != null && folder.exists()) {
@@ -111,15 +111,17 @@ object FileHelper {
     /* Reads tracklist from storage using GSON */
     fun readTracklist(context: Context): Tracklist {
         LogHelper.v(TAG, "Reading Tracklist - Thread: ${Thread.currentThread().name}")
-        // get JSON from text file
-        val json: String = readTextFile(context, getTracklistFileUri(context))
+        var folder = context.getExternalFilesDir("tracks")
         var tracklist: Tracklist = Tracklist()
-        when (json.isNotBlank()) {
-            // convert JSON and return as tracklist
-            true -> try {
-                tracklist = getCustomGson().fromJson(json, Tracklist::class.java)
-            } catch (e: Exception) {
-                e.printStackTrace()
+        Log.i(TAG, folder.toString())
+        if (folder != null)
+        {
+            folder.walk().filter{ f: File -> f.isFile }.forEach{ track_file ->
+                val track_json = readTextFile(context, track_file.toUri())
+                Log.i("VOUSSOIR", track_json)
+                val track = getCustomGson().fromJson(track_json, Track::class.java)
+                val tracklist_element = track.toTracklistElement(context)
+                tracklist.tracklistElements.add(tracklist_element)
             }
         }
         return tracklist
@@ -165,7 +167,7 @@ object FileHelper {
 
     /* Creates Uri for json track file */
     fun getTrackFileUri(context: Context, track: Track): Uri {
-        val fileName: String = DateTimeHelper.convertToSortableDateString(track.recordingStart) + Keys.TRACKBOOK_FILE_EXTENSION
+        val fileName: String = track.id.toString() + Keys.TRACKBOOK_FILE_EXTENSION
         return File(context.getExternalFilesDir(Keys.FOLDER_TRACKS), fileName).toUri()
     }
 
@@ -175,33 +177,10 @@ object FileHelper {
         return File(context.getExternalFilesDir(Keys.FOLDER_TEMP), Keys.TEMP_FILE).toUri()
     }
 
-
-    /* Suspend function: Wrapper for saveTracklist */
-    suspend fun addTrackAndSaveTracklistSuspended(context: Context, track: Track, modificationDate: Date = track.recordingStop) {
-        return suspendCoroutine { cont ->
-            val tracklist: Tracklist = readTracklist(context)
-            tracklist.tracklistElements.add(track.toTracklistElement(context))
-            tracklist.totalDistanceAll += track.length
-//            tracklist.totalDurationAll += track.duration // note: TracklistElement does not contain duration
-//            tracklist.totalRecordingPausedAll += track.recordingPaused // note: TracklistElement does not contain recordingPaused
-//            tracklist.totalStepCountAll += track.stepCount // note: TracklistElement does not contain stepCount
-            cont.resume(saveTracklist(context, tracklist, modificationDate))
-        }
-    }
-
-
     /* Suspend function: Wrapper for renameTrack */
     suspend fun renameTrackSuspended(context: Context, track: Track, newName: String) {
         return suspendCoroutine { cont ->
             cont.resume(renameTrack(context, track, newName))
-        }
-    }
-
-
-    /* Suspend function: Wrapper for saveTracklist */
-    suspend fun saveTracklistSuspended(context: Context, tracklist: Tracklist, modificationDate: Date) {
-        return suspendCoroutine { cont ->
-            cont.resume(saveTracklist(context, tracklist, modificationDate))
         }
     }
 
@@ -223,12 +202,11 @@ object FileHelper {
 
 
     /* Suspend function: Wrapper for deleteTrack */
-    suspend fun deleteTrackSuspended(context: Context, position: Int, tracklist: Tracklist): Tracklist {
+    suspend fun deleteTrackSuspended(context: Context, tracklist_element: TracklistElement, tracklist: Tracklist): Tracklist {
         return suspendCoroutine { cont ->
-            cont.resume(deleteTrack(context, position, tracklist))
+            cont.resume(deleteTrack(context, tracklist_element, tracklist))
         }
     }
-
 
     /* Suspend function: Deletes tracks that are not starred using deleteTracks */
     suspend fun deleteNonStarredSuspended(context: Context, tracklist: Tracklist): Tracklist {
@@ -243,7 +221,6 @@ object FileHelper {
         }
     }
 
-
     /* Suspend function: Wrapper for readTracklist */
     suspend fun readTracklistSuspended(context: Context): Tracklist {
         return suspendCoroutine {cont ->
@@ -251,14 +228,12 @@ object FileHelper {
         }
     }
 
-
     /* Suspend function: Wrapper for copyFile */
     suspend fun saveCopyOfFileSuspended(context: Context, originalFileUri: Uri, targetFileUri: Uri, deleteOriginal: Boolean = false) {
         return suspendCoroutine { cont ->
             cont.resume(copyFile(context, originalFileUri, targetFileUri, deleteOriginal))
         }
     }
-
 
     /* Save Track as JSON to storage */
     private fun saveTrack(track: Track, saveGpxToo: Boolean) {
@@ -276,7 +251,6 @@ object FileHelper {
         }
     }
 
-
     /* Save Temp Track as JSON to storage */
     private fun saveTempTrack(context: Context, track: Track) {
         val json: String = getTrackJsonString(track)
@@ -285,31 +259,10 @@ object FileHelper {
         }
     }
 
-
-    /* Saves track tracklist as JSON text file */
-    private fun saveTracklist(context: Context, tracklist: Tracklist, modificationDate: Date) {
-        tracklist.modificationDate = modificationDate
-        // convert to JSON
-        val gson: Gson = getCustomGson()
-        var json: String = String()
-        try {
-            json = gson.toJson(tracklist)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        if (json.isNotBlank()) {
-            // write text file
-            writeTextFile(json, getTracklistFileUri(context))
-        }
-    }
-
-
     /* Creates Uri for tracklist file */
     private fun getTracklistFileUri(context: Context): Uri {
         return File(context.getExternalFilesDir(""), Keys.TRACKLIST_FILE).toUri()
     }
-
-
 
     /* Renames track */
     private fun renameTrack(context: Context, track: Track, newName: String) {
@@ -317,15 +270,13 @@ object FileHelper {
         val tracklist: Tracklist = readTracklist(context)
         var trackUriString: String = String()
         tracklist.tracklistElements.forEach { tracklistElement ->
-            if (tracklistElement.getTrackId() == track.getTrackId()) {
+            if (tracklistElement.id == track.id) {
                 // rename tracklist element
                 tracklistElement.name = newName
                 trackUriString = tracklistElement.trackUriString
             }
         }
         if (trackUriString.isNotEmpty()) {
-            // save tracklist
-            saveTracklist(context, tracklist, GregorianCalendar.getInstance().time)
             // rename track
             track.name = newName
             // save track
@@ -337,29 +288,27 @@ object FileHelper {
     /* Deletes multiple tracks */
     private fun deleteTracks(context: Context, tracklistElements: MutableList<TracklistElement>, tracklist: Tracklist): Tracklist {
         tracklistElements.forEach { tracklistElement ->
-            // delete track files
-            tracklistElement.trackUriString.toUri().toFile().delete()
-            tracklistElement.gpxUriString.toUri().toFile().delete()
-            // subtract track length from total distance
-            tracklist.totalDistanceAll -= tracklistElement.length
+            deleteTrack(context, tracklistElement, tracklist)
         }
-        tracklist.tracklistElements.removeAll{ tracklistElements.contains(it) }
-        saveTracklist(context, tracklist, GregorianCalendar.getInstance().time)
         return tracklist
     }
 
 
     /* Deletes one track */
-    private fun deleteTrack(context: Context, position: Int, tracklist: Tracklist): Tracklist {
-        val tracklistElement: TracklistElement = tracklist.tracklistElements[position]
+    private fun deleteTrack(context: Context, tracklist_element: TracklistElement, tracklist: Tracklist): Tracklist {
         // delete track files
-        tracklistElement.trackUriString.toUri().toFile().delete()
-        tracklistElement.gpxUriString.toUri().toFile().delete()
-        // subtract track length from total distance
-        tracklist.totalDistanceAll -= tracklistElement.length
+        val json_file: File = tracklist_element.trackUriString.toUri().toFile()
+        if (json_file.isFile)
+        {
+            json_file.delete()
+        }
+        val gpx_file: File = tracklist_element.gpxUriString.toUri().toFile()
+        if (gpx_file.isFile)
+        {
+            gpx_file.delete()
+        }
         // remove track element from list
-        tracklist.tracklistElements.removeIf { TrackHelper.getTrackId(it) == TrackHelper.getTrackId(tracklistElement) }
-        saveTracklist(context, tracklist, GregorianCalendar.getInstance().time)
+        tracklist.tracklistElements.removeIf {it.id == tracklist_element.id}
         return tracklist
     }
 
@@ -389,16 +338,13 @@ object FileHelper {
         return json
     }
 
-
     /* Creates a Gson object */
     private fun getCustomGson(): Gson {
         val gsonBuilder = GsonBuilder()
-        gsonBuilder.setDateFormat("M/d/yy hh:mm a")
+        gsonBuilder.setDateFormat("yyyy-MM-dd-HH-mm-ss")
         gsonBuilder.excludeFieldsWithoutExposeAnnotation()
         return gsonBuilder.create()
     }
-
-
 
     /* Converts byte value into a human readable format */
     // Source: https://programming.guide/java/formatting-byte-size-to-human-readable-format.html

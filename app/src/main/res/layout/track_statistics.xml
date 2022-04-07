@@ -75,16 +75,40 @@
         app:srcCompat="@drawable/ic_save_to_storage_24dp" />
 
     <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/statistics_p_distance"
+        android:id="@+id/statistics_p_trackid"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:text="@string/statistics_sheet_p_distance"
+        android:text="@string/statistics_sheet_p_trackid"
         android:textAllCaps="false"
         android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
         android:textColor="@color/text_lightweight"
         app:layout_constraintStart_toStartOf="@+id/statistics_track_name_headline"
         app:layout_constraintTop_toBottomOf="@+id/statistics_track_name_headline" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/statistics_data_trackid"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+        android:textColor="@color/text_default"
+        app:layout_constraintBottom_toBottomOf="@+id/statistics_p_trackid"
+        app:layout_constraintStart_toEndOf="@+id/statistics_p_trackid"
+        app:layout_constraintTop_toTopOf="@+id/statistics_p_trackid"
+        tools:text="@string/sample_text_default_data" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/statistics_p_distance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/statistics_sheet_p_distance"
+        android:textAllCaps="false"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        android:textColor="@color/text_lightweight"
+        app:layout_constraintStart_toStartOf="@+id/statistics_track_name_headline"
+        app:layout_constraintTop_toBottomOf="@+id/statistics_p_trackid" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/statistics_data_distance"

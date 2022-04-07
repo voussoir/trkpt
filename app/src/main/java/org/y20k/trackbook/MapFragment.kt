@@ -275,10 +275,16 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
 
 
     /* Saves track - shows dialog, if recording is still empty */
-    private fun saveTrack() {
+    private fun saveTrack()
+    {
         if (track.wayPoints.isEmpty())
         {
-            YesNoDialog(this as YesNoDialog.YesNoDialogListener).show(context = activity as Context, type = Keys.DIALOG_RESUME_EMPTY_RECORDING, message = R.string.dialog_error_empty_recording_message, yesButton = R.string.dialog_error_empty_recording_button_resume)
+            YesNoDialog(this as YesNoDialog.YesNoDialogListener).show(
+                context = activity as Context,
+                type = Keys.DIALOG_RESUME_EMPTY_RECORDING,
+                message = R.string.dialog_error_empty_recording_message,
+                yesButton = R.string.dialog_error_empty_recording_button_resume
+            )
         }
         else
         {
@@ -288,8 +294,6 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
                 track.gpxUriString = FileHelper.getGpxFileUri(activity as Context, track).toString()
                 // step 2: save track
                 FileHelper.saveTrackSuspended(track, saveGpxToo = true)
-                // step 3: save tracklist - suspended
-                FileHelper.addTrackAndSaveTracklistSuspended(activity as Context, track)
                 // step 3: clear track
                 trackerService.clearTrack()
                 // step 4: open track in TrackFragement
@@ -307,7 +311,7 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
         bundle.putString(Keys.ARG_TRACK_TITLE, tracklistElement.name)
         bundle.putString(Keys.ARG_TRACK_FILE_URI, tracklistElement.trackUriString)
         bundle.putString(Keys.ARG_GPX_FILE_URI, tracklistElement.gpxUriString)
-        bundle.putLong(Keys.ARG_TRACK_ID, TrackHelper.getTrackId(tracklistElement))
+        bundle.putLong(Keys.ARG_TRACK_ID, tracklistElement.id)
         findNavController().navigate(R.id.fragment_track, bundle)
     }
 
@@ -372,7 +376,7 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
             // update location and track
             layout.markCurrentPosition(currentBestLocation, trackingState)
             layout.overlayCurrentTrack(track, trackingState)
-            layout.updateLiveStatics(length = track.length, duration = track.duration, trackingState = trackingState)
+            layout.updateLiveStatics(distance = track.distance, duration = track.duration, trackingState = trackingState)
             // center map, if it had not been dragged/zoomed before
             if (!layout.userInteraction) { layout.centerMap(currentBestLocation, true)}
             // show error snackbar if necessary

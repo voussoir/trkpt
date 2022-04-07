@@ -32,26 +32,39 @@ import java.util.*
 @Keep
 @Parcelize
 data class Tracklist (@Expose val tracklistFormatVersion: Int = Keys.CURRENT_TRACKLIST_FORMAT_VERSION,
-                      @Expose val tracklistElements: MutableList<TracklistElement> = mutableListOf<TracklistElement>(),
-                      @Expose var modificationDate: Date = Date(),
-                      @Expose var totalDistanceAll: Float = 0f,
-                      @Expose var totalDurationAll: Long = 0L,
-                      @Expose var totalRecordingPausedAll: Long = 0L,
-                      @Expose var totalStepCountAll: Float = 0f): Parcelable {
+                      @Expose val tracklistElements: MutableList<TracklistElement> = mutableListOf<TracklistElement>()): Parcelable {
 
     /* Return trackelement for given track id */
     fun getTrackElement(trackId: Long): TracklistElement? {
         tracklistElements.forEach { tracklistElement ->
-            if (TrackHelper.getTrackId(tracklistElement) == trackId) {
+            if (tracklistElement.id == trackId) {
                 return tracklistElement
             }
         }
         return null
     }
 
+    fun get_total_distance(): Float
+    {
+        var total: Float = 0F
+        tracklistElements.forEach { tracklist_element ->
+            total += tracklist_element.distance
+        }
+        return total
+    }
+
+    fun get_total_duration(): Long
+    {
+        var total: Long = 0L
+        tracklistElements.forEach { tracklist_element ->
+            total += tracklist_element.duration
+        }
+        return total
+    }
+
     /* Create a deep copy */
     fun deepCopy(): Tracklist {
-        return Tracklist(tracklistFormatVersion, mutableListOf<TracklistElement>().apply { addAll(tracklistElements) }, modificationDate)
+        return Tracklist(tracklistFormatVersion, mutableListOf<TracklistElement>().apply { addAll(tracklistElements) })
     }
 
 }

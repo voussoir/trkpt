@@ -90,7 +90,12 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
         // set up delete button
         layout.deleteButton.setOnClickListener {
             val dialogMessage: String = "${getString(R.string.dialog_yes_no_message_delete_recording)}\n\n- ${layout.trackNameView.text}"
-            YesNoDialog(this@TrackFragment as YesNoDialog.YesNoDialogListener).show(context = activity as Context, type = Keys.DIALOG_DELETE_TRACK, messageString = dialogMessage, yesButton = R.string.dialog_yes_no_positive_button_delete_recording)
+            YesNoDialog(this@TrackFragment as YesNoDialog.YesNoDialogListener).show(
+                context = activity as Context,
+                type = Keys.DIALOG_DELETE_TRACK,
+                messageString = dialogMessage,
+                yesButton = R.string.dialog_yes_no_positive_button_delete_recording
+            )
         }
         // set up rename button
         layout.editButton.setOnClickListener {
@@ -154,7 +159,7 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
                     // user tapped remove track
                     true -> {
                         // switch to TracklistFragment and remove track there
-                        val bundle: Bundle = bundleOf(Keys.ARG_TRACK_ID to layout.track.getTrackId())
+                        val bundle: Bundle = bundleOf(Keys.ARG_TRACK_ID to layout.track.id)
                         findNavController().navigate(R.id.tracklist_fragment, bundle)
                     }
                 }

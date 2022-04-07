@@ -78,6 +78,7 @@ data class TrackFragmentLayoutHolder(private var context: Context, private var m
     private val statisticsSheetBehavior: BottomSheetBehavior<View>
     private val statisticsSheet: NestedScrollView
     private val statisticsView: View
+    private val trackidView: MaterialTextView
     private val distanceView: MaterialTextView
     private val stepsTitleView: MaterialTextView
     private val stepsView: MaterialTextView
@@ -120,6 +121,7 @@ data class TrackFragmentLayoutHolder(private var context: Context, private var m
         // get views for statistics sheet
         statisticsSheet = rootView.findViewById(R.id.statistics_sheet)
         statisticsView = rootView.findViewById(R.id.statistics_view)
+        trackidView = rootView.findViewById(R.id.statistics_data_trackid)
         distanceView = rootView.findViewById(R.id.statistics_data_distance)
         stepsTitleView = rootView.findViewById(R.id.statistics_p_steps)
         stepsView = rootView.findViewById(R.id.statistics_data_steps)
@@ -190,8 +192,10 @@ data class TrackFragmentLayoutHolder(private var context: Context, private var m
 
 
     /* Saves zoom level and center of this map */
-    fun saveViewStateToTrack() {
-        if (track.latitude != 0.0 && track.longitude != 0.0) {
+    fun saveViewStateToTrack()
+    {
+        if (track.latitude != 0.0 && track.longitude != 0.0)
+        {
             CoroutineScope(Dispatchers.IO).launch { FileHelper.saveTrackSuspended(track, false) }
         }
     }
@@ -202,12 +206,14 @@ data class TrackFragmentLayoutHolder(private var context: Context, private var m
 
         // get step count string - hide step count if not available
         val steps: String
-        if (track.stepCount == -1f) {
+        if (track.stepCount == -1f)
+        {
             steps = context.getString(R.string.statistics_sheet_p_steps_no_pedometer)
             stepsTitleView.isGone = true
             stepsView.isGone = true
         }
-        else {
+        else
+        {
             steps = track.stepCount.roundToInt().toString()
             stepsTitleView.isVisible = true
             stepsView.isVisible = true
@@ -215,11 +221,12 @@ data class TrackFragmentLayoutHolder(private var context: Context, private var m
 
         // populate views
         trackNameView.text = track.name
-        distanceView.text = LengthUnitHelper.convertDistanceToString(track.length, useImperialUnits)
+        trackidView.text = track.id.toString()
+        distanceView.text = LengthUnitHelper.convertDistanceToString(track.distance, useImperialUnits)
         stepsView.text = steps
         waypointsView.text = track.wayPoints.size.toString()
         durationView.text = DateTimeHelper.convertToReadableTime(context, track.duration)
-        velocityView.text = LengthUnitHelper.convertToVelocityString(track.duration, track.recordingPaused, track.length, useImperialUnits)
+        velocityView.text = LengthUnitHelper.convertToVelocityString(track.duration, track.recordingPaused, track.distance, useImperialUnits)
         recordingStartView.text = DateTimeHelper.convertToReadableDateAndTime(track.recordingStart)
         recordingStopView.text = DateTimeHelper.convertToReadableDateAndTime(track.recordingStop)
         maxAltitudeView.text = LengthUnitHelper.convertDistanceToString(track.maxAltitude, useImperialUnits)

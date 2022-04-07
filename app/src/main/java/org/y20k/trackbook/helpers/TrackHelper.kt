@@ -14,13 +14,14 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 package org.y20k.trackbook.helpers
 
 import android.content.Context
 import android.location.Location
 import android.widget.Toast
 import androidx.core.net.toUri
+import java.text.SimpleDateFormat
+import java.util.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
@@ -30,9 +31,6 @@ import org.y20k.trackbook.core.Track
 import org.y20k.trackbook.core.Tracklist
 import org.y20k.trackbook.core.TracklistElement
 import org.y20k.trackbook.core.WayPoint
-import java.text.SimpleDateFormat
-import java.util.*
-
 
 /*
  * TrackHelper object
@@ -41,15 +39,6 @@ object TrackHelper {
 
     /* Define log tag */
     private val TAG: String = LogHelper.makeLogTag(TrackHelper::class.java)
-
-
-    /* Returns unique ID for Track - currently the start date */
-    fun getTrackId(track: Track): Long = track.recordingStart.time
-
-
-    /* Returns unique ID for TracklistElement - currently the start date */
-    fun getTrackId(tracklistElement: TracklistElement): Long = tracklistElement.date.time
-
 
     /* Adds given locatiom as waypoint to track */
     fun addWayPointToTrack(track: Track, location: Location, accuracyMultiplier: Int, resumed: Boolean): Pair<Boolean, Track> {
@@ -85,7 +74,7 @@ object TrackHelper {
         if (shouldBeAdded) {
             // Step 3.1: Update distance (do not update if resumed -> we do not want to add values calculated during a recording pause)
             if (!resumed) {
-                track.length = track.length + LocationHelper.calculateDistance(previousLocation, location)
+                track.distance = track.distance + LocationHelper.calculateDistance(previousLocation, location)
             }
             // Step 3.2: Update altitude values
             val altitude: Double = location.altitude
@@ -109,16 +98,14 @@ object TrackHelper {
             track.longitude = location.longitude
 
             // Step 3.5: Add location as new waypoint
-            track.wayPoints.add(WayPoint(location = location, distanceToStartingPoint = track.length))
+            track.wayPoints.add(WayPoint(location = location, distanceToStartingPoint = track.distance))
         }
 
         return Pair(shouldBeAdded, track)
     }
 
-
     /* Calculates time passed since last stop of recording */
     fun calculateDurationOfPause(recordingStop: Date): Long = GregorianCalendar.getInstance().time.time - recordingStop.time
-
 
     /* Creates GPX string for given track */
     fun createGpxString(track: Track): String {
@@ -236,7 +223,6 @@ object TrackHelper {
         return gpxTrack.toString()
     }
 
-
     /* Toggles starred flag for given position */
     fun toggleStarred(context: Context, track: Track, latitude: Double, longitude: Double): Track {
         track.wayPoints.forEach { waypoint ->
@@ -250,28 +236,4 @@ object TrackHelper {
         }
         return track
     }
-
-
-    /* Calculates total distance, duration and pause */
-    fun calculateAndSaveTrackTotals(context: Context, tracklist: Tracklist) {
-        CoroutineScope(IO).launch {
-            var totalDistanceAll: Float = 0f
-//            var totalDurationAll: Long = 0L
-//            var totalRecordingPausedAll: Long = 0L
-//            var totalStepCountAll: Float = 0f
-            tracklist.tracklistElements.forEach { tracklistElement ->
-                val track: Track = FileHelper.readTrack(context, tracklistElement.trackUriString.toUri())
-                totalDistanceAll += track.length
-//                totalDurationAll += track.duration
-//                totalRecordingPausedAll += track.recordingPaused
-//                totalStepCountAll += track.stepCount
-            }
-            tracklist.totalDistanceAll = totalDistanceAll
-//            tracklist.totalDurationAll = totalDurationAll
-//            tracklist.totalRecordingPausedAll = totalRecordingPausedAll
-//            tracklist.totalStepCountAll = totalStepCountAll
-            FileHelper.saveTracklistSuspended(context, tracklist, GregorianCalendar.getInstance().time)
-        }
-    }
-
 }

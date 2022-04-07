@@ -14,17 +14,15 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 package org.y20k.trackbook
 
-import android.Manifest
 import android.app.Notification
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.content.SharedPreferences
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -32,16 +30,18 @@ import android.hardware.SensorManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.Manifest
 import android.os.*
+import android.util.Log
 import androidx.core.content.ContextCompat
+import java.util.*
+import kotlinx.coroutines.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Runnable
 import org.y20k.trackbook.core.Track
 import org.y20k.trackbook.helpers.*
-import java.util.*
-
 
 /*
  * TrackerService class
@@ -50,7 +50,6 @@ class TrackerService: Service(), SensorEventListener {
 
     /* Define log tag */
     private val TAG: String = LogHelper.makeLogTag(TrackerService::class.java)
-
 
     /* Main class variables */
     var trackingState: Int = Keys.STATE_TRACKING_NOT_STARTED
@@ -77,7 +76,6 @@ class TrackerService: Service(), SensorEventListener {
     private lateinit var gpsLocationListener: LocationListener
     private lateinit var networkLocationListener: LocationListener
 
-
     /* Overrides onCreate from Service */
     override fun onCreate() {
         super.onCreate()
@@ -99,7 +97,6 @@ class TrackerService: Service(), SensorEventListener {
 //        altitudeValues.capacity = PreferencesHelper.loadAltitudeSmoothingValue()
         PreferencesHelper.registerPreferenceChangeListener(sharedPreferenceChangeListener)
     }
-
 
     /* Overrides onStartCommand from Service */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -128,7 +125,6 @@ class TrackerService: Service(), SensorEventListener {
         return START_STICKY
     }
 
-
     /* Overrides onBind from Service */
     override fun onBind(p0: Intent?): IBinder? {
         bound = true
@@ -139,7 +135,6 @@ class TrackerService: Service(), SensorEventListener {
         return binder
     }
 
-
     /* Overrides onRebind from Service */
     override fun onRebind(intent: Intent?) {
         bound = true
@@ -147,7 +142,6 @@ class TrackerService: Service(), SensorEventListener {
         addGpsLocationListener()
         addNetworkLocationListener()
     }
-
 
     /* Overrides onUnbind from Service */
     override fun onUnbind(intent: Intent?): Boolean {
@@ -160,7 +154,6 @@ class TrackerService: Service(), SensorEventListener {
         // ensures onRebind is called
         return true
     }
-
 
     /* Overrides onDestroy from Service */
     override fun onDestroy() {
@@ -180,12 +173,10 @@ class TrackerService: Service(), SensorEventListener {
         removeNetworkLocationListener()
     }
 
-
     /* Overrides onAccuracyChanged from SensorEventListener */
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
         LogHelper.v(TAG, "Accuracy changed: $accuracy")
     }
-
 
     /* Overrides onSensorChanged from SensorEventListener */
     override fun onSensorChanged(sensorEvent: SensorEvent?) {
@@ -201,7 +192,6 @@ class TrackerService: Service(), SensorEventListener {
         // update step count in track
         track.stepCount = steps
     }
-
 
     /* Resume tracking after stop/pause */
     fun resumeTracking() {
@@ -220,7 +210,6 @@ class TrackerService: Service(), SensorEventListener {
         startTracking(newTrack = false)
     }
 
-
     /* Start tracking location */
     fun startTracking(newTrack: Boolean = true) {
         // start receiving location updates
@@ -229,8 +218,6 @@ class TrackerService: Service(), SensorEventListener {
         // set up new track
         if (newTrack) {
             track = Track()
-            track.recordingStart = GregorianCalendar.getInstance().time
-            track.recordingStop = track.recordingStart
             track.name = DateTimeHelper.convertToReadableDate(track.recordingStart)
             stepCountOffset = 0f
         }
@@ -243,7 +230,6 @@ class TrackerService: Service(), SensorEventListener {
         // show notification
         startForeground(Keys.TRACKER_SERVICE_NOTIFICATION_ID, displayNotification())
     }
-
 
     /* Stop tracking location */
     fun stopTracking() {
@@ -263,7 +249,6 @@ class TrackerService: Service(), SensorEventListener {
         stopForeground(false)
     }
 
-
     /* Clear track recording */
     fun clearTrack() {
         track = Track()
@@ -273,24 +258,6 @@ class TrackerService: Service(), SensorEventListener {
         stopForeground(true)
         notificationManager.cancel(Keys.TRACKER_SERVICE_NOTIFICATION_ID) // this call was not necessary prior to Android 12
     }
-
-
-//    /* Saves track recording to storage */ // todo remove
-//    fun saveTrack() {
-//        // save track using "deferred await"
-//        launch {
-//            // step 1: create and store filenames for json and gpx files
-//            track.trackUriString = FileHelper.getTrackFileUri(this@TrackerService, track).toString()
-//            track.gpxUriString = FileHelper.getGpxFileUri(this@TrackerService, track).toString()
-//            // step 2: save track
-//            FileHelper.saveTrackSuspended(track, saveGpxToo = true)
-//            // step 3: save tracklist
-//            FileHelper.addTrackAndSaveTracklistSuspended(this@TrackerService, track)
-//            // step 3: clear track
-//            clearTrack()
-//        }
-//    }
-
 
     /* Creates location listener */
     private fun createLocationListener(): LocationListener {
@@ -331,7 +298,6 @@ class TrackerService: Service(), SensorEventListener {
         }
     }
 
-
     /* Adds a GPS location listener to location manager */
     private fun addGpsLocationListener() {
         // check if already registered
@@ -367,45 +333,43 @@ class TrackerService: Service(), SensorEventListener {
         }
     }
 
-
     /* Adds a Network location listener to location manager */
     private fun addNetworkLocationListener() {
-        // check if already registered
-        if (!networkLocationListenerRegistered) {
-            // check if Network provider is available
-            networkProviderActive = LocationHelper.isNetworkEnabled(locationManager)
-            if (networkProviderActive && !gpsOnly) {
-                // check for location permission
-                if (ContextCompat.checkSelfPermission(
-                        this,
-                        Manifest.permission.ACCESS_FINE_LOCATION
-                    ) == PackageManager.PERMISSION_GRANTED) {
-                    // adds Network location listener
-                    locationManager.requestLocationUpdates(
-                        LocationManager.NETWORK_PROVIDER,
-                        0,
-                        0f,
-                        networkLocationListener
-                    )
-                    networkLocationListenerRegistered = true
-                    LogHelper.v(TAG, "Added Network location listener.")
-                } else {
-                    LogHelper.w(
-                        TAG,
-                        "Unable to add Network location listener. Location permission is not granted."
-                    )
-                }
-            } else {
-                LogHelper.w(TAG, "Unable to add Network location listener.")
-            }
-        } else {
-            LogHelper.v(
-                TAG,
-                "Skipping registration. Network location listener has already been added."
-            )
+        if (gpsOnly)
+        {
+            LogHelper.v(TAG, "User prefers GPS-only.")
+            return;
         }
-    }
 
+        if (networkLocationListenerRegistered)
+        {
+            LogHelper.v(TAG, "Network location listener has already been added.")
+            return;
+        }
+
+        networkProviderActive = LocationHelper.isNetworkEnabled(locationManager)
+        if (!networkProviderActive)
+        {
+            LogHelper.w(TAG, "Unable to add Network location listener.")
+            return
+        }
+
+        val has_permission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (! has_permission)
+        {
+            LogHelper.w(TAG, "Unable to add Network location listener. Location permission is not granted.")
+            return
+        }
+
+        locationManager.requestLocationUpdates(
+            LocationManager.NETWORK_PROVIDER,
+            0,
+            0f,
+            networkLocationListener
+        )
+        networkLocationListenerRegistered = true
+        LogHelper.v(TAG, "Added Network location listener.")
+    }
 
     /* Adds location listeners to location manager */
     fun removeGpsLocationListener() {
@@ -421,7 +385,6 @@ class TrackerService: Service(), SensorEventListener {
         }
     }
 
-
     /* Adds location listeners to location manager */
     fun removeNetworkLocationListener() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -436,7 +399,6 @@ class TrackerService: Service(), SensorEventListener {
         }
     }
 
-
     /* Registers a step counter listener */
     private fun startStepCounter() {
         val stepCounterAvailable = sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER), SensorManager.SENSOR_DELAY_UI)
@@ -446,19 +408,17 @@ class TrackerService: Service(), SensorEventListener {
         }
     }
 
-
-    /* Displays / updates notification */
+    /* Displays or updates notification */
     private fun displayNotification(): Notification {
         val notification: Notification = notificationHelper.createNotification(
             trackingState,
-            track.length,
+            track.distance,
             track.duration,
             useImperial
         )
         notificationManager.notify(Keys.TRACKER_SERVICE_NOTIFICATION_ID, notification)
         return notification
     }
-
 
     /*
      * Defines the listener for changes in shared preferences
@@ -487,7 +447,6 @@ class TrackerService: Service(), SensorEventListener {
      * End of declaration
      */
 
-
     /*
      * Inner class: Local Binder that returns this service
      */
@@ -497,7 +456,6 @@ class TrackerService: Service(), SensorEventListener {
     /*
      * End of inner class
      */
-
 
     /*
      * Runnable: Periodically track updates (if recording active)
@@ -554,7 +512,6 @@ class TrackerService: Service(), SensorEventListener {
      * End of declaration
      */
 
-
     /* Simple queue that evicts older elements and holds an average */
     /* Credit: CircularQueue https://stackoverflow.com/a/51923797 */
     class SimpleMovingAverageQueue(var capacity: Int) : LinkedList<Double>() {
@@ -576,18 +533,4 @@ class TrackerService: Service(), SensorEventListener {
             sum = 0.0
         }
     }
-
-
-//    // TODO remove
-//    val testAltitudes: Array<Double> = arrayOf(352.4349365234375, 358.883544921875, 358.6827392578125, 357.31396484375, 354.27459716796875, 354.573486328125, 354.388916015625, 354.6697998046875, 356.534912109375, 355.2772216796875, 356.21246337890625, 352.3499755859375, 350.37646484375, 351.2098388671875, 350.5213623046875, 350.5145263671875, 350.1728515625, 350.9075927734375, 351.5965576171875, 349.55767822265625, 351.548583984375, 357.1195068359375, 362.18634033203125, 366.3153076171875, 366.2218017578125, 362.1046142578125, 357.48291015625, 356.78570556640625, 353.7734375, 352.53936767578125, 351.8125, 353.1099853515625, 354.93035888671875, 355.4337158203125, 354.83270263671875, 352.9859619140625, 352.3006591796875, 351.63470458984375, 350.2501220703125, 351.75726318359375, 350.87664794921875, 350.4185791015625, 350.51568603515625, 349.5537109375, 345.2874755859375, 345.57196044921875, 349.99658203125, 353.3822021484375, 355.19061279296875, 359.1099853515625, 361.74365234375, 363.313232421875, 362.026611328125, 363.20703125, 363.2508544921875, 362.5870361328125, 362.521240234375)
-//    var testCounter: Int = 0
-//    fun getTestAltitude(): Double {
-//        if (testCounter >= testAltitudes.size) testCounter = 0
-//        val testAltitude: Double = testAltitudes[testCounter]
-//        testCounter ++
-//        return testAltitude
-//    }
-//    // TODO remove
-
-
 }

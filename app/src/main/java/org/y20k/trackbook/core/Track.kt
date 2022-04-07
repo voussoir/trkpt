@@ -14,27 +14,27 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 package org.y20k.trackbook.core
 
 import android.content.Context
 import android.os.Parcelable
 import androidx.annotation.Keep
 import com.google.gson.annotations.Expose
+import java.util.*
+import kotlin.random.Random
 import kotlinx.parcelize.Parcelize
 import org.y20k.trackbook.Keys
 import org.y20k.trackbook.helpers.DateTimeHelper
-import java.util.*
-
 
 /*
  * Track data class
  */
 @Keep
 @Parcelize
-data class Track (@Expose var trackFormatVersion: Int = Keys.CURRENT_TRACK_FORMAT_VERSION,
+data class Track (@Expose val id: Long = make_random_id(),
+                  @Expose var trackFormatVersion: Int = Keys.CURRENT_TRACK_FORMAT_VERSION,
                   @Expose val wayPoints: MutableList<WayPoint> = mutableListOf<WayPoint>(),
-                  @Expose var length: Float = 0f,
+                  @Expose var distance: Float = 0f,
                   @Expose var duration: Long = 0L,
                   @Expose var recordingPaused: Long = 0L,
                   @Expose var stepCount: Float = 0f,
@@ -49,30 +49,27 @@ data class Track (@Expose var trackFormatVersion: Int = Keys.CURRENT_TRACK_FORMA
                   @Expose var latitude: Double = Keys.DEFAULT_LATITUDE,
                   @Expose var longitude: Double = Keys.DEFAULT_LONGITUDE,
                   @Expose var zoomLevel: Double = Keys.DEFAULT_ZOOM_LEVEL,
-                  @Expose var name: String = String()): Parcelable {
-
-
+                  @Expose var name: String = String()): Parcelable
+{
     /* Creates a TracklistElement */
     fun toTracklistElement(context: Context): TracklistElement {
         val readableDateString: String = DateTimeHelper.convertToReadableDate(recordingStart)
         val readableDurationString: String = DateTimeHelper.convertToReadableTime(context, duration)
         return TracklistElement(
+            id = id,
             name = name,
             date = recordingStart,
             dateString = readableDateString,
-            length = length,
-            durationString = readableDurationString,
+            distance = distance,
+            duration = duration,
             trackUriString = trackUriString,
             gpxUriString = gpxUriString,
             starred = false
         )
     }
+}
 
-
-    /* Returns unique ID for Track - currently the start date */
-    fun getTrackId(): Long {
-        return recordingStart.time
-    }
-
-
+fun make_random_id(): Long
+{
+    return (Random.nextBits(31).toLong() shl 32) + Random.nextBits(32)
 }

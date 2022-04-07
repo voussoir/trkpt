@@ -19,6 +19,7 @@ package org.y20k.trackbook.tracklist
 
 
 import android.content.Context
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,6 +30,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import java.util.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
@@ -37,7 +39,6 @@ import org.y20k.trackbook.R
 import org.y20k.trackbook.core.Tracklist
 import org.y20k.trackbook.core.TracklistElement
 import org.y20k.trackbook.helpers.*
-import java.util.*
 
 
 /*
@@ -70,10 +71,6 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
         // load tracklist
         tracklist = FileHelper.readTracklist(context)
         tracklist.tracklistElements.sortByDescending { tracklistElement -> tracklistElement.date  }
-        // calculate total duration and distance, if necessary
-        if (tracklist.tracklistElements.isNotEmpty() && tracklist.totalDurationAll == 0L) {
-            TrackHelper.calculateAndSaveTrackTotals(context, tracklist)
-        }
     }
 
 
@@ -118,12 +115,12 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
             // CASE STATISTICS ELEMENT
             is ElementStatisticsViewHolder -> {
                 val elementStatisticsViewHolder: ElementStatisticsViewHolder = holder as ElementStatisticsViewHolder
-                elementStatisticsViewHolder.totalDistanceView.text = LengthUnitHelper.convertDistanceToString(tracklist.totalDistanceAll, useImperial)
+                elementStatisticsViewHolder.totalDistanceView.text = LengthUnitHelper.convertDistanceToString(tracklist.get_total_distance(), useImperial)
             }
 
             // CASE TRACK ELEMENT
             is ElementTrackViewHolder -> {
-                val positionInTracklist: Int = position -1
+                val positionInTracklist: Int = position - 1 // Element 0 is the statistics element.
                 val elementTrackViewHolder: ElementTrackViewHolder = holder as ElementTrackViewHolder
                 elementTrackViewHolder.trackNameView.text = tracklist.tracklistElements[positionInTracklist].name
                 elementTrackViewHolder.trackDataView.text = createTrackDataString(positionInTracklist)
@@ -154,8 +151,9 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
     /* Removes track and track files for given position - used by TracklistFragment */
     fun removeTrackAtPosition(context: Context, position: Int) {
         CoroutineScope(IO).launch {
-            val positionInTracklist = position - 1
-            val deferred: Deferred<Tracklist> = async { FileHelper.deleteTrackSuspended(context, positionInTracklist, tracklist) }
+            val index = position - 1 // position 0 is the statistics element
+            val tracklist_element = tracklist.tracklistElements[index]
+            val deferred: Deferred<Tracklist> = async { FileHelper.deleteTrackSuspended(context, tracklist_element, tracklist) }
             // wait for result and store in tracklist
             withContext(Main) {
                 tracklist = deferred.await()
@@ -166,20 +164,23 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
         }
     }
 
-
     /* Removes track and track files for given track id - used by TracklistFragment */
     fun removeTrackById(context: Context, trackId: Long) {
         CoroutineScope(IO).launch {
             // reload tracklist //todo check if necessary
-//            tracklist = FileHelper.readTracklist(context)
-            val positionInTracklist: Int = findPosition(trackId)
-            val deferred: Deferred<Tracklist> = async { FileHelper.deleteTrackSuspended(context, positionInTracklist, tracklist) }
+            tracklist = FileHelper.readTracklist(context)
+            val index: Int = tracklist.tracklistElements.indexOfFirst {it.id == trackId}
+            if (index == -1) {
+                return@launch
+            }
+            val tracklist_element = tracklist.tracklistElements[index]
+            val deferred: Deferred<Tracklist> = async { FileHelper.deleteTrackSuspended(context, tracklist_element, tracklist) }
             // wait for result and store in tracklist
+            val position = index + 1 // position 0 is the statistics element
             withContext(Main) {
                 tracklist = deferred.await()
-                val positionInRecyclerView: Int = positionInTracklist + 1 // position 0 is the statistics element
                 notifyItemChanged(0)
-                notifyItemRemoved(positionInRecyclerView)
+                notifyItemRemoved(position)
                 notifyItemRangeChanged(position, tracklist.tracklistElements.size)
             }
         }
@@ -195,7 +196,10 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
     /* Finds current position of track element in adapter list */
     private fun findPosition(trackId: Long): Int {
         tracklist.tracklistElements.forEachIndexed {index, tracklistElement ->
-            if (tracklistElement.getTrackId() == trackId) return index
+            if (tracklistElement.id == trackId)
+            {
+                return index
+            }
         }
         return -1
     }
@@ -214,21 +218,19 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
                 tracklist.tracklistElements[position].starred = true
             }
         }
-        CoroutineScope(Dispatchers.IO).launch {
-            FileHelper.saveTracklistSuspended(context, tracklist, GregorianCalendar.getInstance().time)
-        }
     }
 
 
     /* Creates the track data string */
     private fun createTrackDataString(position: Int): String {
         val tracklistElement: TracklistElement = tracklist.tracklistElements[position]
+        val track_duration_string = DateTimeHelper.convertToReadableTime(context, tracklistElement.duration)
         val trackDataString: String
         when (tracklistElement.name == tracklistElement.dateString) {
             // CASE: no individual name set - exclude date
-            true -> trackDataString = "${LengthUnitHelper.convertDistanceToString(tracklistElement.length, useImperial)} • ${tracklistElement.durationString}"
+            true -> trackDataString = "${LengthUnitHelper.convertDistanceToString(tracklistElement.distance, useImperial)} • ${track_duration_string}"
             // CASE: no individual name set - include date
-            false -> trackDataString = "${tracklistElement.dateString} • ${LengthUnitHelper.convertDistanceToString(tracklistElement.length, useImperial)} • ${tracklistElement.durationString}"
+            false -> trackDataString = "${tracklistElement.dateString} • ${LengthUnitHelper.convertDistanceToString(tracklistElement.distance, useImperial)} • ${track_duration_string}"
         }
         return trackDataString
     }
@@ -242,7 +244,7 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
         override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
             val oldItem = oldList.tracklistElements[oldItemPosition]
             val newItem = newList.tracklistElements[newItemPosition]
-            return TrackHelper.getTrackId(oldItem) == TrackHelper.getTrackId(newItem)
+            return oldItem.id == newItem.id
         }
 
         override fun getOldListSize(): Int {
@@ -256,7 +258,7 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
         override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
             val oldItem = oldList.tracklistElements[oldItemPosition]
             val newItem = newList.tracklistElements[newItemPosition]
-            return TrackHelper.getTrackId(oldItem) == TrackHelper.getTrackId(newItem) && oldItem.length == newItem.length
+            return (oldItem.id == newItem.id) && (oldItem.distance == newItem.distance)
         }
     }
     /*

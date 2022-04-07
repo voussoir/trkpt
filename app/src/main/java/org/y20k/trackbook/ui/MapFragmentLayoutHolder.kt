@@ -203,13 +203,13 @@ data class MapFragmentLayoutHolder(private var context: Context, private var mar
 
 
     /* Update live statics */
-    fun updateLiveStatics(length: Float, duration: Long, trackingState: Int) {
+    fun updateLiveStatics(distance: Float, duration: Long, trackingState: Int) {
         // toggle visibility
         val trackingActive: Boolean = trackingState != Keys.STATE_TRACKING_NOT_STARTED
         liveStatisticsDistanceView.isVisible = trackingActive
         liveStatisticsDurationView.isVisible = trackingActive
         // update distance and duration (and add outline)
-        val distanceString: String = LengthUnitHelper.convertDistanceToString(length, useImperial)
+        val distanceString: String = LengthUnitHelper.convertDistanceToString(distance, useImperial)
         liveStatisticsDistanceView.text = distanceString
         liveStatisticsDistanceOutlineView.text = distanceString
         liveStatisticsDistanceOutlineView.paint.strokeWidth = 5f

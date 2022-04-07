@@ -101,7 +101,7 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
             Keys.ARG_TRACK_TITLE to tracklistElement.name,
             Keys.ARG_TRACK_FILE_URI to tracklistElement.trackUriString,
             Keys.ARG_GPX_FILE_URI to tracklistElement.gpxUriString,
-            Keys.ARG_TRACK_ID to TrackHelper.getTrackId(tracklistElement)
+            Keys.ARG_TRACK_ID to tracklistElement.id
         )
         findNavController().navigate(R.id.fragment_track, bundle)
     }
@@ -159,11 +159,13 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
             // handle delete request from TrackFragment - after layout calculations are complete
             val deleteTrackId: Long = arguments?.getLong(Keys.ARG_TRACK_ID, -1L) ?: -1L
             arguments?.putLong(Keys.ARG_TRACK_ID, -1L)
-            if (deleteTrackId != -1L) {
-                CoroutineScope(Main). launch {
-                    tracklistAdapter.removeTrackById(this@TracklistFragment.activity as Context, deleteTrackId)
-                    toggleOnboardingLayout()
-                }
+            if (deleteTrackId == -1L)
+            {
+                return;
+            }
+            CoroutineScope(Main). launch {
+                tracklistAdapter.removeTrackById(this@TracklistFragment.activity as Context, deleteTrackId)
+                toggleOnboardingLayout()
             }
         }
 
