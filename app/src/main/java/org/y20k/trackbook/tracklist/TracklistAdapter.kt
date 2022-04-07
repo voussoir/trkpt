@@ -159,8 +159,9 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
             // wait for result and store in tracklist
             withContext(Main) {
                 tracklist = deferred.await()
-                notifyItemRemoved(position)
                 notifyItemChanged(0)
+                notifyItemRemoved(position)
+                notifyItemRangeChanged(position, tracklist.tracklistElements.size)
             }
         }
     }
@@ -177,8 +178,9 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
             withContext(Main) {
                 tracklist = deferred.await()
                 val positionInRecyclerView: Int = positionInTracklist + 1 // position 0 is the statistics element
-                notifyItemRemoved(positionInRecyclerView)
                 notifyItemChanged(0)
+                notifyItemRemoved(positionInRecyclerView)
+                notifyItemRangeChanged(position, tracklist.tracklistElements.size)
             }
         }
     }
