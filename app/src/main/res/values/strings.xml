@@ -120,12 +120,12 @@
     <string name="descr_button_start">Start recording</string>
     <string name="descr_map_current_track">Mapping of current track</string>
     <string name="descr_map_last_track">Mapping of last track</string>
-    <string name="descr_mark_starred_button">Mark as starred button</string>
+    <string name="descr_mark_starred_button">Star track</string>
     <string name="descr_quick_settings_tile_title_start">Start Recording</string>
     <string name="descr_quick_settings_tile_title_pause">Pause Recording</string>
-    <string name="descr_statistics_sheet_delete_button">Track delete button</string>
-    <string name="descr_statistics_sheet_edit_button">Track edit button</string>
-    <string name="descr_statistics_sheet_save_button">Save as GPX button</string>
+    <string name="descr_statistics_sheet_delete_button">Delete track</string>
+    <string name="descr_statistics_sheet_edit_button">Edit track</string>
+    <string name="descr_statistics_sheet_save_button">Save track as GPX</string>
     <!-- Sample Text -->
     <string name="sample_text_track_data" translatable="false">23.0 km • 5 hrs 23 min 42 sec</string>
     <string name="sample_text_track_name" translatable="false">July 20, 1969</string>
