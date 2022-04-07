@@ -70,7 +70,7 @@ object Keys {
     const val STATE_THEME_DARK_MODE: String = "stateDarkMode"
 
     // dialog types
-    const val DIALOG_EMPTY_RECORDING: Int = 0
+    const val DIALOG_RESUME_EMPTY_RECORDING: Int = 0
     const val DIALOG_DELETE_TRACK: Int = 1
     const val DIALOG_DELETE_NON_STARRED: Int = 2
     const val DIALOG_DELETE_CURRENT_RECORDING: Int = 3

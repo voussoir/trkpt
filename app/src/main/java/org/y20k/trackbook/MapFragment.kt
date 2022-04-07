@@ -185,7 +185,7 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
     override fun onYesNoDialog(type: Int, dialogResult: Boolean, payload: Int, payloadString: String) {
         super.onYesNoDialog(type, dialogResult, payload, payloadString)
         when (type) {
-            Keys.DIALOG_EMPTY_RECORDING -> {
+            Keys.DIALOG_RESUME_EMPTY_RECORDING -> {
                 when (dialogResult) {
                     // user tapped resume
                     true -> {
@@ -276,9 +276,12 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
 
     /* Saves track - shows dialog, if recording is still empty */
     private fun saveTrack() {
-        if (track.wayPoints.isEmpty()) {
-            YesNoDialog(this as YesNoDialog.YesNoDialogListener).show(context = activity as Context, type = Keys.DIALOG_EMPTY_RECORDING, message = R.string.dialog_error_empty_recording_message, yesButton = R.string.dialog_error_empty_recording_button_resume)
-        } else {
+        if (track.wayPoints.isEmpty())
+        {
+            YesNoDialog(this as YesNoDialog.YesNoDialogListener).show(context = activity as Context, type = Keys.DIALOG_RESUME_EMPTY_RECORDING, message = R.string.dialog_error_empty_recording_message, yesButton = R.string.dialog_error_empty_recording_button_resume)
+        }
+        else
+        {
             CoroutineScope(IO).launch {
                 // step 1: create and store filenames for json and gpx files
                 track.trackUriString = FileHelper.getTrackFileUri(activity as Context, track).toString()
