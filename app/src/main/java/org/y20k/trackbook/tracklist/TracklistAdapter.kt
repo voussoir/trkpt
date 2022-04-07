@@ -133,9 +133,7 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
                     toggleStarred(it, positionInTracklist)
                 }
             }
-
         }
-
     }
 
 
@@ -148,35 +146,29 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
 
     fun delete_track_at_position(context: Context, ui_index: Int)
     {
-        CoroutineScope(IO).launch {
-            val track_index = ui_index - 1 // position 0 is the statistics element
-            val track = tracklist.tracks[track_index]
-            val deferred: Deferred<Unit> = async { track.delete_suspended(context) }
-            // wait for result and store in tracklist
-            withContext(Main) {
-                deferred.await()
-                tracklist.tracks.remove(track)
-                notifyItemChanged(0)
-                notifyItemRemoved(ui_index)
-                notifyItemRangeChanged(ui_index, tracklist.tracks.size)
-            }
-        }
+        val track_index = ui_index - 1 // position 0 is the statistics element
+        val track = tracklist.tracks[track_index]
+        track.delete(context)
+        tracklist.tracks.remove(track)
+        notifyItemChanged(0)
+        notifyItemRemoved(ui_index)
+        notifyItemRangeChanged(ui_index, tracklist.tracks.size)
     }
 
-    suspend fun delete_track_at_position_suspended(context: Context, position: Int) {
+    suspend fun delete_track_at_position_suspended(context: Context, position: Int)
+    {
         return suspendCoroutine { cont ->
             cont.resume(delete_track_at_position(context, position))
         }
     }
 
-    fun delete_track_by_id(context: Context, trackId: Long) {
-        CoroutineScope(IO).launch {
-            val index: Int = tracklist.tracks.indexOfFirst {it.id == trackId}
-            if (index == -1) {
-                return@launch
-            }
-            delete_track_at_position(context, index + 1)
+    fun delete_track_by_id(context: Context, trackId: Long)
+    {
+        val index: Int = tracklist.tracks.indexOfFirst {it.id == trackId}
+        if (index == -1) {
+            return
         }
+        delete_track_at_position(context, index + 1)
     }
 
     /* Returns if the adapter is empty */

@@ -105,26 +105,25 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
     }
 
     /* Overrides onYesNoDialog from YesNoDialogListener */
-    override fun onYesNoDialog(type: Int, dialogResult: Boolean, payload: Int, payloadString: String) {
-        CoroutineScope(Dispatchers.IO).launch {
-            when (type) {
-                Keys.DIALOG_DELETE_TRACK -> {
-                    when (dialogResult) {
-                        // user tapped remove track
-                        true -> {
-                            toggleOnboardingLayout()
-                            val deferred: Deferred<Unit> = async { tracklistAdapter.delete_track_at_position_suspended(activity as Context, payload) }
-                            // wait for result and store in tracklist
-                            withContext(Main) {
-                                deferred.await()
-                                toggleOnboardingLayout()
-                            }
-
-                        }
-                        // user tapped cancel
-                        false -> {
-                            tracklistAdapter.notifyItemChanged(payload)
-                        }
+    override fun onYesNoDialog(type: Int, dialogResult: Boolean, payload: Int, payloadString: String)
+    {
+        when (type)
+        {
+            Keys.DIALOG_DELETE_TRACK ->
+            {
+                when (dialogResult) {
+                    // user tapped remove track
+                    true ->
+                    {
+                        tracklistAdapter.delete_track_at_position(activity as Context, payload)
+                        toggleOnboardingLayout()
+                    }
+                    // user tapped cancel
+                    false ->
+                    {
+                        // The user slid the track over to the side and turned it red, we have to
+                        // bring it back.
+                        tracklistAdapter.notifyItemChanged(payload)
                     }
                 }
             }
