@@ -53,7 +53,7 @@ class TrackerService: Service(), SensorEventListener {
 
 
     /* Main class variables */
-    var trackingState: Int = Keys.STATE_TRACKING_NOT
+    var trackingState: Int = Keys.STATE_TRACKING_NOT_STARTED
     var gpsProviderActive: Boolean = false
     var networkProviderActive: Boolean = false
     var useImperial: Boolean = false
@@ -268,7 +268,7 @@ class TrackerService: Service(), SensorEventListener {
     fun clearTrack() {
         track = Track()
         FileHelper.deleteTempFile(this)
-        trackingState = Keys.STATE_TRACKING_NOT
+        trackingState = Keys.STATE_TRACKING_NOT_STARTED
         PreferencesHelper.saveTrackingState(trackingState)
         stopForeground(true)
         notificationManager.cancel(Keys.TRACKER_SERVICE_NOTIFICATION_ID) // this call was not necessary prior to Android 12

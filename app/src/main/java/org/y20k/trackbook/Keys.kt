@@ -62,7 +62,7 @@ object Keys {
     const val PREF_LOCATION_AGE_THRESHOLD: String = "prefLocationAgeThreshold"
 
     // states
-    const val STATE_TRACKING_NOT: Int = 0
+    const val STATE_TRACKING_NOT_STARTED: Int = 0
     const val STATE_TRACKING_ACTIVE: Int = 1
     const val STATE_TRACKING_PAUSED: Int = 2
     const val STATE_THEME_FOLLOW_SYSTEM: String = "stateFollowSystem"

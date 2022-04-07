@@ -53,7 +53,7 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
     /* Main class variables */
     private var bound: Boolean = false
     private val handler: Handler = Handler(Looper.getMainLooper())
-    private var trackingState: Int = Keys.STATE_TRACKING_NOT
+    private var trackingState: Int = Keys.STATE_TRACKING_NOT_STARTED
     private var gpsProviderActive: Boolean = false
     private var networkProviderActive: Boolean = false
     private var track: Track = Track()
@@ -269,7 +269,7 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
         when (trackingState) {
             Keys.STATE_TRACKING_PAUSED -> resumeTracking()
             Keys.STATE_TRACKING_ACTIVE -> trackerService.stopTracking()
-            Keys.STATE_TRACKING_NOT -> startTracking()
+            Keys.STATE_TRACKING_NOT_STARTED -> startTracking()
         }
     }
 

@@ -177,7 +177,7 @@ data class MapFragmentLayoutHolder(private var context: Context, private var mar
 
 
     /* Mark current position on map */
-    fun markCurrentPosition(location: Location, trackingState: Int = Keys.STATE_TRACKING_NOT) {
+    fun markCurrentPosition(location: Location, trackingState: Int = Keys.STATE_TRACKING_NOT_STARTED) {
         mapView.overlays.remove(currentPositionOverlay)
         currentPositionOverlay = MapOverlayHelper(markerListener).createMyLocationOverlay(context, location, trackingState)
         mapView.overlays.add(currentPositionOverlay)
@@ -205,7 +205,7 @@ data class MapFragmentLayoutHolder(private var context: Context, private var mar
     /* Update live statics */
     fun updateLiveStatics(length: Float, duration: Long, trackingState: Int) {
         // toggle visibility
-        val trackingActive: Boolean = trackingState != Keys.STATE_TRACKING_NOT
+        val trackingActive: Boolean = trackingState != Keys.STATE_TRACKING_NOT_STARTED
         liveStatisticsDistanceView.isVisible = trackingActive
         liveStatisticsDurationView.isVisible = trackingActive
         // update distance and duration (and add outline)
@@ -226,7 +226,7 @@ data class MapFragmentLayoutHolder(private var context: Context, private var mar
     /* Toggles state of main button and additional buttons (save & resume) */
     fun updateMainButton(trackingState: Int) {
         when (trackingState) {
-            Keys.STATE_TRACKING_NOT -> {
+            Keys.STATE_TRACKING_NOT_STARTED -> {
                 mainButton.setIconResource(R.drawable.ic_fiber_manual_record_inactive_24dp)
                 mainButton.text = context.getString(R.string.button_start)
                 mainButton.contentDescription = context.getString(R.string.descr_button_start)

@@ -154,8 +154,8 @@ data class TrackFragmentLayoutHolder(private var context: Context, private var m
 
         // create map overlay
         val mapOverlayHelper: MapOverlayHelper = MapOverlayHelper(markerListener)
-        trackOverlay = mapOverlayHelper.createTrackOverlay(context, track, Keys.STATE_TRACKING_NOT)
-        trackSpecialMarkersOverlay = mapOverlayHelper.createSpecialMakersTrackOverlay(context, track, Keys.STATE_TRACKING_NOT, displayStartEndMarker = true)
+        trackOverlay = mapOverlayHelper.createTrackOverlay(context, track, Keys.STATE_TRACKING_NOT_STARTED)
+        trackSpecialMarkersOverlay = mapOverlayHelper.createSpecialMakersTrackOverlay(context, track, Keys.STATE_TRACKING_NOT_STARTED, displayStartEndMarker = true)
         if (track.wayPoints.isNotEmpty()) {
             mapView.overlays.add(trackSpecialMarkersOverlay)
             mapView.overlays.add(trackOverlay)
@@ -179,8 +179,8 @@ data class TrackFragmentLayoutHolder(private var context: Context, private var m
         }
         if (track.wayPoints.isNotEmpty()) {
             val mapOverlayHelper: MapOverlayHelper = MapOverlayHelper(markerListener)
-            trackOverlay = mapOverlayHelper.createTrackOverlay(context, track, Keys.STATE_TRACKING_NOT)
-            trackSpecialMarkersOverlay = mapOverlayHelper.createSpecialMakersTrackOverlay(context, track, Keys.STATE_TRACKING_NOT, displayStartEndMarker = true)
+            trackOverlay = mapOverlayHelper.createTrackOverlay(context, track, Keys.STATE_TRACKING_NOT_STARTED)
+            trackSpecialMarkersOverlay = mapOverlayHelper.createSpecialMakersTrackOverlay(context, track, Keys.STATE_TRACKING_NOT_STARTED, displayStartEndMarker = true)
             mapView.overlays.add(trackOverlay)
             mapView.overlays.add(trackSpecialMarkersOverlay)
         }

@@ -63,7 +63,7 @@ object PreferencesHelper {
     /* Loads tracking state */
     fun loadTrackingState(): Int {
         // load tracking state
-        return sharedPreferences.getInt(Keys.PREF_TRACKING_STATE, Keys.STATE_TRACKING_NOT)
+        return sharedPreferences.getInt(Keys.PREF_TRACKING_STATE, Keys.STATE_TRACKING_NOT_STARTED)
     }
 
 
