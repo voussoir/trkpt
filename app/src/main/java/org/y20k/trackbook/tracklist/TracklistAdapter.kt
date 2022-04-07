@@ -152,7 +152,6 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
         tracklist.tracks.remove(track)
         notifyItemChanged(0)
         notifyItemRemoved(ui_index)
-        notifyItemRangeChanged(ui_index, tracklist.tracks.size)
     }
 
     suspend fun delete_track_at_position_suspended(context: Context, position: Int)
