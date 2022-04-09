@@ -22,6 +22,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.graphics.Paint
 import android.location.Location
 import android.view.LayoutInflater
@@ -50,7 +51,6 @@ import org.y20k.trackbook.Keys
 import org.y20k.trackbook.R
 import org.y20k.trackbook.core.Track
 import org.y20k.trackbook.helpers.*
-
 
 /*
  * MapFragmentLayoutHolder class
@@ -120,7 +120,8 @@ data class MapFragmentLayoutHolder(private var context: Context, private var mar
         val compassOverlay = CompassOverlay(context, InternalCompassOrientationProvider(context), mapView)
         compassOverlay.enableCompass()
 //        compassOverlay.setCompassCenter(36f, 36f + (statusBarHeight / densityScalingFactor)) // TODO uncomment when transparent status bar is re-implemented
-        compassOverlay.setCompassCenter(36f, 36f)
+        val screen_width = Resources.getSystem().getDisplayMetrics().widthPixels;
+        compassOverlay.setCompassCenter((screen_width / densityScalingFactor) - 36f, 36f)
         mapView.overlays.add(compassOverlay)
 
         // position the live statistics
@@ -254,7 +255,7 @@ data class MapFragmentLayoutHolder(private var context: Context, private var mar
                 mainButton.text = context.getString(R.string.button_resume)
                 mainButton.contentDescription = context.getString(R.string.descr_button_resume)
                 additionalButtons.isVisible = true
-                currentLocationButton.isGone = true
+                currentLocationButton.isVisible = true
             }
         }
     }

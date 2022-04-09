@@ -77,14 +77,14 @@
             style="@style/Widget.MaterialComponents.FloatingActionButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
+            android:layout_marginTop="64dp"
+            android:layout_marginEnd="16dp"
             android:contentDescription="@string/descr_button_location"
             android:src="@drawable/ic_current_location_24dp"
             app:backgroundTint="@color/location_button_background"
             app:fabSize="mini"
-            app:layout_constraintBottom_toBottomOf="@+id/main_button"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/main_button"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
             app:tint="@color/location_button_icon" />
 
         <com.google.android.material.textview.MaterialTextView
@@ -101,13 +101,11 @@
             android:id="@+id/live_statistics_distance"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="64dp"
-            android:layout_marginEnd="16dp"
             android:textAlignment="textEnd"
             android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
             android:textColor="@color/text_default"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="@+id/live_statistics_duration"
+            app:layout_constraintTop_toBottomOf="@+id/live_statistics_duration"
             tools:text="@string/sample_text_default_live_statistics_distance" />
 
         <com.google.android.material.textview.MaterialTextView
@@ -124,14 +122,16 @@
             android:id="@+id/live_statistics_duration"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:textAlignment="textEnd"
             android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
             android:textColor="@color/text_default"
-            app:layout_constraintEnd_toEndOf="@+id/live_statistics_distance"
-            app:layout_constraintTop_toBottomOf="@+id/live_statistics_distance"
+            app:layout_constraintEnd_toEndOf="@+id/location_button"
+            app:layout_constraintTop_toBottomOf="@+id/location_button"
             tools:text="@string/sample_text_default_live_statistics_duration" />
 
         <!-- GROUPS -->
+
         <androidx.constraintlayout.widget.Group
             android:id="@+id/additional_buttons"
             android:layout_width="0dp"
