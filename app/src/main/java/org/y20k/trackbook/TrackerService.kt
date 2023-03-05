@@ -58,12 +58,11 @@ class TrackerService: Service(), SensorEventListener
     var useImperial: Boolean = false
     var gpsOnly: Boolean = false
     var omitRests: Boolean = true
+    var autoExportInterval: Int = Keys.DEFAULT_AUTO_EXPORT_INTERVAL
     var currentBestLocation: Location = LocationHelper.getDefaultLocation()
-    var lastSave: Date = Keys.DEFAULT_DATE
+    var lastTempSave: Date = Keys.DEFAULT_DATE
+    var lastAutoExport: Date = Keys.DEFAULT_DATE
     var stepCountOffset: Float = 0f
-    // The resumed flag will be true for the first point that is received after unpausing a
-    // recording, so that the distance travelled while paused is not added to the track.distance.
-    var resumed: Boolean = false
     var track: Track = Track()
     var gpsLocationListenerRegistered: Boolean = false
     var networkLocationListenerRegistered: Boolean = false
@@ -152,7 +151,7 @@ class TrackerService: Service(), SensorEventListener
     fun clearTrack()
     {
         track = Track()
-        resumed = false
+        stepCountOffset = 0f
         FileHelper.delete_temp_file(this as Context)
         trackingState = Keys.STATE_TRACKING_NOT_STARTED
         PreferencesHelper.saveTrackingState(trackingState)
@@ -237,6 +236,7 @@ class TrackerService: Service(), SensorEventListener
         gpsOnly = PreferencesHelper.loadGpsOnly()
         useImperial = PreferencesHelper.loadUseImperialUnits()
         omitRests = PreferencesHelper.loadOmitRests()
+        autoExportInterval = PreferencesHelper.loadAutoExportInterval()
 
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         sensorManager = this.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -259,7 +259,7 @@ class TrackerService: Service(), SensorEventListener
         LogHelper.i(TAG, "onDestroy called.")
         if (trackingState == Keys.STATE_TRACKING_ACTIVE)
         {
-            stopTracking()
+            pauseTracking()
         }
         stopForeground(true)
         notificationManager.cancel(Keys.TRACKER_SERVICE_NOTIFICATION_ID) // this call was not necessary prior to Android 12
@@ -305,7 +305,7 @@ class TrackerService: Service(), SensorEventListener
         }
         else if (intent.action == Keys.ACTION_STOP)
         {
-            stopTracking()
+            pauseTracking()
         }
         else if (intent.action == Keys.ACTION_START)
         {
@@ -363,15 +363,29 @@ class TrackerService: Service(), SensorEventListener
     {
         // load temp track - returns an empty track if there is no temp file.
         track = load_temp_track(this)
-        // try to mark last waypoint as stopover
-        if (track.wayPoints.size > 0) {
-            val lastWayPointIndex = track.wayPoints.size - 1
-            track.wayPoints[lastWayPointIndex].isStopOver = true
+        if (track.wayPoints.isNotEmpty()) {
+            track.wayPoints.last().isStopOver = true
         }
-        resumed = true
-        // calculate length of recording break
-        track.recordingPaused += TrackHelper.calculateDurationOfPause(track.recordingStop)
+        track.resumed = true
+        track.recordingPaused += (GregorianCalendar.getInstance().time.time - track.recordingStop.time)
         startTracking(newTrack = false)
+    }
+
+    fun saveTrackAndClear(context: Context)
+    {
+        this.pauseTracking()
+        track.save_all_files(context)
+        this.clearTrack()
+    }
+
+    fun saveTrackAndStartNew(context: Context)
+    {
+        if (track.wayPoints.isNotEmpty())
+        {
+            track.save_all_files(context)
+        }
+        track = Track()
+        FileHelper.delete_temp_file(this as Context)
     }
 
     private fun startStepCounter()
@@ -390,7 +404,6 @@ class TrackerService: Service(), SensorEventListener
         // set up new track
         if (newTrack) {
             track = Track()
-            resumed = false
             stepCountOffset = 0f
         }
         trackingState = Keys.STATE_TRACKING_ACTIVE
@@ -400,11 +413,10 @@ class TrackerService: Service(), SensorEventListener
         startForeground(Keys.TRACKER_SERVICE_NOTIFICATION_ID, displayNotification())
     }
 
-    fun stopTracking()
+    fun pauseTracking()
     {
         track.recordingStop = GregorianCalendar.getInstance().time
-        val context: Context = this
-        CoroutineScope(IO).launch { track.save_temp_suspended(context) }
+        CoroutineScope(IO).launch { track.save_temp_suspended(this@TrackerService) }
 
         trackingState = Keys.STATE_TRACKING_PAUSED
         PreferencesHelper.saveTrackingState(trackingState)
@@ -439,6 +451,9 @@ class TrackerService: Service(), SensorEventListener
             Keys.PREF_OMIT_RESTS -> {
                 omitRests = PreferencesHelper.loadOmitRests()
             }
+            Keys.PREF_AUTO_EXPORT_INTERVAL -> {
+                autoExportInterval = PreferencesHelper.loadAutoExportInterval()
+            }
         }
     }
     /*
@@ -462,9 +477,10 @@ class TrackerService: Service(), SensorEventListener
     {
         override fun run() {
             // add waypoint to track - step count is continuously updated in onSensorChanged
-            val success = track.add_waypoint(currentBestLocation, omitRests, resumed)
+            val success = track.add_waypoint(currentBestLocation, omitRests, track.resumed)
+            val now: Date = GregorianCalendar.getInstance().time
             if (success) {
-                resumed = false
+                track.resumed = false
 
                 // store previous smoothed altitude
                 val previousAltitude: Double = altitudeValues.getAverage()
@@ -488,11 +504,14 @@ class TrackerService: Service(), SensorEventListener
                 }
 
                 // save a temp track
-                val now: Date = GregorianCalendar.getInstance().time
-                if (now.time - lastSave.time > Keys.SAVE_TEMP_TRACK_INTERVAL) {
-                    lastSave = now
+                if (now.time - lastTempSave.time > Keys.SAVE_TEMP_TRACK_INTERVAL) {
+                    lastTempSave = now
                     CoroutineScope(IO).launch { track.save_temp_suspended(this@TrackerService) }
                 }
+
+            }
+            if (now.time - track.recordingStart.time > (autoExportInterval * Keys.ONE_HOUR_IN_MILLISECONDS)) {
+                saveTrackAndStartNew(this@TrackerService)
             }
             // update notification
             displayNotification()

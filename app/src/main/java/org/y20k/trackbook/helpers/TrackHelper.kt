@@ -32,10 +32,6 @@ object TrackHelper {
 
     /* Adds given locatiom as waypoint to track */
 
-
-    /* Calculates time passed since last stop of recording */
-    fun calculateDurationOfPause(recordingStop: Date): Long = GregorianCalendar.getInstance().time.time - recordingStop.time
-
     /* Toggles starred flag for given position */
     fun toggle_waypoint_starred(context: Context, track: Track, latitude: Double, longitude: Double)
     {

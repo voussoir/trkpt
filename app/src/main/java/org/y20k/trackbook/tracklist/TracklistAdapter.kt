@@ -75,64 +75,39 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
     /* Overrides onCreateViewHolder from RecyclerView.Adapter */
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder
     {
-        when (viewType) {
-            Keys.VIEW_TYPE_STATISTICS -> {
-                val v = LayoutInflater.from(parent.context).inflate(R.layout.element_statistics, parent, false)
-                return ElementStatisticsViewHolder(v)
-            }
-            else -> {
-                val v = LayoutInflater.from(parent.context).inflate(R.layout.element_track, parent, false)
-                return ElementTrackViewHolder(v)
-            }
-        }
+        val v = LayoutInflater.from(parent.context).inflate(R.layout.element_track, parent, false)
+        return ElementTrackViewHolder(v)
     }
 
 
     /* Overrides getItemViewType */
     override fun getItemViewType(position: Int): Int {
-        if (position == 0) {
-            return Keys.VIEW_TYPE_STATISTICS
-        } else {
-            return Keys.VIEW_TYPE_TRACK
-        }
+        return Keys.VIEW_TYPE_TRACK
     }
 
 
     /* Overrides getItemCount from RecyclerView.Adapter */
     override fun getItemCount(): Int {
-        // +1 because of the total statistics element
-        return tracklist.tracks.size + 1
+        return tracklist.tracks.size
     }
 
 
     /* Overrides onBindViewHolder from RecyclerView.Adapter */
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int)
     {
-        when (holder)
-        {
-            // CASE STATISTICS ELEMENT
-            is ElementStatisticsViewHolder -> {
-                val elementStatisticsViewHolder: ElementStatisticsViewHolder = holder
-                elementStatisticsViewHolder.totalDistanceView.text = LengthUnitHelper.convertDistanceToString(tracklist.get_total_distance(), useImperial)
-            }
-
-            // CASE TRACK ELEMENT
-            is ElementTrackViewHolder -> {
-                val positionInTracklist: Int = position - 1 // Element 0 is the statistics element.
-                val elementTrackViewHolder: ElementTrackViewHolder = holder
-                elementTrackViewHolder.trackNameView.text = tracklist.tracks[positionInTracklist].name
-                elementTrackViewHolder.trackDataView.text = createTrackDataString(positionInTracklist)
-                when (tracklist.tracks[positionInTracklist].starred) {
-                    true -> elementTrackViewHolder.starButton.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_star_filled_24dp))
-                    false -> elementTrackViewHolder.starButton.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_star_outline_24dp))
-                }
-                elementTrackViewHolder.trackElement.setOnClickListener {
-                    tracklistListener.onTrackElementTapped(tracklist.tracks[positionInTracklist])
-                }
-                elementTrackViewHolder.starButton.setOnClickListener {
-                    toggleStarred(it, positionInTracklist)
-                }
-            }
+        val positionInTracklist: Int = position
+        val elementTrackViewHolder: ElementTrackViewHolder = holder as ElementTrackViewHolder
+        elementTrackViewHolder.trackNameView.text = tracklist.tracks[positionInTracklist].name
+        elementTrackViewHolder.trackDataView.text = createTrackDataString(positionInTracklist)
+        when (tracklist.tracks[positionInTracklist].starred) {
+            true -> elementTrackViewHolder.starButton.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_star_filled_24dp))
+            false -> elementTrackViewHolder.starButton.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_star_outline_24dp))
+        }
+        elementTrackViewHolder.trackElement.setOnClickListener {
+            tracklistListener.onTrackElementTapped(tracklist.tracks[positionInTracklist])
+        }
+        elementTrackViewHolder.starButton.setOnClickListener {
+            toggleStarred(it, positionInTracklist)
         }
     }
 
@@ -140,18 +115,16 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
     /* Get track name for given position */
     fun getTrackName(positionInRecyclerView: Int): String
     {
-        // Minus 1 because first position is always the statistics element
-        return tracklist.tracks[positionInRecyclerView - 1].name
+        return tracklist.tracks[positionInRecyclerView].name
     }
 
-    fun delete_track_at_position(context: Context, ui_index: Int)
+    fun delete_track_at_position(context: Context, index: Int)
     {
-        val track_index = ui_index - 1 // position 0 is the statistics element
-        val track = tracklist.tracks[track_index]
+        val track = tracklist.tracks[index]
         track.delete(context)
         tracklist.tracks.remove(track)
-        notifyItemChanged(0)
-        notifyItemRemoved(ui_index)
+        notifyItemRemoved(index)
+        notifyItemRangeChanged(index, this.itemCount);
     }
 
     suspend fun delete_track_at_position_suspended(context: Context, position: Int)
@@ -167,10 +140,12 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
         if (index == -1) {
             return
         }
-        delete_track_at_position(context, index + 1)
+        tracklist.tracks[index].delete(context)
+        tracklist.tracks.removeAt(index)
+        notifyItemRemoved(index)
+        notifyItemRangeChanged(index, this.itemCount);
     }
 
-    /* Returns if the adapter is empty */
     fun isEmpty(): Boolean {
         return tracklist.tracks.size == 0
     }
@@ -249,16 +224,4 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
     /*
      * End of inner class
      */
-
-
-    /*
-     * Inner class: ViewHolder for a statistics element
-     */
-    inner class ElementStatisticsViewHolder (elementStatisticsLayout: View): RecyclerView.ViewHolder(elementStatisticsLayout) {
-        val totalDistanceView: TextView = elementStatisticsLayout.findViewById(R.id.total_distance_data)
-    }
-    /*
-     * End of inner class
-     */
-
 }

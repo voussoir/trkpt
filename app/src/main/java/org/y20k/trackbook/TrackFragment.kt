@@ -49,7 +49,7 @@ import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.MapOverlayHelper
 import org.y20k.trackbook.helpers.TrackHelper
 import org.y20k.trackbook.ui.TrackFragmentLayoutHolder
-
+import java.io.File
 
 class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDialog.YesNoDialogListener, MapOverlayHelper.MarkerListener {
 
@@ -138,6 +138,7 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
         if (result.resultCode == Activity.RESULT_OK && result.data != null)
         {
             val sourceUri: Uri = layout.track.get_gpx_file(activity as Context).toUri()
+            Toast.makeText(activity as Context, sourceUri.toString(), Toast.LENGTH_LONG).show()
             val targetUri: Uri? = result.data?.data
             if (targetUri != null)
             {
@@ -145,7 +146,8 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
                 CoroutineScope(Dispatchers.IO).launch {
                     FileHelper.saveCopyOfFileSuspended(activity as Context, originalFileUri = sourceUri, targetFileUri = targetUri)
                 }
-                Toast.makeText(activity as Context, R.string.toast_message_save_gpx, Toast.LENGTH_LONG).show()
+                Toast.makeText(activity as Context, targetUri.toString(), Toast.LENGTH_LONG).show()
+                // Toast.makeText(activity as Context, R.string.toast_message_save_gpx, Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -211,6 +213,16 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
             LogHelper.e(TAG, "Unable to save GPX.")
             Toast.makeText(activity as Context, R.string.toast_message_install_file_helper, Toast.LENGTH_LONG).show()
         }
+        // val context = this.activity as Context
+        // val export_name: String = DateTimeHelper.convertToSortableDateString(layout.track.recordingStart) + Keys.GPX_FILE_EXTENSION
+        // val sourceUri: Uri = layout.track.get_gpx_file(activity as Context).toUri()
+        // // val targetUri: Uri = "file:///storage/emulated/0/Syncthing/GPX".toUri()
+        // val targetUri: Uri = File(File("/storage/emulated/0/Syncthing/GPX"), export_name).toUri()
+        // Toast.makeText(activity as Context, targetUri.toString(), Toast.LENGTH_LONG).show()
+        // CoroutineScope(Dispatchers.IO).launch {
+        //     FileHelper.saveCopyOfFileSuspended(activity as Context, originalFileUri = sourceUri, targetFileUri = targetUri)
+        // }
+        // Toast.makeText(activity as Context, R.string.toast_message_save_gpx, Toast.LENGTH_LONG).show()
     }
 
 

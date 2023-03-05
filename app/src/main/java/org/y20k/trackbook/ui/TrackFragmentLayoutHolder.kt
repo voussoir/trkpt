@@ -187,7 +187,7 @@ data class TrackFragmentLayoutHolder(private var context: Context, private var m
             mapView.overlays.add(trackSpecialMarkersOverlay)
         }
         // save track
-        CoroutineScope(Dispatchers.IO).launch { track.save_both_suspended(context) }
+        CoroutineScope(Dispatchers.IO).launch { track.save_all_files_suspended(context) }
     }
 
 

@@ -16,23 +16,36 @@
 
 package org.y20k.trackbook.core
 
+import android.Manifest
+import android.app.Activity
 import android.content.Context
+import android.content.pm.PackageManager
 import android.location.Location
+import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.os.Parcelable
 import android.util.Log
+import android.widget.Toast
 import androidx.annotation.Keep
+import androidx.core.app.ActivityCompat
+import androidx.core.net.toUri
 import com.google.gson.annotations.Expose
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.parcelize.Parcelize
+import org.y20k.trackbook.Keys
+import org.y20k.trackbook.R
+import org.y20k.trackbook.helpers.DateTimeHelper
+import org.y20k.trackbook.helpers.FileHelper
+import org.y20k.trackbook.helpers.LocationHelper
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.random.Random
-import kotlinx.parcelize.Parcelize
-import org.y20k.trackbook.Keys
-import org.y20k.trackbook.helpers.DateTimeHelper
-import org.y20k.trackbook.helpers.FileHelper
-import org.y20k.trackbook.helpers.LocationHelper
 
 /*
  * Track data class
@@ -50,6 +63,9 @@ data class Track (
     @Expose var recordingStart: Date = GregorianCalendar.getInstance().time,
     @Expose var dateString: String = DateTimeHelper.convertToReadableDate(recordingStart),
     @Expose var recordingStop: Date = recordingStart,
+    // The resumed flag will be true for the first point that is received after unpausing a
+    // recording, so that the distance travelled while paused is not added to the track.distance.
+    @Expose var resumed: Boolean = false,
     @Expose var maxAltitude: Double = 0.0,
     @Expose var minAltitude: Double = 0.0,
     @Expose var positiveElevation: Double = 0.0,
@@ -165,22 +181,29 @@ data class Track (
         return File(context.getExternalFilesDir(Keys.FOLDER_GPX), basename)
     }
 
+    fun get_export_gpx_file(context: Context): File
+    {
+        val basename: String = DateTimeHelper.convertToSortableDateString(this.recordingStart) + Keys.GPX_FILE_EXTENSION
+        return File(File("/storage/emulated/0/Syncthing/GPX"), basename)
+    }
+
     fun get_json_file(context: Context): File
     {
         val basename: String = this.id.toString() + Keys.TRACKBOOK_FILE_EXTENSION
         return File(context.getExternalFilesDir(Keys.FOLDER_TRACKS), basename)
     }
 
-    fun save_both(context: Context)
+    fun save_all_files(context: Context)
     {
         this.save_json(context)
         this.save_gpx(context)
+        this.save_export_gpx(context)
     }
 
-    suspend fun save_both_suspended(context: Context)
+    suspend fun save_all_files_suspended(context: Context)
     {
         return suspendCoroutine { cont ->
-            cont.resume(this.save_both(context))
+            cont.resume(this.save_all_files(context))
         }
     }
 
@@ -195,6 +218,23 @@ data class Track (
     {
         return suspendCoroutine { cont ->
             cont.resume(this.save_gpx(context))
+        }
+    }
+
+    fun save_export_gpx(context: Context)
+    {
+        val gpx: String = this.to_gpx()
+        val outputfile: File = this.get_export_gpx_file(context)
+        FileHelper.write_text_file_noblank(gpx, outputfile)
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(context, outputfile.toString(), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    suspend fun save_export_gpx_suspended(context: Context)
+    {
+        return suspendCoroutine { cont ->
+            cont.resume(this.save_export_gpx(context))
         }
     }
 

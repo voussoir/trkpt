@@ -55,7 +55,8 @@ object FileHelper {
     suspend fun renameTrackSuspended(context: Context, track: Track, newName: String) {
         return suspendCoroutine { cont ->
             track.name = newName
-            track.save_both(context)
+            track.save_json(context)
+            track.save_gpx(context)
             cont.resume(Unit)
         }
     }
@@ -71,7 +72,7 @@ object FileHelper {
 
 
     /* Copies file to specified target */
-    private fun copyFile(context: Context, originalFileUri: Uri, targetFileUri: Uri, deleteOriginal: Boolean = false) {
+    fun copyFile(context: Context, originalFileUri: Uri, targetFileUri: Uri, deleteOriginal: Boolean = false) {
         val inputStream = context.contentResolver.openInputStream(originalFileUri)
         val outputStream = context.contentResolver.openOutputStream(targetFileUri)
         if (outputStream != null) {

@@ -123,6 +123,16 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         preferenceOmitRests.summaryOff = getString(R.string.pref_omit_rests_off)
         preferenceOmitRests.setDefaultValue(DEFAULT_OMIT_RESTS)
 
+        val preferenceAutoExportInterval: SeekBarPreference = SeekBarPreference(activity as Context)
+        preferenceAutoExportInterval.title = getString(R.string.pref_auto_export_interval_title)
+        preferenceAutoExportInterval.setIcon(R.drawable.ic_bar_chart_24)
+        preferenceAutoExportInterval.key = Keys.PREF_AUTO_EXPORT_INTERVAL
+        preferenceAutoExportInterval.summary = getString(R.string.pref_auto_export_interval_summary)
+        preferenceAutoExportInterval.showSeekBarValue = true
+        preferenceAutoExportInterval.min = 1
+        preferenceAutoExportInterval.max = 24
+        preferenceAutoExportInterval.setDefaultValue(Keys.DEFAULT_ALTITUDE_SMOOTHING_VALUE)
+
         // set up "Altitude Smoothing" preference
 //        val preferenceAltitudeSmoothingValue: SeekBarPreference = SeekBarPreference(activity as Context)
 //        preferenceAltitudeSmoothingValue.title = getString(R.string.pref_altitude_smoothing_value_title)
@@ -190,6 +200,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         screen.addPreference(preferenceCategoryAdvanced)
         screen.addPreference(preferenceOmitRests)
 //        screen.addPreference(preferenceAltitudeSmoothingValue)
+        screen.addPreference(preferenceAutoExportInterval)
         screen.addPreference(preferenceResetAdvanced)
         screen.addPreference(preferenceCategoryAbout)
         screen.addPreference(preferenceAppVersion)

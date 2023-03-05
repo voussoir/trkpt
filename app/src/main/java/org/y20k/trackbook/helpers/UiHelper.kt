@@ -104,7 +104,6 @@ object UiHelper {
 
         override fun getSwipeDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
             // disable swipe for statistics element
-            if (viewHolder is TracklistAdapter.ElementStatisticsViewHolder) return 0
             return super.getSwipeDirs(recyclerView, viewHolder)
         }
 

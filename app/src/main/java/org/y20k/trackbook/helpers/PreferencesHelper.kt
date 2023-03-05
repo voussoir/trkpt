@@ -71,9 +71,11 @@ object PreferencesHelper {
         return sharedPreferences.getBoolean(Keys.PREF_OMIT_RESTS, true)
     }
 
-//    /* Load altitude smoothing value */
+    fun loadAutoExportInterval(): Int {
+        return sharedPreferences.getInt(Keys.PREF_AUTO_EXPORT_INTERVAL, Keys.DEFAULT_AUTO_EXPORT_INTERVAL)
+    }
+
 //    fun loadAltitudeSmoothingValue(): Int {
-//        // load current setting
 //        return sharedPreferences.getInt(Keys.PREF_ALTITUDE_SMOOTHING_VALUE, Keys.DEFAULT_ALTITUDE_SMOOTHING_VALUE)
 //    }
 

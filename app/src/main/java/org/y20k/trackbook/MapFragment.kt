@@ -275,7 +275,7 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
     private fun handleTrackingManagementMenu() {
         when (trackingState) {
             Keys.STATE_TRACKING_PAUSED -> resumeTracking()
-            Keys.STATE_TRACKING_ACTIVE -> trackerService.stopTracking()
+            Keys.STATE_TRACKING_ACTIVE -> trackerService.pauseTracking()
             Keys.STATE_TRACKING_NOT_STARTED -> startTracking()
         }
     }
@@ -296,9 +296,7 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
         else
         {
             CoroutineScope(IO).launch {
-                track.save_json(activity as Context)
-                track.save_gpx(activity as Context)
-                trackerService.clearTrack()
+                trackerService.saveTrackAndClear(activity as Context)
                 withContext(Main) {
                     // step 4: open track in TrackFragement
                     openTrack(track)

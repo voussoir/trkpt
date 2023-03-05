@@ -17,12 +17,16 @@
 
 package org.y20k.trackbook
 
+import android.Manifest
+import android.app.Activity
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -30,6 +34,35 @@ import org.osmdroid.config.Configuration
 import org.y20k.trackbook.helpers.AppThemeHelper
 import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.PreferencesHelper
+
+private const val REQUEST_EXTERNAL_STORAGE = 1
+private val PERMISSIONS_STORAGE = arrayOf<String>(
+    Manifest.permission.READ_EXTERNAL_STORAGE,
+    Manifest.permission.WRITE_EXTERNAL_STORAGE
+)
+
+/**
+ * Checks if the app has permission to write to device storage
+ *
+ * If the app does not has permission then the user will be prompted to grant permissions
+ *
+ * @param activity
+ */
+fun verifyStoragePermissions(activity: Activity?)
+{
+    // Check if we have write permission
+    val permission = ActivityCompat.checkSelfPermission(activity!!,
+        Manifest.permission.WRITE_EXTERNAL_STORAGE)
+    if (permission != PackageManager.PERMISSION_GRANTED)
+    {
+        // We don't have permission so prompt the user
+        ActivityCompat.requestPermissions(
+            activity,
+            PERMISSIONS_STORAGE,
+            REQUEST_EXTERNAL_STORAGE
+        )
+    }
+}
 
 /*
  * MainActivity class
@@ -48,7 +81,7 @@ class MainActivity : AppCompatActivity() {
     /* Overrides onCreate from AppCompatActivity */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        verifyStoragePermissions(this)
         // todo: remove after testing finished
         if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             StrictMode.setVmPolicy(
