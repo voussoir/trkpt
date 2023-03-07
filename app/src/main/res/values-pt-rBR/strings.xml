@@ -3,7 +3,6 @@
     <!-- App Name -->
     <string name="app_name">Trackbook</string>
     <!-- please do not translate app_name - transcription into different alphabet types is fine though -->
-    <string name="app_version_name" translatable="false">\"Echoes\"</string>
     <!-- Tabs -->
     <string name="tab_map">Mapa</string>
     <string name="tab_tracks">Caminhos</string>
@@ -22,7 +21,6 @@
     <!-- FAB Sub Menu -->
     <string name="button_delete">Limpar</string>
     <string name="button_save">Salvar</string>
-    <string name="button_resume">Retomar</string>
     <!-- Dialogs -->
     <string name="dialog_generic_button_cancel">Cancelar</string>
     <string name="dialog_generic_button_okay">OK</string>
@@ -113,8 +111,5 @@
     <string name="descr_statistics_sheet_delete_button">Botão apagar rota</string>
     <string name="descr_statistics_sheet_edit_button">Botão editar rota</string>
     <string name="descr_statistics_sheet_save_button">Botão salvar como GPX</string>
-    <string name="pref_recording_accuracy_summary_high">Os waypoints têm maior precisão, mas são menos freqüentes.</string>
-    <string name="pref_recording_accuracy_title">Precisão de Gravação</string>
     <string name="track_list_p_element_statistics">Distância Total Registrada</string>
-    <string name="pref_recording_accuracy_summary_default">Os waypoints têm menor precisão, mas são mais freqüentes.</string>
 </resources>

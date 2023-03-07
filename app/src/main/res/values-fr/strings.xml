@@ -17,7 +17,6 @@
     <string name="snackbar_message_location_offline">Localisation désactivée. Le suivi ne fonctionnera pas.</string>
     <!-- fab sub menu_bottom_navigation -->
     <string name="button_delete">Supprimer</string>
-    <string name="button_resume">Reprendre</string>
     <string name="button_save">Sauvegarder</string>
     <!-- dialogs -->
     <string name="dialog_error_empty_recording_button_resume">Reprendre l\'enregistrement</string>
@@ -109,9 +108,6 @@
     <string name="toast_message_copied_to_clipboard">Copié dans le presse-papiers.</string>
     <string name="toast_message_poi_removed">Marqueur de point d\'intérêt supprimé.</string>
     <string name="toast_message_poi_added">Marqueur de point d\'intérêt ajouté.</string>
-    <string name="pref_recording_accuracy_title">Précision de l\'enregistrement</string>
-    <string name="pref_recording_accuracy_summary_default">Les points de cheminements ont une précision plus faible mais sont plus fréquents.</string>
-    <string name="pref_recording_accuracy_summary_high">Les points de cheminement ont une plus grande précision mais sont moins fréquents.</string>
     <string name="track_list_p_element_statistics">Distance totale enregistrée</string>
     <string name="descr_button_location">Centrer sur la position actuelle</string>
 </resources>

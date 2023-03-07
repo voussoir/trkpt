@@ -45,7 +45,7 @@ class NotificationHelper(private val trackerService: TrackerService) {
 
 
     /* Creates notification */
-    fun createNotification(trackingState: Int, trackLength: Float, duration: Long, useImperial: Boolean): Notification {
+    fun createNotification(trackingState: Int, timestamp: String): Notification {
 
         // create notification channel if necessary
         if (shouldCreateNotificationChannel()) {
@@ -56,7 +56,7 @@ class NotificationHelper(private val trackerService: TrackerService) {
         val builder = NotificationCompat.Builder(trackerService, Keys.NOTIFICATION_CHANNEL_RECORDING)
         builder.setContentIntent(showActionPendingIntent)
         builder.setSmallIcon(R.drawable.ic_notification_icon_small_24dp)
-        builder.setContentText(getContentString(trackerService, duration, trackLength, useImperial))
+        builder.setContentText(timestamp)
 
         // add icon and actions for stop, resume and show
         when (trackingState) {
@@ -77,21 +77,12 @@ class NotificationHelper(private val trackerService: TrackerService) {
 
     }
 
-
-    /* Build context text for notification builder */
-    private fun getContentString(context: Context, duration: Long, trackLength: Float, useImperial: Boolean): String {
-        return "${LengthUnitHelper.convertDistanceToString(trackLength, useImperial)} • ${DateTimeHelper.convertToReadableTime(context, duration)}"
-    }
-
-
     /* Checks if notification channel should be created */
     private fun shouldCreateNotificationChannel() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !nowPlayingChannelExists()
-
 
     /* Checks if notification channel exists */
     @RequiresApi(Build.VERSION_CODES.O)
     private fun nowPlayingChannelExists() = notificationManager.getNotificationChannel(Keys.NOTIFICATION_CHANNEL_RECORDING) != null
-
 
     /* Create a notification channel */
     @RequiresApi(Build.VERSION_CODES.O)
@@ -103,19 +94,23 @@ class NotificationHelper(private val trackerService: TrackerService) {
         notificationManager.createNotificationChannel(notificationChannel)
     }
 
-
     /* Notification pending intents */
     private val stopActionPendingIntent = PendingIntent.getService(
-        trackerService,14,
-        Intent(trackerService, TrackerService::class.java).setAction(Keys.ACTION_STOP),PendingIntent.FLAG_IMMUTABLE)
+        trackerService,
+        14,
+        Intent(trackerService, TrackerService::class.java).setAction(Keys.ACTION_STOP),
+        PendingIntent.FLAG_IMMUTABLE
+    )
     private val resumeActionPendingIntent = PendingIntent.getService(
-        trackerService, 16,
-        Intent(trackerService, TrackerService::class.java).setAction(Keys.ACTION_RESUME),PendingIntent.FLAG_IMMUTABLE)
+        trackerService,
+        16,
+        Intent(trackerService, TrackerService::class.java).setAction(Keys.ACTION_RESUME),
+        PendingIntent.FLAG_IMMUTABLE
+    )
     private val showActionPendingIntent: PendingIntent? = TaskStackBuilder.create(trackerService).run {
         addNextIntentWithParentStack(Intent(trackerService, MainActivity::class.java))
         getPendingIntent(10, PendingIntent.FLAG_IMMUTABLE)
     }
-
 
     /* Notification actions */
     private val stopAction = NotificationCompat.Action(

@@ -18,7 +18,6 @@
     <!-- fab sub menu_bottom_navigation -->
     <string name="button_delete">Wissen</string>
     <string name="button_save">Opslaan</string>
-    <string name="button_resume">Hervatten</string>
     <!-- dialogs -->
     <string name="dialog_share_gpx">GPX-bestand delen met</string>
     <string name="dialog_error_empty_recording_message">Trackbook heeft nog geen routepunten vastgelegd.</string>
@@ -109,9 +108,6 @@
     <string name="toast_message_copied_to_clipboard">Gekopieerd naar klembord.</string>
     <string name="toast_message_poi_removed">POI-indicatie verwijderd.</string>
     <string name="toast_message_poi_added">POI-indicatie toegevoegd.</string>
-    <string name="pref_recording_accuracy_title">Opname nauwkeurigheid</string>
-    <string name="pref_recording_accuracy_summary_default">Routepunten zijn minder nauwkeurig, maar frequenter.</string>
-    <string name="pref_recording_accuracy_summary_high">Routepunten zijn nauwkeuriger, maar minder frequent.</string>
     <string name="track_list_p_element_statistics">Totaal afgelegde afstand</string>
     <string name="descr_button_location">Centreren op huidige locatie</string>
 </resources>

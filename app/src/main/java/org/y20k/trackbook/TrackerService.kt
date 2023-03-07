@@ -31,17 +31,17 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.Manifest
+import android.content.ContentValues
 import android.os.*
+import android.util.Log
 import androidx.core.content.ContextCompat
 import java.util.*
-import kotlinx.coroutines.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.Runnable
 import org.y20k.trackbook.core.Track
-import org.y20k.trackbook.core.load_temp_track
+import org.y20k.trackbook.core.Database
+import org.y20k.trackbook.core.Trkpt
 import org.y20k.trackbook.helpers.*
+import java.text.SimpleDateFormat
 
 /*
  * TrackerService class
@@ -52,24 +52,25 @@ class TrackerService: Service(), SensorEventListener
     private val TAG: String = LogHelper.makeLogTag(TrackerService::class.java)
 
     /* Main class variables */
-    var trackingState: Int = Keys.STATE_TRACKING_NOT_STARTED
+    var trackingState: Int = Keys.STATE_TRACKING_STOPPED
     var gpsProviderActive: Boolean = false
     var networkProviderActive: Boolean = false
     var useImperial: Boolean = false
     var gpsOnly: Boolean = false
     var omitRests: Boolean = true
-    var autoExportInterval: Int = Keys.DEFAULT_AUTO_EXPORT_INTERVAL
+    var device_id: String = random_int().toString()
+    var recording_started: Date = GregorianCalendar.getInstance().time
+    var commitInterval: Int = Keys.COMMIT_INTERVAL
     var currentBestLocation: Location = LocationHelper.getDefaultLocation()
-    var lastTempSave: Date = Keys.DEFAULT_DATE
-    var lastAutoExport: Date = Keys.DEFAULT_DATE
+    var lastCommit: Date = Keys.DEFAULT_DATE
     var stepCountOffset: Float = 0f
-    var track: Track = Track()
+    lateinit var track: Track
     var gpsLocationListenerRegistered: Boolean = false
     var networkLocationListenerRegistered: Boolean = false
     var bound: Boolean = false
     private val binder = LocalBinder()
     private val handler: Handler = Handler(Looper.getMainLooper())
-    private var altitudeValues: SimpleMovingAverageQueue = SimpleMovingAverageQueue(Keys.DEFAULT_ALTITUDE_SMOOTHING_VALUE)
+    lateinit var trackbook: Trackbook
     private lateinit var locationManager: LocationManager
     private lateinit var sensorManager: SensorManager
     private lateinit var notificationManager: NotificationManager
@@ -111,7 +112,8 @@ class TrackerService: Service(), SensorEventListener
     }
 
     /* Adds a Network location listener to location manager */
-    private fun addNetworkLocationListener() {
+    private fun addNetworkLocationListener()
+    {
         if (gpsOnly)
         {
             LogHelper.v(TAG, "Skipping Network listener. User prefers GPS-only.")
@@ -150,12 +152,11 @@ class TrackerService: Service(), SensorEventListener
 
     fun clearTrack()
     {
-        track = Track()
-        stepCountOffset = 0f
-        FileHelper.delete_temp_file(this as Context)
-        trackingState = Keys.STATE_TRACKING_NOT_STARTED
+        trackingState = Keys.STATE_TRACKING_STOPPED
         PreferencesHelper.saveTrackingState(trackingState)
-        stopForeground(true)
+        track.delete()
+        track = Track(trackbook.database, device_id, start_time=GregorianCalendar.getInstance().time, stop_time=Date(GregorianCalendar.getInstance().time.time + 86400))
+        stopForeground(STOP_FOREGROUND_REMOVE)
         notificationManager.cancel(Keys.TRACKER_SERVICE_NOTIFICATION_ID) // this call was not necessary prior to Android 12
     }
 
@@ -205,9 +206,7 @@ class TrackerService: Service(), SensorEventListener
     private fun displayNotification(): Notification {
         val notification: Notification = notificationHelper.createNotification(
             trackingState,
-            track.distance,
-            track.duration,
-            useImperial
+            iso8601(GregorianCalendar.getInstance().time)
         )
         notificationManager.notify(Keys.TRACKER_SERVICE_NOTIFICATION_ID, notification)
         return notification
@@ -233,11 +232,14 @@ class TrackerService: Service(), SensorEventListener
     override fun onCreate()
     {
         super.onCreate()
+        trackbook = (applicationContext as Trackbook)
+        trackbook.load_homepoints()
         gpsOnly = PreferencesHelper.loadGpsOnly()
+        device_id = PreferencesHelper.load_device_id()
+        track = Track(trackbook.database, device_id, start_time=GregorianCalendar.getInstance().time, stop_time=Date(GregorianCalendar.getInstance().time.time + 86400))
         useImperial = PreferencesHelper.loadUseImperialUnits()
         omitRests = PreferencesHelper.loadOmitRests()
-        autoExportInterval = PreferencesHelper.loadAutoExportInterval()
-
+        commitInterval = PreferencesHelper.loadCommitInterval()
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         sensorManager = this.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -248,8 +250,6 @@ class TrackerService: Service(), SensorEventListener
         networkLocationListener = createLocationListener()
         trackingState = PreferencesHelper.loadTrackingState()
         currentBestLocation = LocationHelper.getLastKnownLocation(this)
-        track = load_temp_track(this)
-//        altitudeValues.capacity = PreferencesHelper.loadAltitudeSmoothingValue()
         PreferencesHelper.registerPreferenceChangeListener(sharedPreferenceChangeListener)
     }
 
@@ -282,13 +282,11 @@ class TrackerService: Service(), SensorEventListener
         if (sensorEvent != null) {
             if (stepCountOffset == 0f) {
                 // store steps previously recorded by the system
-                stepCountOffset = (sensorEvent.values[0] - 1) - track.stepCount // subtract any steps recorded during this session in case the app was killed
+                stepCountOffset = (sensorEvent.values[0] - 1) - 0 // subtract any steps recorded during this session in case the app was killed
             }
             // calculate step count - subtract steps previously recorded
             steps = sensorEvent.values[0] - stepCountOffset
         }
-        // update step count in track
-        track.stepCount = steps
     }
 
     /* Overrides onStartCommand from Service */
@@ -300,7 +298,7 @@ class TrackerService: Service(), SensorEventListener
             if (trackingState == Keys.STATE_TRACKING_ACTIVE)
             {
                 LogHelper.w(TAG, "Trackbook has been killed by the operating system. Trying to resume recording.")
-                resumeTracking()
+                startTracking()
             }
         }
         else if (intent.action == Keys.ACTION_STOP)
@@ -310,10 +308,6 @@ class TrackerService: Service(), SensorEventListener
         else if (intent.action == Keys.ACTION_START)
         {
             startTracking()
-        }
-        else if (intent.action == Keys.ACTION_RESUME)
-        {
-            resumeTracking()
         }
 
         // START_STICKY is used for services that are explicitly started and stopped as needed
@@ -358,42 +352,11 @@ class TrackerService: Service(), SensorEventListener
         }
     }
 
-    /* Resume tracking after stop/pause */
-    fun resumeTracking()
-    {
-        // load temp track - returns an empty track if there is no temp file.
-        track = load_temp_track(this)
-        if (track.wayPoints.isNotEmpty()) {
-            track.wayPoints.last().isStopOver = true
-        }
-        track.resumed = true
-        track.recordingPaused += (GregorianCalendar.getInstance().time.time - track.recordingStop.time)
-        startTracking(newTrack = false)
-    }
-
-    fun saveTrackAndClear(context: Context)
-    {
-        this.pauseTracking()
-        track.save_all_files(context)
-        this.clearTrack()
-    }
-
-    fun saveTrackAndStartNew(context: Context)
-    {
-        if (track.wayPoints.isNotEmpty())
-        {
-            track.save_all_files(context)
-        }
-        track = Track()
-        FileHelper.delete_temp_file(this as Context)
-    }
-
     private fun startStepCounter()
     {
         val stepCounterAvailable = sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER), SensorManager.SENSOR_DELAY_UI)
         if (!stepCounterAvailable) {
             LogHelper.w(TAG, "Pedometer sensor not available.")
-            track.stepCount = -1f
         }
     }
 
@@ -401,12 +364,11 @@ class TrackerService: Service(), SensorEventListener
     {
         addGpsLocationListener()
         addNetworkLocationListener()
-        // set up new track
-        if (newTrack) {
-            track = Track()
-            stepCountOffset = 0f
-        }
         trackingState = Keys.STATE_TRACKING_ACTIVE
+        if (newTrack)
+        {
+            this.recording_started = GregorianCalendar.getInstance().time
+        }
         PreferencesHelper.saveTrackingState(trackingState)
         startStepCounter()
         handler.postDelayed(periodicTrackUpdate, 0)
@@ -415,19 +377,16 @@ class TrackerService: Service(), SensorEventListener
 
     fun pauseTracking()
     {
-        track.recordingStop = GregorianCalendar.getInstance().time
-        CoroutineScope(IO).launch { track.save_temp_suspended(this@TrackerService) }
+        trackbook.database.commit()
 
-        trackingState = Keys.STATE_TRACKING_PAUSED
+        trackingState = Keys.STATE_TRACKING_STOPPED
         PreferencesHelper.saveTrackingState(trackingState)
-
-        altitudeValues.reset()
 
         sensorManager.unregisterListener(this)
         handler.removeCallbacks(periodicTrackUpdate)
 
         displayNotification()
-        stopForeground(false)
+        stopForeground(STOP_FOREGROUND_DETACH)
     }
 
     /*
@@ -435,24 +394,25 @@ class TrackerService: Service(), SensorEventListener
      */
     private val sharedPreferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
         when (key) {
-            // preference "Restrict to GPS"
-            Keys.PREF_GPS_ONLY -> {
+            Keys.PREF_GPS_ONLY ->
+            {
                 gpsOnly = PreferencesHelper.loadGpsOnly()
                 when (gpsOnly) {
                     true -> removeNetworkLocationListener()
                     false -> addNetworkLocationListener()
                 }
             }
-            // preference "Use Imperial Measurements"
-            Keys.PREF_USE_IMPERIAL_UNITS -> {
+            Keys.PREF_USE_IMPERIAL_UNITS ->
+            {
                 useImperial = PreferencesHelper.loadUseImperialUnits()
             }
-            // preference "Recording Accuracy"
-            Keys.PREF_OMIT_RESTS -> {
+            Keys.PREF_OMIT_RESTS ->
+            {
                 omitRests = PreferencesHelper.loadOmitRests()
             }
-            Keys.PREF_AUTO_EXPORT_INTERVAL -> {
-                autoExportInterval = PreferencesHelper.loadAutoExportInterval()
+            Keys.PREF_DEVICE_ID ->
+            {
+                device_id = PreferencesHelper.load_device_id()
             }
         }
     }
@@ -470,84 +430,96 @@ class TrackerService: Service(), SensorEventListener
      * End of inner class
      */
 
+    fun should_keep_point(location: Location): Boolean
+    {
+        if(! trackbook.database.ready)
+        {
+            Log.i("VOUSSOIR", "Omitting due to database not ready.")
+            return false
+        }
+        if (location.latitude == 0.0 || location.longitude == 0.0)
+        {
+            Log.i("VOUSSOIR", "Omitting due to 0,0 location.")
+            return false
+        }
+        if (! LocationHelper.isRecentEnough(location))
+        {
+            Log.i("VOUSSOIR", "Omitting due to not recent enough.")
+            return false
+        }
+        if (! LocationHelper.isAccurateEnough(location, Keys.DEFAULT_THRESHOLD_LOCATION_ACCURACY))
+        {
+            Log.i("VOUSSOIR", "Omitting due to not accurate enough.")
+            return false
+        }
+        for (homepoint in trackbook.homepoints)
+        {
+            if (LocationHelper.calculateDistance(homepoint.location, location) < homepoint.radius)
+            {
+                Log.i("VOUSSOIR", "Omitting due to homepoint ${homepoint}.")
+                return false;
+            }
+        }
+        if (track.trkpts.isEmpty())
+        {
+            return true
+        }
+        if (! LocationHelper.isDifferentEnough(track.trkpts.last().toLocation(), location, omitRests))
+        {
+            Log.i("VOUSSOIR", "Omitting due to too close to previous.")
+            return false
+        }
+        return true
+    }
     /*
      * Runnable: Periodically track updates (if recording active)
      */
     private val periodicTrackUpdate: Runnable = object : Runnable
     {
         override fun run() {
-            // add waypoint to track - step count is continuously updated in onSensorChanged
-            val success = track.add_waypoint(currentBestLocation, omitRests, track.resumed)
             val now: Date = GregorianCalendar.getInstance().time
-            if (success) {
-                track.resumed = false
-
-                // store previous smoothed altitude
-                val previousAltitude: Double = altitudeValues.getAverage()
-                // put current altitude into queue
-                val currentBestLocationAltitude: Double = currentBestLocation.altitude
-                if (currentBestLocationAltitude != Keys.DEFAULT_ALTITUDE) altitudeValues.add(currentBestLocationAltitude)
-                // TODO remove
-                // uncomment to use test altitude values - useful if testing with an emulator
-                //altitudeValues.add(getTestAltitude()) // TODO remove
-                // TODO remove
-
-                // only start calculating elevation differences, if enough data has been added to queue
-                if (altitudeValues.prepared) {
-                    // get current smoothed altitude
-                    val currentAltitude: Double = altitudeValues.getAverage()
-                    // calculate and store elevation differences
-                    track = LocationHelper.calculateElevationDifferences(currentAltitude, previousAltitude, track)
-                    // TODO remove
-                    LogHelper.d(TAG, "Elevation Calculation || prev = $previousAltitude | curr = $currentAltitude | pos = ${track.positiveElevation} | neg = ${track.negativeElevation}")
-                    // TODO remove
+            val nowstr: String = iso8601(now)
+            val trkpt: Trkpt = Trkpt(location=currentBestLocation)
+            Log.i("VOUSSOIR", "Processing point ${currentBestLocation.latitude}, ${currentBestLocation.longitude} ${nowstr}.")
+            if (should_keep_point((currentBestLocation)))
+            {
+                val values = ContentValues().apply {
+                    put("device_id", device_id)
+                    put("lat", trkpt.latitude)
+                    put("lon", trkpt.longitude)
+                    put("time", nowstr)
+                    put("accuracy", trkpt.accuracy)
+                    put("sat", trkpt.numberSatellites)
+                    put("ele", trkpt.altitude)
+                    put("star", 0)
+                }
+                if (! trackbook.database.connection.inTransaction())
+                {
+                    trackbook.database.connection.beginTransaction()
+                }
+                trackbook.database.connection.insert("trkpt", null, values)
+                track.trkpts.add(trkpt)
+                if (track.trkpts.size > track.dequelimit)
+                {
+                    track.trkpts.removeFirst()
                 }
 
-                // save a temp track
-                if (now.time - lastTempSave.time > Keys.SAVE_TEMP_TRACK_INTERVAL) {
-                    lastTempSave = now
-                    CoroutineScope(IO).launch { track.save_temp_suspended(this@TrackerService) }
+                if (now.time - lastCommit.time > Keys.SAVE_TEMP_TRACK_INTERVAL)
+                {
+                    if (trackbook.database.connection.inTransaction())
+                    {
+                        trackbook.database.commit()
+                    }
+                    lastCommit  = now
                 }
-
-            }
-            if (now.time - track.recordingStart.time > (autoExportInterval * Keys.ONE_HOUR_IN_MILLISECONDS)) {
-                saveTrackAndStartNew(this@TrackerService)
             }
             // update notification
             displayNotification()
             // re-run this in set interval
-            handler.postDelayed(this, Keys.ADD_WAYPOINT_TO_TRACK_INTERVAL)
+            handler.postDelayed(this, Keys.TRACKING_INTERVAL)
         }
     }
     /*
      * End of declaration
      */
-
-    /* Simple queue that evicts older elements and holds an average */
-    /* Credit: CircularQueue https://stackoverflow.com/a/51923797 */
-    class SimpleMovingAverageQueue(var capacity: Int) : LinkedList<Double>()
-    {
-        var prepared: Boolean = false
-        private var sum: Double = 0.0
-        override fun add(element: Double): Boolean
-        {
-            prepared = this.size + 1 >= Keys.MIN_NUMBER_OF_WAYPOINTS_FOR_ELEVATION_CALCULATION
-            if (this.size >= capacity) {
-                sum -= this.first
-                removeFirst()
-            }
-            sum += element
-            return super.add(element)
-        }
-        fun getAverage(): Double
-        {
-            return sum / this.size
-        }
-        fun reset()
-        {
-            this.clear()
-            prepared = false
-            sum = 0.0
-        }
-    }
 }

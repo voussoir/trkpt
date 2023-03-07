@@ -51,14 +51,6 @@ object LocationHelper {
         return defaultLocation
     }
 
-
-    /* Checks if a location is older than one minute */
-    fun isOldLocation(location: Location): Boolean {
-        // check how many milliseconds the given location is old
-        return GregorianCalendar.getInstance().time.time - location.time > Keys.SIGNIFICANT_TIME_DIFFERENCE
-    }
-
-
     /* Tries to return the last location that the system has stored */
     fun getLastKnownLocation(context: Context): Location {
         // get last location that Trackbook has stored
@@ -117,7 +109,6 @@ object LocationHelper {
         }
     }
 
-
     /* Checks if GPS location provider is available and enabled */
     fun isGpsEnabled(locationManager: LocationManager): Boolean {
         if (locationManager.allProviders.contains(LocationManager.GPS_PROVIDER)) {
@@ -155,27 +146,6 @@ object LocationHelper {
         }
         return isAccurate
     }
-
-
-    /* Checks if the first location of track is plausible */
-    fun isFirstLocationPlausible(secondLocation: Location, track: Track): Boolean {
-        // speed in km/h
-        val speed: Double = calculateSpeed(firstLocation = track.wayPoints[0].toLocation(), secondLocation = secondLocation, firstTimestamp = track.recordingStart.time, secondTimestamp = GregorianCalendar.getInstance().time.time)
-        // plausible = speed under 250 km/h
-        return speed < Keys.IMPLAUSIBLE_TRACK_START_SPEED
-    }
-
-
-    /* Calculates speed */
-    private fun calculateSpeed(firstLocation: Location, secondLocation: Location, firstTimestamp: Long, secondTimestamp: Long, useImperial: Boolean = false): Double {
-        // time difference in seconds
-        val timeDifference: Long = (secondTimestamp - firstTimestamp) / 1000L
-        // distance in meters
-        val distance: Float = calculateDistance(firstLocation, secondLocation)
-        // speed in either km/h (default) or mph
-        return LengthUnitHelper.convertMetersPerSecond(distance / timeDifference, useImperial)
-    }
-
 
     /* Checks if given location is different enough compared to previous location */
     fun isDifferentEnough(previousLocation: Location?, location: Location, omitRests: Boolean): Boolean {
@@ -215,51 +185,6 @@ object LocationHelper {
         }
         return distance
     }
-
-
-    /* Calculate elevation differences */
-    fun calculateElevationDifferencesOld(previousLocation: Location?, location: Location, track: Track): Pair<Double, Double> {
-        // store current values
-        var positiveElevation: Double = track.positiveElevation
-        var negativeElevation: Double = track.negativeElevation
-        if (previousLocation != null) {
-            // factor is bigger than 1 if the time stamp difference is larger than the movement recording interval
-            val timeDifferenceFactor: Long = (location.time - previousLocation.time) / Keys.ADD_WAYPOINT_TO_TRACK_INTERVAL
-            // get elevation difference and sum it up
-            val altitudeDifference: Double = location.altitude - previousLocation.altitude
-            if (altitudeDifference > 0 && altitudeDifference < Keys.ALTITUDE_MEASUREMENT_ERROR_THRESHOLD * timeDifferenceFactor && location.altitude != Keys.DEFAULT_ALTITUDE) {
-                positiveElevation = track.positiveElevation + altitudeDifference // upwards movement
-            }
-            if (altitudeDifference < 0 && altitudeDifference > -Keys.ALTITUDE_MEASUREMENT_ERROR_THRESHOLD * timeDifferenceFactor && location.altitude != Keys.DEFAULT_ALTITUDE) {
-                negativeElevation = track.negativeElevation + altitudeDifference // downwards movement
-            }
-        }
-        return Pair(positiveElevation, negativeElevation)
-    }
-
-
-    /* Calculate elevation differences */
-    fun calculateElevationDifferences(currentAltitude: Double, previousAltitude: Double, track: Track): Track {
-        if (currentAltitude != Keys.DEFAULT_ALTITUDE && previousAltitude != Keys.DEFAULT_ALTITUDE) {
-            val altitudeDifference: Double = currentAltitude - previousAltitude
-            if (altitudeDifference > 0) {
-                track.positiveElevation += altitudeDifference // upwards movement
-            }
-            if (altitudeDifference < 0) {
-                track.negativeElevation += altitudeDifference // downwards movement
-            }
-        }
-        return track
-    }
-
-
-    /* Checks if given location is a stop over */
-    fun isStopOver(previousLocation: Location?, location: Location): Boolean {
-        if (previousLocation == null) return false
-        // check how many milliseconds the given locations are apart
-        return location.time - previousLocation.time > Keys.STOP_OVER_THRESHOLD
-    }
-
 
     /* Get number of satellites from Location extras */
     fun getNumberOfSatellites(location: Location): Int {

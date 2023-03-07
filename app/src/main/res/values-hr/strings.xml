@@ -32,7 +32,6 @@
     <string name="button_save">Spremi</string>
     <string name="pref_general_title">Opće</string>
     <string name="pref_accuracy_threshold_title">Prag točnosti</string>
-    <string name="button_resume">Nastavi</string>
     <string name="pref_theme_selection_title">Tema programa</string>
     <string name="tab_tracks">Rute</string>
     <string name="descr_map_last_track">Mapa zadnje rute</string>
@@ -96,9 +95,6 @@
     <string name="toast_message_copied_to_clipboard">Kopirano u međuspremnik.</string>
     <string name="toast_message_poi_removed">Oznaka točke interesa uklonjena.</string>
     <string name="toast_message_poi_added">Oznaka točke interesa dodana.</string>
-    <string name="pref_recording_accuracy_summary_high">Točke rute imaju veću točnost ali su rjeđe.</string>
-    <string name="pref_recording_accuracy_title">Točnost snimanja</string>
-    <string name="pref_recording_accuracy_summary_default">Točke rute imaju manju točnost ali su češće.</string>
     <string name="track_list_p_element_statistics">Ukupna udaljenost snimljena</string>
     <string name="descr_button_location">Centriraj na trenutačno mjesto</string>
 </resources>

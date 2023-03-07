@@ -28,7 +28,6 @@
     <string name="snackbar_message_location_permission_denied">Permiso de ubicación no concedido. Trackbook no funcionará.</string>
     <string name="button_delete">Limpiar</string>
     <string name="button_save">Guardar</string>
-    <string name="button_resume">Resumir</string>
     <string name="dialog_generic_button_okay">OK</string>
     <string name="dialog_generic_details_button">Mostrar detalles</string>
     <string name="dialog_error_empty_recording_message">Trackbook no registró ningún punto de referencia hasta el momento.</string>
@@ -77,9 +76,6 @@
     <string name="pref_gps_only_summary_gps_and_network">Actualmente usando GPS y Red para localización.</string>
     <string name="pref_imperial_measurement_units_summary_metric">Actualmente se utilizan unidades métricas (Kilómetro, Metro).</string>
     <string name="pref_imperial_measurement_units_title">Utilizar medidas imperiales</string>
-    <string name="pref_recording_accuracy_summary_high">Los puntos de referencia tienen mayor precisión pero son menos frecuentes.</string>
-    <string name="pref_recording_accuracy_summary_default">Los waypoints tienen menor precisión pero son más frecuentes.</string>
-    <string name="pref_recording_accuracy_title">Precisión de grabación</string>
     <string name="pref_report_issue_title">Reportar problema</string>
     <string name="pref_reset_advanced_summary">Restablece la configuración avanzada a los valores predeterminados.</string>
     <string name="pref_reset_advanced_title">Reiniciar</string>

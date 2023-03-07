@@ -17,7 +17,6 @@
 
 package org.y20k.trackbook
 
-import YesNoDialog
 import android.Manifest
 import android.content.*
 import android.content.pm.PackageManager
@@ -28,14 +27,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.Dispatchers.Main
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.y20k.trackbook.core.Track
 import org.y20k.trackbook.helpers.*
 import org.y20k.trackbook.ui.MapFragmentLayoutHolder
@@ -43,33 +35,33 @@ import org.y20k.trackbook.ui.MapFragmentLayoutHolder
 /*
  * MapFragment class
  */
-class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelper.MarkerListener {
-
+class MapFragment : Fragment(), MapOverlayHelper.MarkerListener
+{
     /* Define log tag */
     private val TAG: String = LogHelper.makeLogTag(MapFragment::class.java)
 
     /* Main class variables */
     private var bound: Boolean = false
     private val handler: Handler = Handler(Looper.getMainLooper())
-    private var trackingState: Int = Keys.STATE_TRACKING_NOT_STARTED
+    private var trackingState: Int = Keys.STATE_TRACKING_STOPPED
     private var gpsProviderActive: Boolean = false
     private var networkProviderActive: Boolean = false
-    private var track: Track = Track()
+    private lateinit var track: Track
     private lateinit var currentBestLocation: Location
     private lateinit var layout: MapFragmentLayoutHolder
     private lateinit var trackerService: TrackerService
 
-
     /* Overrides onCreate from Fragment */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // TODO make only MapFragment's status bar transparent - see: https://gist.github.com/Dvik/a3de88d39da9d1d6d175025a56c5e797#file-viewextension-kt and https://proandroiddev.com/android-full-screen-ui-with-transparent-status-bar-ef52f3adde63
+        // TODO make only MapFragment's status bar transparent - see:
+        // https://gist.github.com/Dvik/a3de88d39da9d1d6d175025a56c5e797#file-viewextension-kt and
+        // https://proandroiddev.com/android-full-screen-ui-with-transparent-status-bar-ef52f3adde63
         // get current best location
         currentBestLocation = LocationHelper.getLastKnownLocation(activity as Context)
         // get saved tracking state
         trackingState = PreferencesHelper.loadTrackingState()
     }
-
 
     /* Overrides onStop from Fragment */
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -84,29 +76,9 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
         layout.mainButton.setOnClickListener {
             handleTrackingManagementMenu()
         }
-        layout.saveButton.setOnClickListener {
-            saveTrack()
-        }
-        layout.clearButton.setOnClickListener {
-            if (track.wayPoints.isEmpty())
-            {
-                // This might seem useless since it's already empty, but there are other UI updates
-                // that occur as part of cleartrack so we may as well take advantage of those.
-                trackerService.clearTrack()
-            }
-            else {
-                YesNoDialog(this as YesNoDialog.YesNoDialogListener).show(
-                    context=activity as Context,
-                    type = Keys.DIALOG_DELETE_CURRENT_RECORDING,
-                    message = R.string.dialog_delete_current_recording_message,
-                    yesButton = R.string.dialog_delete_current_recording_button_discard
-                )
-            }
-        }
 
         return layout.rootView
     }
-
 
     /* Overrides onStart from Fragment */
     override fun onStart() {
@@ -119,7 +91,6 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
         activity?.bindService(Intent(activity, TrackerService::class.java), connection, Context.BIND_AUTO_CREATE)
     }
 
-
     /* Overrides onResume from Fragment */
     override fun onResume() {
         super.onResume()
@@ -129,7 +100,6 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
 //        }
     }
 
-
     /* Overrides onPause from Fragment */
     override fun onPause() {
         super.onPause()
@@ -137,16 +107,19 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
         if (bound && trackingState != Keys.STATE_TRACKING_ACTIVE) {
             trackerService.removeGpsLocationListener()
             trackerService.removeNetworkLocationListener()
+            trackerService.trackbook.database.commit()
         }
     }
-
 
     /* Overrides onStop from Fragment */
     override fun onStop() {
         super.onStop()
         // unbind from TrackerService
-        activity?.unbindService(connection)
-        handleServiceUnbind()
+        if (bound)
+        {
+            activity?.unbindService(connection)
+            handleServiceUnbind()
+        }
     }
 
     /* Register the permission launcher for requesting location */
@@ -171,14 +144,6 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
         trackerService.startTracking()
     }
 
-    /* Register the permission launcher for resuming the tracking service */
-    private val resumeTrackingPermissionLauncher = registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
-        logPermissionRequestResult(isGranted)
-        // start service via intent so that it keeps running after unbind
-        startTrackerService()
-        trackerService.resumeTracking()
-    }
-
     /* Logs the request result of the Activity Recognition permission launcher */
     private fun logPermissionRequestResult(isGranted: Boolean) {
         if (isGranted) {
@@ -188,68 +153,24 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
         }
     }
 
-    /* Overrides onYesNoDialog from YesNoDialogListener */
-    override fun onYesNoDialog(type: Int, dialogResult: Boolean, payload: Int, payloadString: String) {
-        super.onYesNoDialog(type, dialogResult, payload, payloadString)
-        when (type) {
-            Keys.DIALOG_RESUME_EMPTY_RECORDING -> {
-                when (dialogResult) {
-                    // user tapped resume
-                    true -> {
-                        trackerService.resumeTracking()
-                    }
-                }
-            }
-            Keys.DIALOG_DELETE_CURRENT_RECORDING -> {
-                when (dialogResult) {
-                    true -> {
-                        trackerService.clearTrack()
-                    }
-                }
-            }
-        }
-    }
-
-
-    /* Overrides onMarkerTapped from MarkerListener */
-    override fun onMarkerTapped(latitude: Double, longitude: Double) {
-        super.onMarkerTapped(latitude, longitude)
-        if (bound) {
-            TrackHelper.toggle_waypoint_starred(activity as Context, track, latitude, longitude)
-            layout.overlayCurrentTrack(track, trackingState)
-            trackerService.track = track
-        }
-    }
-
-
     /* Start recording waypoints */
     private fun startTracking() {
         // request activity recognition permission on Android Q+ if denied
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && ContextCompat.checkSelfPermission(activity as Context, Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_DENIED) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && ContextCompat.checkSelfPermission(activity as Context, Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_DENIED)
+        {
             startTrackingPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
-        } else {
+        }
+        else
+        {
             // start service via intent so that it keeps running after unbind
             startTrackerService()
             trackerService.startTracking()
         }
     }
 
-
-    /* Resume recording waypoints */
-    private fun resumeTracking() {
-        // request activity recognition permission on Android Q+ if denied
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && ContextCompat.checkSelfPermission(activity as Context, Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_DENIED) {
-            resumeTrackingPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
-        } else {
-            // start service via intent so that it keeps running after unbind
-            startTrackerService()
-            trackerService.resumeTracking()
-        }
-    }
-
-
     /* Start tracker service */
-    private fun startTrackerService() {
+    private fun startTrackerService()
+    {
         val intent = Intent(activity, TrackerService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // ... start service in foreground to prevent it being killed on Oreo
@@ -259,9 +180,9 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
         }
     }
 
-
     /* Handles state when service is being unbound */
-    private fun handleServiceUnbind() {
+    private fun handleServiceUnbind()
+    {
         bound = false
         // unregister listener for changes in shared preferences
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
@@ -269,61 +190,25 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
         handler.removeCallbacks(periodicLocationRequestRunnable)
     }
 
-
-
     /* Starts / pauses tracking and toggles the recording sub menu_bottom_navigation */
-    private fun handleTrackingManagementMenu() {
-        when (trackingState) {
-            Keys.STATE_TRACKING_PAUSED -> resumeTracking()
-            Keys.STATE_TRACKING_ACTIVE -> trackerService.pauseTracking()
-            Keys.STATE_TRACKING_NOT_STARTED -> startTracking()
-        }
-    }
-
-
-    /* Saves track - shows dialog, if recording is still empty */
-    private fun saveTrack()
+    private fun handleTrackingManagementMenu()
     {
-        if (track.wayPoints.isEmpty())
-        {
-            YesNoDialog(this as YesNoDialog.YesNoDialogListener).show(
-                context = activity as Context,
-                type = Keys.DIALOG_RESUME_EMPTY_RECORDING,
-                message = R.string.dialog_error_empty_recording_message,
-                yesButton = R.string.dialog_error_empty_recording_button_resume
-            )
-        }
-        else
-        {
-            CoroutineScope(IO).launch {
-                trackerService.saveTrackAndClear(activity as Context)
-                withContext(Main) {
-                    // step 4: open track in TrackFragement
-                    openTrack(track)
-                }
-            }
+        when (trackingState) {
+            Keys.STATE_TRACKING_ACTIVE -> trackerService.pauseTracking()
+            Keys.STATE_TRACKING_STOPPED -> startTracking()
         }
     }
-
-
-    /* Opens a track in TrackFragment */
-    private fun openTrack(track: Track) {
-        val bundle: Bundle = Bundle()
-        bundle.putString(Keys.ARG_TRACK_TITLE, track.name)
-        bundle.putString(Keys.ARG_TRACK_FILE_URI, track.get_json_file(activity as Context).toUri().toString())
-        bundle.putString(Keys.ARG_GPX_FILE_URI, track.get_gpx_file(activity as Context).toUri().toString())
-        bundle.putLong(Keys.ARG_TRACK_ID, track.id)
-        findNavController().navigate(R.id.fragment_track, bundle)
-    }
-
 
     /*
      * Defines the listener for changes in shared preferences
      */
     private val sharedPreferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
-        when (key) {
-            Keys.PREF_TRACKING_STATE -> {
-                if (activity != null) {
+        when (key)
+        {
+            Keys.PREF_TRACKING_STATE ->
+            {
+                if (activity != null)
+                {
                     trackingState = PreferencesHelper.loadTrackingState()
                     layout.updateMainButton(trackingState)
                 }
@@ -333,7 +218,6 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
     /*
      * End of declaration
      */
-
 
     /*
      * Defines callbacks for service binding, passed to bindService()
@@ -362,7 +246,6 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
      * End of declaration
      */
 
-
     /*
      * Runnable: Periodically requests location
      */
@@ -377,9 +260,11 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
             // update location and track
             layout.markCurrentPosition(currentBestLocation, trackingState)
             layout.overlayCurrentTrack(track, trackingState)
-            layout.updateLiveStatics(distance = track.distance, duration = track.duration, trackingState = trackingState)
             // center map, if it had not been dragged/zoomed before
-            if (!layout.userInteraction) { layout.centerMap(currentBestLocation, true)}
+            if (!layout.userInteraction)
+            {
+                layout.centerMap(currentBestLocation, true)
+            }
             // show error snackbar if necessary
             layout.toggleLocationErrorBar(gpsProviderActive, networkProviderActive)
             // use the handler to start runnable again after specified delay
@@ -389,5 +274,4 @@ class MapFragment : Fragment(), YesNoDialog.YesNoDialogListener, MapOverlayHelpe
     /*
      * End of declaration
      */
-
 }

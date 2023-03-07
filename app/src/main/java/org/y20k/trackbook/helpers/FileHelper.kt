@@ -38,31 +38,6 @@ object FileHelper {
     /* Define log tag */
     private val TAG: String = LogHelper.makeLogTag(FileHelper::class.java)
 
-    fun delete_temp_file(context: Context)
-    {
-        val temp: File = get_temp_file(context)
-        if (temp.isFile())
-        {
-            temp.delete()
-        }
-    }
-    fun get_temp_file(context: Context): File
-    {
-        return File(context.getExternalFilesDir(Keys.FOLDER_TEMP), Keys.TEMP_FILE)
-    }
-
-    /* Suspend function: Wrapper for renameTrack */
-    suspend fun renameTrackSuspended(context: Context, track: Track, newName: String) {
-        return suspendCoroutine { cont ->
-            track.name = newName
-            track.save_json(context)
-            track.save_gpx(context)
-            cont.resume(Unit)
-        }
-    }
-
-
-
     /* Suspend function: Wrapper for copyFile */
     suspend fun saveCopyOfFileSuspended(context: Context, originalFileUri: Uri, targetFileUri: Uri, deleteOriginal: Boolean = false) {
         return suspendCoroutine { cont ->

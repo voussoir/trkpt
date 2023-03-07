@@ -26,7 +26,7 @@ import java.util.*
 object Keys {
 
     // application name
-    const val APPLICATION_NAME: String = "Trackbook"
+    const val APPLICATION_NAME: String = "trkpt"
 
     // version numbers
     const val CURRENT_TRACK_FORMAT_VERSION: Int = 4
@@ -39,9 +39,10 @@ object Keys {
 
     // args
     const val ARG_TRACK_TITLE: String = "ArgTrackTitle"
-    const val ARG_TRACK_FILE_URI: String = "ArgTrackFileUri"
-    const val ARG_GPX_FILE_URI: String = "ArgGpxFileUri"
-    const val ARG_TRACK_ID: String = "ArgTrackId"
+    const val ARG_TRACK_ID: String = "ArgTrackID"
+    const val ARG_TRACK_DEVICE_ID: String = "ArgTrackDeviceID"
+    const val ARG_TRACK_START_TIME: String = "ArgTrackStartTime"
+    const val ARG_TRACK_STOP_TIME: String = "ArgTrackStopTime"
 
     // preferences
     const val PREF_ONE_TIME_HOUSEKEEPING_NECESSARY = "ONE_TIME_HOUSEKEEPING_NECESSARY_VERSIONCODE_38" // increment to current app version code to trigger housekeeping that runs only once
@@ -57,15 +58,12 @@ object Keys {
     const val PREF_USE_IMPERIAL_UNITS: String = "prefUseImperialUnits"
     const val PREF_GPS_ONLY: String = "prefGpsOnly"
     const val PREF_OMIT_RESTS: String = "prefOmitRests"
-    const val PREF_AUTO_EXPORT_INTERVAL: String = "prefAutoExportInterval"
-    const val PREF_ALTITUDE_SMOOTHING_VALUE: String = "prefAltitudeSmoothingValue"
-    const val PREF_LOCATION_ACCURACY_THRESHOLD: String = "prefLocationAccuracyThreshold"
-    const val PREF_LOCATION_AGE_THRESHOLD: String = "prefLocationAgeThreshold"
+    const val PREF_COMMIT_INTERVAL: String = "prefCommitInterval"
+    const val PREF_DEVICE_ID: String = "prefDeviceID"
 
     // states
-    const val STATE_TRACKING_NOT_STARTED: Int = 0
+    const val STATE_TRACKING_STOPPED: Int = 0
     const val STATE_TRACKING_ACTIVE: Int = 1
-    const val STATE_TRACKING_PAUSED: Int = 2
     const val STATE_THEME_FOLLOW_SYSTEM: String = "stateFollowSystem"
     const val STATE_THEME_LIGHT_MODE: String = "stateLightMode"
     const val STATE_THEME_DARK_MODE: String = "stateDarkMode"
@@ -105,9 +103,9 @@ object Keys {
     const val ONE_HOUR_IN_MILLISECONDS: Long = 60 * ONE_MINUTE_IN_MILLISECONDS
     const val EMPTY_STRING_RESOURCE: Int = 0
     const val REQUEST_CURRENT_LOCATION_INTERVAL: Long = 1 * ONE_SECOND_IN_MILLISECONDS
-    const val ADD_WAYPOINT_TO_TRACK_INTERVAL: Long = 1 * ONE_SECOND_IN_MILLISECONDS
+    const val TRACKING_INTERVAL: Long = 1 * ONE_SECOND_IN_MILLISECONDS
     const val SAVE_TEMP_TRACK_INTERVAL: Long = 30 * ONE_SECOND_IN_MILLISECONDS
-    const val SIGNIFICANT_TIME_DIFFERENCE: Long = 2 * ONE_MINUTE_IN_MILLISECONDS
+    const val SIGNIFICANT_TIME_DIFFERENCE: Long = 1 * ONE_MINUTE_IN_MILLISECONDS
     const val STOP_OVER_THRESHOLD: Long = 5 * ONE_MINUTE_IN_MILLISECONDS
     const val IMPLAUSIBLE_TRACK_START_SPEED: Double = 250.0                     // 250 km/h
     const val DEFAULT_LATITUDE: Double = 71.172500                              // latitude Nordkapp, Norway
@@ -115,14 +113,12 @@ object Keys {
     const val DEFAULT_ACCURACY: Float = 300f                                    // in meters
     const val DEFAULT_ALTITUDE: Double = 0.0
     const val DEFAULT_TIME: Long = 0L
-    const val DEFAULT_AUTO_EXPORT_INTERVAL: Int = 24
+    const val COMMIT_INTERVAL: Int = 30
     const val DEFAULT_ALTITUDE_SMOOTHING_VALUE: Int = 13
     const val DEFAULT_THRESHOLD_LOCATION_ACCURACY: Int = 30                     // 30 meters
     const val DEFAULT_THRESHOLD_LOCATION_AGE: Long = 60_000_000_000L               // one minute in nanoseconds
     const val DEFAULT_THRESHOLD_DISTANCE: Float = 15f                           // 15 meters
     const val DEFAULT_ZOOM_LEVEL: Double = 16.0
-    const val MIN_NUMBER_OF_WAYPOINTS_FOR_ELEVATION_CALCULATION: Int = 5
-    const val MAX_NUMBER_OF_WAYPOINTS_FOR_ELEVATION_CALCULATION: Int = 20
     const val ALTITUDE_MEASUREMENT_ERROR_THRESHOLD = 10 // altitude changes of 10 meter or more (per 15 seconds) are being discarded
 
     // notification

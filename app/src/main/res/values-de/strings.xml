@@ -18,7 +18,6 @@
     <!-- fab sub menu_bottom_navigation -->
     <string name="button_delete">Zurücksetzen</string>
     <string name="button_save">Speichern</string>
-    <string name="button_resume">Fortsetzen</string>
     <!-- dialogs -->
     <string name="dialog_share_gpx">GPX-Datei teilen mit</string>
     <string name="dialog_error_empty_recording_message">Trackbook hat noch keine Wegpunkte aufgenommen.</string>
@@ -110,7 +109,4 @@
     <string name="toast_message_poi_removed">Markierung für Ort von Interesse entfernt.</string>
     <string name="toast_message_poi_added">Markierung für Ort von Interesse hinzugefügt.</string>
     <string name="track_list_p_element_statistics">Erfasste Gesamtentfernung</string>
-    <string name="pref_recording_accuracy_summary_high">Wegpunkte haben eine höhere Genauigkeit, sind aber weniger häufig.</string>
-    <string name="pref_recording_accuracy_summary_default">Wegpunkte haben eine geringere Genauigkeit, sind aber häufiger.</string>
-    <string name="pref_recording_accuracy_title">Aufzeichnungsgenauigkeit</string>
 </resources>

@@ -49,6 +49,7 @@ import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
 import org.y20k.trackbook.Keys
 import org.y20k.trackbook.R
+import org.y20k.trackbook.Trackbook
 import org.y20k.trackbook.core.Track
 import org.y20k.trackbook.helpers.*
 
@@ -66,17 +67,11 @@ data class MapFragmentLayoutHolder(private var context: Context, private var mar
     var userInteraction: Boolean = false
     val currentLocationButton: FloatingActionButton
     val mainButton: ExtendedFloatingActionButton
-    val saveButton: FloatingActionButton
-    val clearButton: FloatingActionButton
-    private val additionalButtons: Group
     private val mapView: MapView
+    private val homepoint_overlays: ArrayList<ItemizedIconOverlay<OverlayItem>> = ArrayList()
     private var currentPositionOverlay: ItemizedIconOverlay<OverlayItem>
     private var currentTrackOverlay: SimpleFastPointOverlay?
     private var currentTrackSpecialMarkerOverlay: ItemizedIconOverlay<OverlayItem>?
-    private val liveStatisticsDistanceView: MaterialTextView
-    private val liveStatisticsDistanceOutlineView: MaterialTextView
-    private val liveStatisticsDurationView: MaterialTextView
-    private val liveStatisticsDurationOutlineView: MaterialTextView
     private val useImperial: Boolean = PreferencesHelper.loadUseImperialUnits()
     private var locationErrorBar: Snackbar
     private var controller: IMapController
@@ -90,13 +85,6 @@ data class MapFragmentLayoutHolder(private var context: Context, private var mar
         mapView = rootView.findViewById(R.id.map)
         currentLocationButton = rootView.findViewById(R.id.location_button)
         mainButton = rootView.findViewById(R.id.main_button)
-        additionalButtons = rootView.findViewById(R.id.additional_buttons)
-        saveButton = rootView.findViewById(R.id.button_save)
-        clearButton = rootView.findViewById(R.id.button_clear)
-        liveStatisticsDistanceView = rootView.findViewById(R.id.live_statistics_distance)
-        liveStatisticsDistanceOutlineView = rootView.findViewById(R.id.live_statistics_distance_outline)
-        liveStatisticsDurationView = rootView.findViewById(R.id.live_statistics_duration)
-        liveStatisticsDurationOutlineView = rootView.findViewById(R.id.live_statistics_duration_outline)
         locationErrorBar = Snackbar.make(mapView, String(), Snackbar.LENGTH_INDEFINITE)
 
         // basic map setup
@@ -124,11 +112,8 @@ data class MapFragmentLayoutHolder(private var context: Context, private var mar
         compassOverlay.setCompassCenter((screen_width / densityScalingFactor) - 36f, 36f)
         mapView.overlays.add(compassOverlay)
 
-        // position the live statistics
-        (liveStatisticsDistanceView.layoutParams as ConstraintLayout.LayoutParams).apply {
-//            topMargin = (12 * densityScalingFactor).toInt() + statusBarHeight // TODO uncomment when transparent status bar is re-implemented
-            topMargin = (12 * densityScalingFactor).toInt()
-        }
+        val app: Trackbook = (context.applicationContext as Trackbook)
+        app.homepoint_generator().forEach { homepoint -> mapView.overlays.add(MapOverlayHelper(markerListener).createHomepointOverlay(context, homepoint.location))}
 
         // add my location overlay
         currentPositionOverlay = MapOverlayHelper(markerListener).createMyLocationOverlay(context, startLocation, trackingState)
@@ -178,7 +163,7 @@ data class MapFragmentLayoutHolder(private var context: Context, private var mar
 
 
     /* Mark current position on map */
-    fun markCurrentPosition(location: Location, trackingState: Int = Keys.STATE_TRACKING_NOT_STARTED) {
+    fun markCurrentPosition(location: Location, trackingState: Int = Keys.STATE_TRACKING_STOPPED) {
         mapView.overlays.remove(currentPositionOverlay)
         currentPositionOverlay = MapOverlayHelper(markerListener).createMyLocationOverlay(context, location, trackingState)
         mapView.overlays.add(currentPositionOverlay)
@@ -193,7 +178,7 @@ data class MapFragmentLayoutHolder(private var context: Context, private var mar
         if (currentTrackSpecialMarkerOverlay != null) {
             mapView.overlays.remove(currentTrackSpecialMarkerOverlay)
         }
-        if (track.wayPoints.isNotEmpty()) {
+        if (track.trkpts.isNotEmpty()) {
             val mapOverlayHelper: MapOverlayHelper = MapOverlayHelper(markerListener)
             currentTrackOverlay = mapOverlayHelper.createTrackOverlay(context, track, trackingState)
             currentTrackSpecialMarkerOverlay = mapOverlayHelper.createSpecialMakersTrackOverlay(context, track, trackingState)
@@ -202,59 +187,20 @@ data class MapFragmentLayoutHolder(private var context: Context, private var mar
         }
     }
 
-    /* Update live statics */
-    fun updateLiveStatics(distance: Float, duration: Long, trackingState: Int) {
-        // toggle visibility
-        if (trackingState == Keys.STATE_TRACKING_NOT_STARTED)
-        {
-            liveStatisticsDistanceView.isGone = true
-            liveStatisticsDurationView.isGone = true
-            liveStatisticsDistanceOutlineView.isGone = true
-            liveStatisticsDurationOutlineView.isGone = true
-        }
-        else
-        {
-            liveStatisticsDistanceView.isVisible = true
-            liveStatisticsDurationView.isVisible = true
-            liveStatisticsDistanceOutlineView.isVisible = true
-            liveStatisticsDurationOutlineView.isVisible = true
-            // update distance and duration (and add outline)
-            val distanceString: String = LengthUnitHelper.convertDistanceToString(distance, useImperial)
-            liveStatisticsDistanceView.text = distanceString
-            liveStatisticsDistanceOutlineView.text = distanceString
-            liveStatisticsDistanceOutlineView.paint.strokeWidth = 5f
-            liveStatisticsDistanceOutlineView.paint.style = Paint.Style.STROKE
-            val durationString: String = DateTimeHelper.convertToReadableTime(context, duration, compactFormat = true)
-            liveStatisticsDurationView.text = durationString
-            liveStatisticsDurationOutlineView.text = durationString
-            liveStatisticsDurationOutlineView.paint.strokeWidth = 5f
-            liveStatisticsDurationOutlineView.paint.style = Paint.Style.STROKE
-        }
-    }
-
     /* Toggles state of main button and additional buttons (save & resume) */
     fun updateMainButton(trackingState: Int)
     {
         when (trackingState) {
-            Keys.STATE_TRACKING_NOT_STARTED -> {
+            Keys.STATE_TRACKING_STOPPED -> {
                 mainButton.setIconResource(R.drawable.ic_fiber_manual_record_inactive_24dp)
                 mainButton.text = context.getString(R.string.button_start)
                 mainButton.contentDescription = context.getString(R.string.descr_button_start)
-                additionalButtons.isGone = true
                 currentLocationButton.isVisible = true
             }
             Keys.STATE_TRACKING_ACTIVE -> {
-                mainButton.setIconResource(R.drawable.ic_pause_24dp)
+                mainButton.setIconResource(R.drawable.ic_fiber_manual_stop_24dp)
                 mainButton.text = context.getString(R.string.button_pause)
-                mainButton.contentDescription = context.getString(R.string.descr_button_start)
-                additionalButtons.isGone = true
-                currentLocationButton.isVisible = true
-            }
-            Keys.STATE_TRACKING_PAUSED -> {
-                mainButton.setIconResource(R.drawable.ic_fiber_manual_record_inactive_24dp)
-                mainButton.text = context.getString(R.string.button_resume)
-                mainButton.contentDescription = context.getString(R.string.descr_button_resume)
-                additionalButtons.isVisible = true
+                mainButton.contentDescription = context.getString(R.string.descr_button_pause)
                 currentLocationButton.isVisible = true
             }
         }

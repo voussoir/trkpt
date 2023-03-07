@@ -21,7 +21,6 @@
     <!-- Buttons -->
     <string name="button_delete">删除</string>
     <string name="button_pause">暂停</string>
-    <string name="button_resume">恢复</string>
     <string name="button_save">保存</string>
     <string name="button_start">开始</string>
     <!-- Dialogs -->
@@ -92,9 +91,6 @@
     <string name="pref_imperial_measurement_units_summary_metric">当前正使用公制单位（千米，米）。</string>
     <string name="pref_imperial_measurement_units_summary_imperial">当前正使用英制单位（英里，英尺）。</string>
     <string name="pref_imperial_measurement_units_title">使用英制测量</string>
-    <string name="pref_recording_accuracy_summary_high">航点的精确度较高，但频率较低。</string>
-    <string name="pref_recording_accuracy_summary_default">航点的精确度较低，但频率较高。</string>
-    <string name="pref_recording_accuracy_title">记录精确度</string>
     <string name="pref_report_issue_summary">在 Github 上报告漏洞并提出改进建议。</string>
     <string name="pref_report_issue_title">报告问题</string>
     <string name="pref_reset_advanced_summary">重置高级设置为默认值。</string>

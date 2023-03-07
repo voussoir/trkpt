@@ -96,15 +96,12 @@ object LengthUnitHelper {
 
 
     /* Converts for the given unit System distance and duration values to a readable velocity string */
-    fun convertToVelocityString(trackDuration: Long, trackRecordingPause: Long, trackLength: Float, useImperialUnits: Boolean = false) : String {
+    fun convertToVelocityString(velocity: Double, useImperialUnits: Boolean = false) : String {
         var speed: String = "0"
 
-        // duration minus pause in seconds
-        val duration: Long = (trackDuration - trackRecordingPause) / 1000L
-
-        if (duration > 0L) {
+        if (velocity > 0.0) {
             // speed in km/h / mph
-            val velocity: Double = convertMetersPerSecond((trackLength / duration), useImperialUnits)
+            val velocity: Double = convertMetersPerSecond(velocity, useImperialUnits)
             // create readable speed string
             var bd: BigDecimal = BigDecimal.valueOf(velocity)
             bd = bd.setScale(1, RoundingMode.HALF_UP)
@@ -119,7 +116,7 @@ object LengthUnitHelper {
 
 
     /* Coverts meters per second to either km/h or mph */
-    fun convertMetersPerSecond(metersPerSecond: Float, useImperial: Boolean = false): Double {
+    fun convertMetersPerSecond(metersPerSecond: Double, useImperial: Boolean = false): Double {
         if (useImperial) {
             // mph
             return metersPerSecond * 2.2369362920544

@@ -30,9 +30,6 @@ import androidx.core.view.isVisible
 import androidx.core.widget.NestedScrollView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.textview.MaterialTextView
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import org.osmdroid.api.IGeoPoint
 import org.osmdroid.api.IMapController
 import org.osmdroid.events.MapListener
@@ -50,6 +47,7 @@ import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
 import org.y20k.trackbook.Keys
 import org.y20k.trackbook.R
 import org.y20k.trackbook.core.Track
+import org.y20k.trackbook.core.TrackStatistics
 import org.y20k.trackbook.helpers.*
 import kotlin.math.roundToInt
 
@@ -58,12 +56,14 @@ import kotlin.math.roundToInt
  * TrackFragmentLayoutHolder class
  */
 //data class TrackFragmentLayoutHolder(private var context: Context, private var markerListener: MapOverlayHelper.MarkerListener, private var inflater: LayoutInflater, private var statusBarHeight: Int, private var container: ViewGroup?, var track: Track): MapListener { TODO REMOVE
-data class TrackFragmentLayoutHolder(private var context: Context, private var markerListener: MapOverlayHelper.MarkerListener, private var inflater: LayoutInflater, private var container: ViewGroup?, var track: Track): MapListener {
-
-    /* Define log tag */
-    private val TAG: String = LogHelper.makeLogTag(TrackFragmentLayoutHolder::class.java)
-
-
+data class TrackFragmentLayoutHolder(
+    private var context: Context,
+    private var markerListener: MapOverlayHelper.MarkerListener,
+    private var inflater: LayoutInflater,
+    private var container: ViewGroup?,
+    var track: Track
+): MapListener
+{
     /* Main class variables */
     val rootView: View
     val shareButton: ImageButton
@@ -78,7 +78,6 @@ data class TrackFragmentLayoutHolder(private var context: Context, private var m
     private val statisticsSheetBehavior: BottomSheetBehavior<View>
     private val statisticsSheet: NestedScrollView
     private val statisticsView: View
-    private val trackidView: MaterialTextView
     private val distanceView: MaterialTextView
     private val stepsTitleView: MaterialTextView
     private val stepsView: MaterialTextView
@@ -115,13 +114,12 @@ data class TrackFragmentLayoutHolder(private var context: Context, private var m
         mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.setMultiTouchControls(true)
         mapView.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
-        controller.setCenter(GeoPoint(track.latitude, track.longitude))
+        controller.setCenter(GeoPoint(track.view_latitude, track.view_longitude))
         controller.setZoom(track.zoomLevel)
 
         // get views for statistics sheet
         statisticsSheet = rootView.findViewById(R.id.statistics_sheet)
         statisticsView = rootView.findViewById(R.id.statistics_view)
-        trackidView = rootView.findViewById(R.id.statistics_data_trackid)
         distanceView = rootView.findViewById(R.id.statistics_data_distance)
         stepsTitleView = rootView.findViewById(R.id.statistics_p_steps)
         stepsView = rootView.findViewById(R.id.statistics_data_steps)
@@ -156,9 +154,9 @@ data class TrackFragmentLayoutHolder(private var context: Context, private var m
 
         // create map overlay
         val mapOverlayHelper: MapOverlayHelper = MapOverlayHelper(markerListener)
-        trackOverlay = mapOverlayHelper.createTrackOverlay(context, track, Keys.STATE_TRACKING_NOT_STARTED)
-        trackSpecialMarkersOverlay = mapOverlayHelper.createSpecialMakersTrackOverlay(context, track, Keys.STATE_TRACKING_NOT_STARTED, displayStartEndMarker = true)
-        if (track.wayPoints.isNotEmpty()) {
+        trackOverlay = mapOverlayHelper.createTrackOverlay(context, track, Keys.STATE_TRACKING_STOPPED)
+        trackSpecialMarkersOverlay = mapOverlayHelper.createSpecialMakersTrackOverlay(context, track, Keys.STATE_TRACKING_STOPPED, displayStartEndMarker = true)
+        if (track.trkpts.isNotEmpty()) {
             mapView.overlays.add(trackSpecialMarkersOverlay)
             mapView.overlays.add(trackOverlay)
         }
@@ -172,77 +170,48 @@ data class TrackFragmentLayoutHolder(private var context: Context, private var m
 
 
     /* Updates map overlay */
-    fun updateTrackOverlay() {
+    fun updateTrackOverlay()
+    {
         if (trackOverlay != null) {
             mapView.overlays.remove(trackOverlay)
         }
         if (trackSpecialMarkersOverlay != null) {
             mapView.overlays.remove(trackSpecialMarkersOverlay)
         }
-        if (track.wayPoints.isNotEmpty()) {
+        if (track.trkpts.isNotEmpty()) {
             val mapOverlayHelper: MapOverlayHelper = MapOverlayHelper(markerListener)
-            trackOverlay = mapOverlayHelper.createTrackOverlay(context, track, Keys.STATE_TRACKING_NOT_STARTED)
-            trackSpecialMarkersOverlay = mapOverlayHelper.createSpecialMakersTrackOverlay(context, track, Keys.STATE_TRACKING_NOT_STARTED, displayStartEndMarker = true)
+            trackOverlay = mapOverlayHelper.createTrackOverlay(context, track, Keys.STATE_TRACKING_STOPPED)
+            trackSpecialMarkersOverlay = mapOverlayHelper.createSpecialMakersTrackOverlay(context, track, Keys.STATE_TRACKING_STOPPED, displayStartEndMarker = true)
             mapView.overlays.add(trackOverlay)
             mapView.overlays.add(trackSpecialMarkersOverlay)
         }
-        // save track
-        CoroutineScope(Dispatchers.IO).launch { track.save_all_files_suspended(context) }
     }
-
 
     /* Saves zoom level and center of this map */
     fun saveViewStateToTrack()
     {
-        if (track.latitude != 0.0 && track.longitude != 0.0)
+        if (track.view_latitude != 0.0 && track.view_longitude != 0.0)
         {
-            CoroutineScope(Dispatchers.IO).launch { track.save_json_suspended(context) }
         }
     }
 
 
     /* Sets up the statistics sheet */
-    private fun setupStatisticsViews() {
-
-        // get step count string - hide step count if not available
-        val steps: String
-        if (track.stepCount == -1f)
-        {
-            steps = context.getString(R.string.statistics_sheet_p_steps_no_pedometer)
-            stepsTitleView.isGone = true
-            stepsView.isGone = true
-        }
-        else
-        {
-            steps = track.stepCount.roundToInt().toString()
-            stepsTitleView.isVisible = true
-            stepsView.isVisible = true
-        }
-
+    private fun setupStatisticsViews()
+    {
         // populate views
+        val stats: TrackStatistics = track.statistics()
         trackNameView.text = track.name
-        trackidView.text = track.id.toString()
-        distanceView.text = LengthUnitHelper.convertDistanceToString(track.distance, useImperialUnits)
-        stepsView.text = steps
-        waypointsView.text = track.wayPoints.size.toString()
-        durationView.text = DateTimeHelper.convertToReadableTime(context, track.duration)
-        velocityView.text = LengthUnitHelper.convertToVelocityString(track.duration, track.recordingPaused, track.distance, useImperialUnits)
-        recordingStartView.text = DateTimeHelper.convertToReadableDateAndTime(track.recordingStart)
-        recordingStopView.text = DateTimeHelper.convertToReadableDateAndTime(track.recordingStop)
-        maxAltitudeView.text = LengthUnitHelper.convertDistanceToString(track.maxAltitude, useImperialUnits)
-        minAltitudeView.text = LengthUnitHelper.convertDistanceToString(track.minAltitude, useImperialUnits)
-        positiveElevationView.text = LengthUnitHelper.convertDistanceToString(track.positiveElevation, useImperialUnits)
-        negativeElevationView.text = LengthUnitHelper.convertDistanceToString(track.negativeElevation, useImperialUnits)
-
-        // show / hide recording pause
-        if (track.recordingPaused != 0L) {
-            recordingPausedLabelView.isVisible = true
-            recordingPausedView.isVisible = true
-            recordingPausedView.text = DateTimeHelper.convertToReadableTime(context, track.recordingPaused)
-        } else {
-            recordingPausedLabelView.isGone = true
-            recordingPausedView.isGone = true
-        }
+        distanceView.text = LengthUnitHelper.convertDistanceToString(stats.distance, useImperialUnits)
+        waypointsView.text = track.trkpts.size.toString()
+        durationView.text = DateTimeHelper.convertToReadableTime(context, stats.duration)
+        velocityView.text = LengthUnitHelper.convertToVelocityString(stats.velocity, useImperialUnits)
+        recordingStartView.text = DateTimeHelper.convertToReadableDateAndTime(track.start_time)
+        recordingStopView.text = DateTimeHelper.convertToReadableDateAndTime(track.stop_time)
+        maxAltitudeView.text = LengthUnitHelper.convertDistanceToString(stats.max_altitude, useImperialUnits)
+        minAltitudeView.text = LengthUnitHelper.convertDistanceToString(stats.min_altitude, useImperialUnits)
+        positiveElevationView.text = LengthUnitHelper.convertDistanceToString(stats.total_ascent, useImperialUnits)
+        negativeElevationView.text = LengthUnitHelper.convertDistanceToString(stats.total_descent, useImperialUnits)
 
         // inform user about possible accuracy issues with altitude measurements
         elevationDataViews.referencedIds.forEach { id ->
@@ -264,7 +233,6 @@ data class TrackFragmentLayoutHolder(private var context: Context, private var m
             else -> statisticsSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
         }
     }
-
 
     /* Defines the behavior of the statistics sheet  */
     private fun getStatisticsSheetCallback(): BottomSheetBehavior.BottomSheetCallback {
@@ -313,8 +281,8 @@ data class TrackFragmentLayoutHolder(private var context: Context, private var m
             return false
         } else {
             val center: IGeoPoint = mapView.mapCenter
-            track.latitude = center.latitude
-            track.longitude = center.longitude
+            track.view_latitude = center.latitude
+            track.view_longitude = center.longitude
             return true
         }
     }

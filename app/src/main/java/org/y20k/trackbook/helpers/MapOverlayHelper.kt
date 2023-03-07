@@ -36,7 +36,7 @@ import org.osmdroid.views.overlay.simplefastpoint.SimplePointTheme
 import org.y20k.trackbook.Keys
 import org.y20k.trackbook.R
 import org.y20k.trackbook.core.Track
-import org.y20k.trackbook.core.WayPoint
+import org.y20k.trackbook.core.Trkpt
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -58,10 +58,10 @@ class MapOverlayHelper (private var markerListener: MarkerListener)  {
 
 
     /* Creates icon overlay for current position (used in MapFragment) */
-    fun createMyLocationOverlay(context: Context, location: Location, trackingState: Int): ItemizedIconOverlay<OverlayItem> {
-
+    fun createMyLocationOverlay(context: Context, location: Location, trackingState: Int): ItemizedIconOverlay<OverlayItem>
+    {
         val overlayItems: ArrayList<OverlayItem> = ArrayList<OverlayItem>()
-        val locationIsOld:Boolean = LocationHelper.isOldLocation(location)
+        val locationIsOld: Boolean = !(LocationHelper.isRecentEnough(location))
 
         // create marker
         val newMarker: Drawable
@@ -83,7 +83,24 @@ class MapOverlayHelper (private var markerListener: MarkerListener)  {
         }
 
         // add marker to list of overlay items
-        val overlayItem: OverlayItem = createOverlayItem(context, location.latitude, location.longitude, location.accuracy, location.provider, location.time)
+        val overlayItem: OverlayItem = createOverlayItem(context, location.latitude, location.longitude, location.accuracy, location.provider.toString(), location.time)
+        overlayItem.setMarker(newMarker)
+        overlayItems.add(overlayItem)
+
+        // create and return overlay for current position
+        return createOverlay(context, overlayItems, enableStarring = false)
+    }
+
+    /* Creates icon overlay for current position (used in MapFragment) */
+    fun createHomepointOverlay(context: Context, location: Location): ItemizedIconOverlay<OverlayItem>
+    {
+        val overlayItems: ArrayList<OverlayItem> = ArrayList<OverlayItem>()
+
+        // create marker
+        val newMarker: Drawable = ContextCompat.getDrawable(context, R.drawable.ic_homepoint_24dp)!!
+
+        // add marker to list of overlay items
+        val overlayItem: OverlayItem = createOverlayItem(context, location.latitude, location.longitude, location.accuracy, location.provider.toString(), location.time)
         overlayItem.setMarker(newMarker)
         overlayItems.add(overlayItem)
 
@@ -93,13 +110,14 @@ class MapOverlayHelper (private var markerListener: MarkerListener)  {
 
 
     /* Creates icon overlay for track */
-    fun createTrackOverlay(context: Context, track: Track, trackingState: Int): SimpleFastPointOverlay {
+    fun createTrackOverlay(context: Context, track: Track, trackingState: Int): SimpleFastPointOverlay
+    {
         // get marker color
         val color = if (trackingState == Keys.STATE_TRACKING_ACTIVE) context.getColor(R.color.default_red)
         else context.getColor(R.color.default_blue)
         // gather points for overlay
         val points: MutableList<IGeoPoint> = mutableListOf()
-        track.wayPoints.forEach { wayPoint ->
+        track.trkpts.forEach { wayPoint ->
             val label: String = "${context.getString(R.string.marker_description_time)}: ${SimpleDateFormat.getTimeInstance(SimpleDateFormat.MEDIUM, Locale.getDefault()).format(wayPoint.time)} | ${context.getString(R.string.marker_description_accuracy)}: ${DecimalFormat("#0.00").format(wayPoint.accuracy)} (${wayPoint.provider})"
             // only add normal points
             if (!wayPoint.starred && !wayPoint.isStopOver) {
@@ -133,44 +151,59 @@ class MapOverlayHelper (private var markerListener: MarkerListener)  {
         return overlay
     }
 
-
     /* Creates overlay containing start, stop, stopover and starred markers for track */
-    fun createSpecialMakersTrackOverlay(context: Context, track: Track, trackingState: Int, displayStartEndMarker: Boolean = false): ItemizedIconOverlay<OverlayItem> {
+    fun createSpecialMakersTrackOverlay(context: Context, track: Track, trackingState: Int, displayStartEndMarker: Boolean = false): ItemizedIconOverlay<OverlayItem>
+    {
         val overlayItems: ArrayList<OverlayItem> = ArrayList<OverlayItem>()
         val trackingActive: Boolean = trackingState == Keys.STATE_TRACKING_ACTIVE
-        val maxIndex: Int = track.wayPoints.size - 1
+        val maxIndex: Int = track.trkpts.size - 1
 
-        track.wayPoints.forEachIndexed { index: Int, wayPoint: WayPoint ->
+        track.trkpts.forEachIndexed { index: Int, trkpt: Trkpt ->
             var overlayItem: OverlayItem? = null
-            if (!trackingActive && index == 0 && displayStartEndMarker && wayPoint.starred) {
-                overlayItem = createOverlayItem(context, wayPoint.latitude, wayPoint.longitude, wayPoint.accuracy, wayPoint.provider, wayPoint.time)
+            if (!trackingActive && index == 0 && displayStartEndMarker && trkpt.starred)
+            {
+                overlayItem = createOverlayItem(context, trkpt.latitude, trkpt.longitude, trkpt.accuracy, trkpt.provider, trkpt.time.time)
                 overlayItem.setMarker(ContextCompat.getDrawable(context, R.drawable.ic_marker_track_start_starred_blue_48dp)!!)
-            } else if (!trackingActive && index == 0 && displayStartEndMarker && !wayPoint.starred) {
-                overlayItem = createOverlayItem(context, wayPoint.latitude, wayPoint.longitude, wayPoint.accuracy, wayPoint.provider, wayPoint.time)
+            }
+            else if (!trackingActive && index == 0 && displayStartEndMarker && !trkpt.starred)
+            {
+                overlayItem = createOverlayItem(context, trkpt.latitude, trkpt.longitude, trkpt.accuracy, trkpt.provider, trkpt.time.time)
                 overlayItem.setMarker(ContextCompat.getDrawable(context, R.drawable.ic_marker_track_start_blue_48dp)!!)
-            } else if (!trackingActive && index == maxIndex && displayStartEndMarker && wayPoint.starred) {
-                overlayItem = createOverlayItem(context, wayPoint.latitude, wayPoint.longitude, wayPoint.accuracy, wayPoint.provider, wayPoint.time)
+            }
+            else if (!trackingActive && index == maxIndex && displayStartEndMarker && trkpt.starred)
+            {
+                overlayItem = createOverlayItem(context, trkpt.latitude, trkpt.longitude, trkpt.accuracy, trkpt.provider, trkpt.time.time)
                 overlayItem.setMarker(ContextCompat.getDrawable(context, R.drawable.ic_marker_track_end_starred_blue_48dp)!!)
-            } else if (!trackingActive && index == maxIndex && displayStartEndMarker && !wayPoint.starred) {
-                overlayItem = createOverlayItem(context, wayPoint.latitude, wayPoint.longitude, wayPoint.accuracy, wayPoint.provider, wayPoint.time)
+            }
+            else if (!trackingActive && index == maxIndex && displayStartEndMarker && !trkpt.starred)
+            {
+                overlayItem = createOverlayItem(context, trkpt.latitude, trkpt.longitude, trkpt.accuracy, trkpt.provider, trkpt.time.time)
                 overlayItem.setMarker(ContextCompat.getDrawable(context, R.drawable.ic_marker_track_end_blue_48dp)!!)
-            } else if (!trackingActive && wayPoint.starred) {
-                overlayItem = createOverlayItem(context, wayPoint.latitude, wayPoint.longitude, wayPoint.accuracy, wayPoint.provider, wayPoint.time)
+            }
+            else if (!trackingActive && trkpt.starred)
+            {
+                overlayItem = createOverlayItem(context, trkpt.latitude, trkpt.longitude, trkpt.accuracy, trkpt.provider, trkpt.time.time)
                 overlayItem.setMarker(ContextCompat.getDrawable(context, R.drawable.ic_star_blue_24dp)!!)
-            } else if (trackingActive && wayPoint.starred) {
-                overlayItem = createOverlayItem(context, wayPoint.latitude, wayPoint.longitude, wayPoint.accuracy, wayPoint.provider, wayPoint.time)
+            }
+            else if (trackingActive && trkpt.starred)
+            {
+                overlayItem = createOverlayItem(context, trkpt.latitude, trkpt.longitude, trkpt.accuracy, trkpt.provider, trkpt.time.time)
                 overlayItem.setMarker(ContextCompat.getDrawable(context, R.drawable.ic_star_red_24dp)!!)
-            } else if (wayPoint.isStopOver) {
-                overlayItem = createOverlayItem(context, wayPoint.latitude, wayPoint.longitude, wayPoint.accuracy, wayPoint.provider, wayPoint.time)
+            }
+            else if (trkpt.isStopOver)
+            {
+                overlayItem = createOverlayItem(context, trkpt.latitude, trkpt.longitude, trkpt.accuracy, trkpt.provider, trkpt.time.time)
                 overlayItem.setMarker(ContextCompat.getDrawable(context, R.drawable.ic_marker_track_location_grey_24dp)!!)
             }
             // add overlay item, if it was created
-            if (overlayItem != null) overlayItems.add(overlayItem)
+            if (overlayItem != null)
+            {
+                overlayItems.add(overlayItem)
+            }
         }
         // create and return overlay for current position
         return createOverlay(context, overlayItems, enableStarring = true)
     }
-
 
     /* Creates a marker overlay item */
     private fun createOverlayItem(context: Context, latitude: Double, longitude: Double, accuracy: Float, provider: String, time: Long): OverlayItem {
@@ -182,7 +215,6 @@ class MapOverlayHelper (private var markerListener: MarkerListener)  {
         item.markerHotspot = OverlayItem.HotspotPlace.CENTER
         return item
     }
-
 
     /* Creates an overlay */
     private fun createOverlay(context: Context, overlayItems: ArrayList<OverlayItem>, enableStarring: Boolean): ItemizedIconOverlay<OverlayItem> {

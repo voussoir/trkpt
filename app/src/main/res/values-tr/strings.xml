@@ -8,7 +8,6 @@
     <string name="descr_mark_starred_button">Yıldızlı olarak işaretle düğmesi</string>
     <string name="descr_button_resume">Kaydı devam ettir</string>
     <string name="notification_resume">Devam ettir</string>
-    <string name="button_resume">Devam ettir</string>
     <string name="descr_button_delete">Kaydı temizle</string>
     <string name="descr_button_save">Kaydı kaydet</string>
     <string name="descr_button_start">Kaydı başlat düğmesi</string>
@@ -96,9 +95,6 @@
     <string name="tab_tracks">Yollar</string>
     <string name="tab_map">Harita</string>
     <string name="app_name">Trackbook</string>
-    <string name="pref_recording_accuracy_title">Kayıt Doğruluğu</string>
-    <string name="pref_recording_accuracy_summary_default">Ara noktalar daha düşük doğruluğa sahiptir ancak daha sıktır.</string>
-    <string name="pref_recording_accuracy_summary_high">Ara noktalar daha yüksek doğruluğa sahiptir ancak daha az sıklıktadır.</string>
     <string name="track_list_p_element_statistics">Kaydedilen Toplam Mesafe</string>
     <string name="descr_button_location">Geçerli konuma ortala</string>
 </resources>

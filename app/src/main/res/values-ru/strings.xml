@@ -33,7 +33,6 @@
     <string name="dialog_generic_details_button">Показать подробности</string>
     <string name="dialog_generic_button_okay">ОЕ</string>
     <string name="dialog_generic_button_cancel">Отмена</string>
-    <string name="button_resume">Продолжить</string>
     <string name="button_save">Сохранить</string>
     <string name="button_delete">Очистить</string>
     <string name="snackbar_message_location_permission_denied">Разрешение на определение местоположения не предоставлено. Trackbook работать не будет.</string>
@@ -67,8 +66,6 @@
     <string name="pref_gps_only_summary_gps_and_network">В настоящее время для локализации используется GPS и сеть.</string>
     <string name="pref_imperial_measurement_units_summary_metric">В настоящее время используются метрические единицы (километр, метр).</string>
     <string name="pref_gps_only_summary_gps_only">В настоящее время для локализации используется только GPS.</string>
-    <string name="pref_recording_accuracy_title">Точность записи</string>
-    <string name="pref_recording_accuracy_summary_default">Путевые точки имеют более низкую точность, но встречаются чаще.</string>
     <string name="pref_reset_advanced_summary">Сброс расширенных настроек до значений по умолчанию.</string>
     <string name="pref_report_issue_title">Выпуск отчета</string>
     <string name="pref_theme_selection_mode_dark">Темный режим</string>
@@ -81,7 +78,6 @@
     <string name="abbreviation_seconds">сек</string>
     <string name="abbreviation_minutes">мин</string>
     <string name="pref_report_issue_summary">Сообщайте об ошибках и предлагайте улучшения на GitHub.</string>
-    <string name="pref_recording_accuracy_summary_high">Путевые точки имеют более высокую точность, но встречаются реже.</string>
     <string name="pref_imperial_measurement_units_title">Используйте имперские меры</string>
     <string name="pref_imperial_measurement_units_summary_imperial">В настоящее время используются имперские единицы (мили, футы).</string>
     <string name="pref_gps_only_title">Ограничение на GPS</string>

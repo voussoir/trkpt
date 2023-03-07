@@ -19,6 +19,7 @@ package org.y20k.trackbook.tracklist
 
 
 import android.content.Context
+import android.database.Cursor
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -26,49 +27,72 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
-import kotlinx.coroutines.*
-import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.Dispatchers.Main
 import org.y20k.trackbook.Keys
 import org.y20k.trackbook.R
+import org.y20k.trackbook.core.Database
 import org.y20k.trackbook.core.Track
-import org.y20k.trackbook.core.Tracklist
-import org.y20k.trackbook.core.load_tracklist
 import org.y20k.trackbook.helpers.*
-
+import java.text.DateFormat
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 /*
  * TracklistAdapter class
  */
-class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-
-    /* Define log tag */
-    private val TAG: String = LogHelper.makeLogTag(TracklistAdapter::class.java)
-
-
+class TracklistAdapter(val fragment: Fragment, val database: Database) : RecyclerView.Adapter<RecyclerView.ViewHolder>()
+{
     /* Main class variables */
     private val context: Context = fragment.activity as Context
     private lateinit var tracklistListener: TracklistAdapterListener
     private var useImperial: Boolean = PreferencesHelper.loadUseImperialUnits()
-    private var tracklist: Tracklist = Tracklist()
-
+    val tracks: ArrayList<Track> = ArrayList<Track>()
 
     /* Listener Interface */
-    interface TracklistAdapterListener {
+    interface TracklistAdapterListener
+    {
         fun onTrackElementTapped(track: Track) {  }
     }
-
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView)
     {
         tracklistListener = fragment as TracklistAdapterListener
-        tracklist = load_tracklist(context)
+        tracks.clear()
+        if (! database.ready)
+        {
+            return
+        }
+        val cursor: Cursor = database.connection.query(
+            "trkpt",
+            arrayOf("distinct strftime('%Y-%m-%d', time)", "device_id"),
+            null,
+            null,
+            null,
+            null,
+            "time DESC",
+            null,
+        )
+        try
+        {
+            val df: DateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US)
+            while (cursor.moveToNext())
+            {
+                val start_time: Date? = df.parse(cursor.getString(0) + "T00:00:00.000")
+                val stop_time: Date? = df.parse(cursor.getString(0) + "T23:59:59.999")
+                Log.i("VOUSSOIR", "TracklistAdapter prep track ${cursor.getString(0)}")
+                if (start_time != null && stop_time != null)
+                {
+                    tracks.add(Track(database=database, device_id=cursor.getString(1), start_time=start_time, stop_time=stop_time))
+                }
+            }
+        }
+        finally
+        {
+            cursor.close();
+        }
     }
 
 
@@ -81,14 +105,16 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
 
 
     /* Overrides getItemViewType */
-    override fun getItemViewType(position: Int): Int {
+    override fun getItemViewType(position: Int): Int
+    {
         return Keys.VIEW_TYPE_TRACK
     }
 
 
     /* Overrides getItemCount from RecyclerView.Adapter */
-    override fun getItemCount(): Int {
-        return tracklist.tracks.size
+    override fun getItemCount(): Int
+    {
+        return tracks.size
     }
 
 
@@ -97,17 +123,10 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
     {
         val positionInTracklist: Int = position
         val elementTrackViewHolder: ElementTrackViewHolder = holder as ElementTrackViewHolder
-        elementTrackViewHolder.trackNameView.text = tracklist.tracks[positionInTracklist].name
+        elementTrackViewHolder.trackNameView.text = getTrackName(positionInTracklist)
         elementTrackViewHolder.trackDataView.text = createTrackDataString(positionInTracklist)
-        when (tracklist.tracks[positionInTracklist].starred) {
-            true -> elementTrackViewHolder.starButton.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_star_filled_24dp))
-            false -> elementTrackViewHolder.starButton.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_star_outline_24dp))
-        }
         elementTrackViewHolder.trackElement.setOnClickListener {
-            tracklistListener.onTrackElementTapped(tracklist.tracks[positionInTracklist])
-        }
-        elementTrackViewHolder.starButton.setOnClickListener {
-            toggleStarred(it, positionInTracklist)
+            tracklistListener.onTrackElementTapped(tracks[positionInTracklist])
         }
     }
 
@@ -115,16 +134,16 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
     /* Get track name for given position */
     fun getTrackName(positionInRecyclerView: Int): String
     {
-        return tracklist.tracks[positionInRecyclerView].name
+        return SimpleDateFormat("yyyy-MM-dd", Locale.US).format(tracks[positionInRecyclerView].start_time)
     }
 
     fun delete_track_at_position(context: Context, index: Int)
     {
-        val track = tracklist.tracks[index]
-        track.delete(context)
-        tracklist.tracks.remove(track)
-        notifyItemRemoved(index)
-        notifyItemRangeChanged(index, this.itemCount);
+        // val track = tracklist.tracks[index]
+        // track.delete()
+        // tracklist.tracks.remove(track)
+        // notifyItemRemoved(index)
+        // notifyItemRangeChanged(index, this.itemCount);
     }
 
     suspend fun delete_track_at_position_suspended(context: Context, position: Int)
@@ -136,79 +155,38 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
 
     fun delete_track_by_id(context: Context, trackId: Long)
     {
-        val index: Int = tracklist.tracks.indexOfFirst {it.id == trackId}
-        if (index == -1) {
-            return
-        }
-        tracklist.tracks[index].delete(context)
-        tracklist.tracks.removeAt(index)
-        notifyItemRemoved(index)
-        notifyItemRangeChanged(index, this.itemCount);
+        // val index: Int = tracklist.tracks.indexOfFirst {it.id == trackId}
+        // if (index == -1) {
+        //     return
+        // }
+        // tracklist.tracks[index].delete()
+        // tracklist.tracks.removeAt(index)
+        // notifyItemRemoved(index)
+        // notifyItemRangeChanged(index, this.itemCount);
     }
 
-    fun isEmpty(): Boolean {
-        return tracklist.tracks.size == 0
-    }
-
-    /* Toggles the starred state of tracklist element - and saves tracklist */
-    private fun toggleStarred(view: View, position: Int) {
-        val starButton: ImageButton = view as ImageButton
-        if (tracklist.tracks[position].starred)
-        {
-            starButton.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_star_outline_24dp))
-            tracklist.tracks[position].starred = false
-        }
-        else
-        {
-            starButton.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_star_filled_24dp))
-            tracklist.tracks[position].starred = true
-        }
-        tracklist.tracks[position].save_json(context)
+    fun isEmpty(): Boolean
+    {
+        return tracks.size == 0
     }
 
     /* Creates the track data string */
-    private fun createTrackDataString(position: Int): String {
-        val track: Track = tracklist.tracks[position]
-        val track_duration_string = DateTimeHelper.convertToReadableTime(context, track.duration)
-        val trackDataString: String
-        when (track.name == track.dateString) {
-            // CASE: no individual name set - exclude date
-            true -> trackDataString = "${LengthUnitHelper.convertDistanceToString(track.distance, useImperial)} • ${track_duration_string}"
-            // CASE: no individual name set - include date
-            false -> trackDataString = "${track.dateString} • ${LengthUnitHelper.convertDistanceToString(track.distance, useImperial)} • ${track_duration_string}"
-        }
-        return trackDataString
+    private fun createTrackDataString(position: Int): String
+    {
+        val track: Track = tracks[position]
+        return "device: " + track.device_id
+        // val track_duration_string = DateTimeHelper.convertToReadableTime(context, track.duration)
+        // val trackDataString: String
+        // if (track.name == track.dateString)
+        // {
+        //     trackDataString = "${LengthUnitHelper.convertDistanceToString(track.distance, useImperial)} • ${track_duration_string}"
+        // }
+        // else
+        // {
+        //     trackDataString = "${track.dateString} • ${LengthUnitHelper.convertDistanceToString(track.distance, useImperial)} • ${track_duration_string}"
+        // }
+        // return trackDataString
     }
-
-
-    /*
-     * Inner class: DiffUtil.Callback that determines changes in data - improves list performance
-     */
-    private inner class DiffCallback(val oldList: Tracklist, val newList: Tracklist): DiffUtil.Callback() {
-
-        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-            val oldItem = oldList.tracks[oldItemPosition]
-            val newItem = newList.tracks[newItemPosition]
-            return oldItem.id == newItem.id
-        }
-
-        override fun getOldListSize(): Int {
-            return oldList.tracks.size
-        }
-
-        override fun getNewListSize(): Int {
-            return newList.tracks.size
-        }
-
-        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-            val oldItem = oldList.tracks[oldItemPosition]
-            val newItem = newList.tracks[newItemPosition]
-            return (oldItem.id == newItem.id) && (oldItem.distance == newItem.distance)
-        }
-    }
-    /*
-     * End of inner class
-     */
 
 
     /*
@@ -218,8 +196,6 @@ class TracklistAdapter(private val fragment: Fragment) : RecyclerView.Adapter<Re
         val trackElement: ConstraintLayout = elementTrackLayout.findViewById(R.id.track_element)
         val trackNameView: TextView = elementTrackLayout.findViewById(R.id.track_name)
         val trackDataView: TextView = elementTrackLayout.findViewById(R.id.track_data)
-        val starButton: ImageButton = elementTrackLayout.findViewById(R.id.star_button)
-
     }
     /*
      * End of inner class

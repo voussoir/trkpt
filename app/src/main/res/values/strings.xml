@@ -1,18 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- App Name -->
-    <string name="app_name">Trackbook-v</string>
+    <string name="app_name">trkpt</string>
     <!-- please do not translate app_name - transcription into different alphabet types is fine though -->
-    <string name="app_version_name" translatable="false">\"See Emily Play\"</string>
     <!-- Tabs -->
     <string name="tab_map">Map</string>
     <string name="tab_tracks">Tracks</string>
     <string name="tab_settings">Settings</string>
     <!-- Notification -->
     <string name="notification_title_trackbook_running">Trackbook running</string>
-    <string name="notification_title_trackbook_not_running">Trackbook not running</string>
-    <string name="notification_pause">Pause</string>
-    <string name="notification_resume">Resume</string>
+    <string name="notification_title_trackbook_not_running">Trackbook stopped</string>
+    <string name="notification_pause">Stop</string>
+    <string name="notification_resume">Record</string>
     <string name="notification_show">Show</string>
     <string name="notification_channel_recording_name">Movement Recording State</string>
     <string name="notification_channel_recording_description">Display duration and distance. Option to pause movement recording.</string>
@@ -21,10 +20,9 @@
     <string name="snackbar_message_location_permission_denied">Location permission not granted. Trackbook will not work.</string>
     <!-- Buttons -->
     <string name="button_delete">Delete</string>
-    <string name="button_pause">Pause</string>
-    <string name="button_resume">Resume</string>
+    <string name="button_pause">Stop</string>
     <string name="button_save">Save</string>
-    <string name="button_start">Start</string>
+    <string name="button_start">Record</string>
     <!-- Dialogs -->
     <string name="dialog_delete_current_recording_message">Discard current recording?</string>
     <string name="dialog_delete_current_recording_button_discard">Discard</string>
@@ -86,7 +84,9 @@
     <string name="pref_altitude_smoothing_value_summary" translatable="false">Number of waypoints used to smooth the elevation curve.</string>
     <string name="pref_altitude_smoothing_value_title" translatable="false">Altitude Smoothing</string>
     <string name="pref_auto_export_interval_summary">Automatically export GPX file after this many hours.</string>
+    <string name="pref_device_id_summary">A unique ID to distinguish tracks recorded across multiple devices.</string>
     <string name="pref_auto_export_interval_title">Auto Export Interval</string>
+    <string name="pref_device_id">Device ID</string>
     <string name="pref_advanced_title">Advanced</string>
     <string name="pref_delete_non_starred_summary">Delete all recordings in \"Tracks\" that are not starred.</string>
     <string name="pref_delete_non_starred_title">Delete Non-Starred Recordings</string>
@@ -117,7 +117,7 @@
     <!-- Descriptions -->
     <string name="descr_button_delete">Discard recording</string>
     <string name="descr_button_location">Center on current location</string>
-    <string name="descr_button_pause">Pause recording</string>
+    <string name="descr_button_pause">Stop recording</string>
     <string name="descr_button_resume">Resume recording</string>
     <string name="descr_button_save">Save recording</string>
     <string name="descr_button_start">Start recording</string>

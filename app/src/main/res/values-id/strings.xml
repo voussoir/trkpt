@@ -182,7 +182,6 @@
     <string name="dialog_generic_details_button">Tampilkan detil</string>
     <string name="dialog_generic_button_okay">Oke</string>
     <string name="dialog_generic_button_cancel">Batalkan</string>
-    <string name="button_resume">Lanjutkan</string>
     <string name="button_save">Simpan</string>
     <string name="button_delete">Bersihkan</string>
     <string name="snackbar_message_location_permission_denied">Izin lokasi tak diberikan. Trackbook tidak akan berfungsi.</string>
@@ -192,8 +191,5 @@
     <string name="notification_show">Tampilkan</string>
     <string name="notification_resume">Lanjutkan</string>
     <string name="tab_settings">Pengaturan</string>
-    <string name="pref_recording_accuracy_summary_default">Waypoints memiliki akurasi yang lebih rendah tetapi lebih sering.</string>
-    <string name="pref_recording_accuracy_summary_high">Waypoints memiliki akurasi yang lebih tinggi tetapi lebih jarang.</string>
-    <string name="pref_recording_accuracy_title">Akurasi Perekaman</string>
     <string name="track_list_p_element_statistics">Jarak Total Terekam</string>
 </resources>

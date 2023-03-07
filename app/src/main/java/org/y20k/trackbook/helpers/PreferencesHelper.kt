@@ -20,6 +20,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.location.Location
 import android.location.LocationManager
+import android.util.Log
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import org.y20k.trackbook.Keys
@@ -43,6 +44,13 @@ object PreferencesHelper {
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this)
     }
 
+    fun load_device_id(): String
+    {
+        val v = sharedPreferences.getString(Keys.PREF_DEVICE_ID, random_int().toString()).toString();
+        Log.i("VOUSSOIR", "Loaded device_id ${v}.")
+        return v
+    }
+
     fun loadZoomLevel(): Double {
         return sharedPreferences.getDouble(Keys.PREF_MAP_ZOOM_LEVEL, Keys.DEFAULT_ZOOM_LEVEL)
     }
@@ -52,7 +60,7 @@ object PreferencesHelper {
     }
 
     fun loadTrackingState(): Int {
-        return sharedPreferences.getInt(Keys.PREF_TRACKING_STATE, Keys.STATE_TRACKING_NOT_STARTED)
+        return sharedPreferences.getInt(Keys.PREF_TRACKING_STATE, Keys.STATE_TRACKING_STOPPED)
     }
 
     fun saveTrackingState(trackingState: Int) {
@@ -71,13 +79,9 @@ object PreferencesHelper {
         return sharedPreferences.getBoolean(Keys.PREF_OMIT_RESTS, true)
     }
 
-    fun loadAutoExportInterval(): Int {
-        return sharedPreferences.getInt(Keys.PREF_AUTO_EXPORT_INTERVAL, Keys.DEFAULT_AUTO_EXPORT_INTERVAL)
+    fun loadCommitInterval(): Int {
+        return sharedPreferences.getInt(Keys.PREF_COMMIT_INTERVAL, Keys.COMMIT_INTERVAL)
     }
-
-//    fun loadAltitudeSmoothingValue(): Int {
-//        return sharedPreferences.getInt(Keys.PREF_ALTITUDE_SMOOTHING_VALUE, Keys.DEFAULT_ALTITUDE_SMOOTHING_VALUE)
-//    }
 
     /* Loads the state of a map */
     fun loadCurrentBestLocation(): Location {

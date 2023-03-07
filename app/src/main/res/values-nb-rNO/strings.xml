@@ -18,7 +18,6 @@
     <!-- fab sub menu_bottom_navigation -->
     <string name="button_delete">Tøm</string>
     <string name="button_save">Lagre og tøm</string>
-    <string name="button_resume">Fortsett</string>
     <!-- dialogs -->
     <string name="dialog_share_gpx">Del GPX-fil med</string>
     <string name="dialog_error_empty_recording_message">Trackbook har ikke registrert noen veipunkter så langt.</string>
@@ -109,9 +108,6 @@
     <string name="toast_message_poi_added">Interessepunktmarkør lagt til.</string>
     <string name="toast_message_poi_removed">Interessepunktmarkør fjernet.</string>
     <string name="toast_message_copied_to_clipboard">Kopiert til utklippstavle.</string>
-    <string name="pref_recording_accuracy_summary_high">Veipunkter har høyere nøyaktighet, men er mindre hyppige.</string>
     <string name="track_list_p_element_statistics">Totalavstand registrert</string>
-    <string name="pref_recording_accuracy_summary_default">Veipunkter har lavere nøyaktighet, men er hyppigere.</string>
-    <string name="pref_recording_accuracy_title">Opptaksnøyaktighet</string>
     <string name="descr_button_location">Sentrer på nåværende sted</string>
 </resources>

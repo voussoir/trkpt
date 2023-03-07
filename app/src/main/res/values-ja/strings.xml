@@ -18,7 +18,6 @@
     <!-- fab sub menu_bottom_navigation -->
     <string name="button_delete">クリア</string>
     <string name="button_save">保存してクリア</string>
-    <string name="button_resume">再開</string>
     <!-- dialogs -->
     <string name="dialog_share_gpx">GPX ファイルを共有...</string>
     <string name="dialog_error_empty_recording_message">トラックブックはこれまでウェイポイントを記録していません。</string>

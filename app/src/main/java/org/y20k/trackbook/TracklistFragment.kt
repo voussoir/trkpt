@@ -37,6 +37,7 @@ import kotlinx.coroutines.Dispatchers.Main
 import org.y20k.trackbook.core.Track
 import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.UiHelper
+import org.y20k.trackbook.helpers.iso8601_format
 import org.y20k.trackbook.tracklist.TracklistAdapter
 
 
@@ -48,20 +49,17 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
     /* Define log tag */
     private val TAG: String = LogHelper.makeLogTag(TracklistFragment::class.java)
 
-
     /* Main class variables */
     private lateinit var tracklistAdapter: TracklistAdapter
     private lateinit var trackElementList: RecyclerView
     private lateinit var tracklistOnboarding: ConstraintLayout
 
-
     /* Overrides onCreateView from Fragment */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // create tracklist adapter
-        tracklistAdapter = TracklistAdapter(this)
+        tracklistAdapter = TracklistAdapter(this, (requireActivity().applicationContext as Trackbook).database)
     }
-
 
     /* Overrides onCreateView from Fragment */
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -97,9 +95,9 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
     override fun onTrackElementTapped(track: Track) {
         val bundle: Bundle = bundleOf(
             Keys.ARG_TRACK_TITLE to track.name,
-            Keys.ARG_TRACK_FILE_URI to track.get_json_file(activity as Context).toUri().toString(),
-            Keys.ARG_GPX_FILE_URI to track.get_gpx_file(activity as Context).toUri().toString(),
-            Keys.ARG_TRACK_ID to track.id
+            Keys.ARG_TRACK_DEVICE_ID to track.device_id,
+            Keys.ARG_TRACK_START_TIME to iso8601_format.format(track.start_time),
+            Keys.ARG_TRACK_STOP_TIME to iso8601_format.format(track.stop_time),
         )
         findNavController().navigate(R.id.fragment_track, bundle)
     }
@@ -130,7 +128,6 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
         }
     }
 
-
     // toggle onboarding layout
     private fun toggleOnboardingLayout() {
         when (tracklistAdapter.isEmpty()) {
@@ -147,13 +144,11 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
         }
     }
 
-
-
     /*
      * Inner class: custom LinearLayoutManager that overrides onLayoutCompleted
      */
-    inner class CustomLinearLayoutManager(context: Context): LinearLayoutManager(context, VERTICAL, false) {
-
+    inner class CustomLinearLayoutManager(context: Context): LinearLayoutManager(context, VERTICAL, false)
+    {
         override fun supportsPredictiveItemAnimations(): Boolean {
             return true
         }

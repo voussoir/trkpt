@@ -3,7 +3,6 @@
     <string name="dialog_generic_details_button">Pokaż szczegóły</string>
     <string name="dialog_generic_button_okay">OK</string>
     <string name="dialog_generic_button_cancel">Anuluj</string>
-    <string name="button_resume">Kontynuuj</string>
     <string name="button_save">Zapisz</string>
     <string name="button_delete">Wyczyść</string>
     <string name="snackbar_message_location_offline">Lokalizacja jest wyłączona. Trackbook nie będzie działać.</string>
@@ -76,9 +75,6 @@
     <string name="pref_reset_advanced_title">Resetuj</string>
     <string name="pref_reset_advanced_summary">Przywróć ustawienia zaawansowane do wartości domyślnych.</string>
     <string name="pref_report_issue_summary">Zgłaszaj błędy i proponuj ulepszenia na GitHub.</string>
-    <string name="pref_recording_accuracy_title">Dokładność zapisu</string>
-    <string name="pref_recording_accuracy_summary_default">Punkty trasy mają mniejszą dokładność, ale są częstsze.</string>
-    <string name="pref_recording_accuracy_summary_high">Punkty trasy mają większą dokładność, ale występują rzadziej.</string>
     <string name="descr_button_resume">Przycisk Wznów</string>
     <string name="descr_map_current_track">Odwzorowanie bieżącego toru</string>
     <string name="abbreviation_minutes">min</string>

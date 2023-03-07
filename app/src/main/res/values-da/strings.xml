@@ -18,7 +18,6 @@
     <!-- fab sub menu_bottom_navigation -->
     <string name="button_delete">Ryd</string>
     <string name="button_save">Gem</string>
-    <string name="button_resume">Fortsæt</string>
     <!-- dialogs -->
     <string name="dialog_share_gpx">Del GPX fil med</string>
     <string name="dialog_error_empty_recording_message">Trackbook har ingen rutepunkter endnu.</string>
@@ -86,9 +85,6 @@
     <string name="pref_about_title">Om</string>
     <string name="track_list_p_element_statistics">Samlet registreret distance</string>
     <string name="pref_report_issue_summary">Rapporter fejl og foreslå forbedringer på GitHub.</string>
-    <string name="pref_recording_accuracy_title">Nøjagtighed af optagelser</string>
-    <string name="pref_recording_accuracy_summary_default">Waypoints har lavere nøjagtighed, men er mere hyppige.</string>
-    <string name="pref_recording_accuracy_summary_high">Waypoints har større nøjagtighed, men er mindre hyppige.</string>
     <string name="pref_imperial_measurement_units_summary_metric">I øjeblikket anvendes metriske enheder (kilometer, meter).</string>
     <string name="pref_gps_only_summary_gps_only">I øjeblikket bruger vi kun GPS til lokalisering.</string>
     <string name="pref_gps_only_summary_gps_and_network">I øjeblikket bruges GPS og netværk til lokalisering.</string>

@@ -18,7 +18,6 @@ package org.y20k.trackbook.helpers
 
 import android.content.Context
 import android.widget.Toast
-import java.util.*
 import org.y20k.trackbook.R
 import org.y20k.trackbook.core.Track
 
@@ -35,7 +34,7 @@ object TrackHelper {
     /* Toggles starred flag for given position */
     fun toggle_waypoint_starred(context: Context, track: Track, latitude: Double, longitude: Double)
     {
-        track.wayPoints.forEach { waypoint ->
+        track.trkpts.forEach { waypoint ->
             if (waypoint.latitude == latitude && waypoint.longitude == longitude) {
                 waypoint.starred = !waypoint.starred
                 when (waypoint.starred) {

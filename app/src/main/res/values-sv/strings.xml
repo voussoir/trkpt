@@ -19,7 +19,6 @@
     <!-- fab sub menu_bottom_navigation -->
     <string name="button_delete">Rensa</string>
     <string name="button_save">Spara</string>
-    <string name="button_resume">Återuppta</string>
     <!-- dialogs -->
     <string name="dialog_share_gpx">Dela GPX-fil med</string>
     <string name="dialog_error_empty_recording_message">Trackbook spelade inte in några vägpunkter så här långt.</string>
@@ -96,7 +95,6 @@
     <string name="descr_statistics_sheet_edit_button">Spårredigeringsknapp</string>
     <string name="pref_reset_advanced_title">Återställ</string>
     <string name="toast_message_elevation_info">Tips: Noggrannheten hos höjddata beror på din enhet. Höjden i upp- och nedförsbacke för hela rutten mäts.</string>
-    <string name="pref_recording_accuracy_summary_high">Vägpunkter har högre noggrannhet men är mindre frekventa.</string>
     <string name="pref_imperial_measurement_units_summary_metric">För närvarande används metriska enheter (kilometer, meter).</string>
     <string name="pref_advanced_title">Avancerad</string>
     <string name="pref_accuracy_threshold_title">Tröskel för noggrannhet</string>
@@ -115,7 +113,6 @@
     <string name="pref_reset_advanced_summary">Återställ avancerade inställningar till standardinställningarna.</string>
     <string name="pref_report_issue_title">Rapportera frågan</string>
     <string name="pref_report_issue_summary">Rapportera fel och föreslå förbättringar på GitHub.</string>
-    <string name="pref_recording_accuracy_title">Noggrannhet vid inspelning</string>
     <string name="track_list_onboarding_h1_part_2">... kommer att visas här.</string>
     <string name="track_list_onboarding_h1_part_1">Dina inspelade spår</string>
     <string name="layout_onboarding_description_app_icon">Ikon för Trackbook-appen</string>
@@ -156,7 +153,6 @@
     <string name="descr_quick_settings_tile_title_pause">Stoppa inspelningen</string>
     <string name="descr_mark_starred_button">Markera som stjärnmärkt</string>
     <string name="descr_button_resume">Återuppta inspelning</string>
-    <string name="pref_recording_accuracy_summary_default">Vägpunkter har lägre noggrannhet men är mer frekventa.</string>
     <string name="statistics_sheet_p_duration">Total varaktighet:</string>
     <string name="pref_gps_only_summary_gps_only">För närvarande används endast GPS för lokalisering.</string>
     <string name="pref_delete_non_starred_summary">Ta bort alla inspelningar i \"Tracks\" som inte har stjärnor.</string>
