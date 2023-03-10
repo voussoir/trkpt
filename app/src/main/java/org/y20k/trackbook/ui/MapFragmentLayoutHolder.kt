@@ -65,7 +65,6 @@ data class MapFragmentLayoutHolder(
     private val trackingState: Int
 )
 {
-    /* Main class variables */
     val rootView: View
     var userInteraction: Boolean = false
     val currentLocationButton: FloatingActionButton
@@ -75,12 +74,13 @@ data class MapFragmentLayoutHolder(
     private var current_location_radius: Polygon = Polygon()
     private var currentTrackOverlay: SimpleFastPointOverlay?
     private var currentTrackSpecialMarkerOverlay: ItemizedIconOverlay<OverlayItem>?
-    private val useImperial: Boolean = PreferencesHelper.loadUseImperialUnits()
     private var locationErrorBar: Snackbar
     private var controller: IMapController
     private var zoomLevel: Double
 
-    init {
+    init
+    {
+        Log.i("VOUSSOIR", "MapFragmentLayoutHolder.init")
         // find views
         rootView = inflater.inflate(R.layout.fragment_map, container, false)
         mapView = rootView.findViewById(R.id.map)
@@ -164,7 +164,7 @@ data class MapFragmentLayoutHolder(
     fun markCurrentPosition(location: Location, trackingState: Int = Keys.STATE_TRACKING_STOPPED)
     {
         Log.i("VOUSSOIR", "MapFragmentLayoutHolder.markCurrentPosition")
-        val locationIsOld: Boolean = !(LocationHelper.isRecentEnough(location))
+        val locationIsOld: Boolean = !(isRecentEnough(location))
 
         // create marker
         val newMarker: Drawable
@@ -228,7 +228,7 @@ data class MapFragmentLayoutHolder(
             val p = Polygon()
             p.points = Polygon.pointsAsCircle(GeoPoint(homepoint.location.latitude, homepoint.location.longitude), homepoint.location.accuracy.toDouble())
             p.fillPaint.color = Color.argb(64, 255, 193, 7)
-            p.outlinePaint.color = Color.argb(128, 255, 193, 7)
+            p.outlinePaint.color = Color.argb(0, 0, 0, 0)
             map_view.overlays.add(p)
         }
     }

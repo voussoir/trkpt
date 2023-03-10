@@ -58,7 +58,7 @@ class MapFragment : Fragment()
         // https://gist.github.com/Dvik/a3de88d39da9d1d6d175025a56c5e797#file-viewextension-kt and
         // https://proandroiddev.com/android-full-screen-ui-with-transparent-status-bar-ef52f3adde63
         // get current best location
-        currentBestLocation = LocationHelper.getLastKnownLocation(activity as Context)
+        currentBestLocation = getLastKnownLocation(activity as Context)
         // get saved tracking state
         trackingState = PreferencesHelper.loadTrackingState()
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);

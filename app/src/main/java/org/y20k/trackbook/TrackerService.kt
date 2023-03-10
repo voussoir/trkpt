@@ -57,7 +57,7 @@ class TrackerService: Service(), SensorEventListener
     var device_id: String = random_device_id()
     var recording_started: Date = GregorianCalendar.getInstance().time
     var commitInterval: Int = Keys.COMMIT_INTERVAL
-    var currentBestLocation: Location = LocationHelper.getDefaultLocation()
+    var currentBestLocation: Location = getDefaultLocation()
     var lastCommit: Date = Keys.DEFAULT_DATE
     var stepCountOffset: Float = 0f
     lateinit var track: Track
@@ -74,7 +74,6 @@ class TrackerService: Service(), SensorEventListener
     private lateinit var gpsLocationListener: LocationListener
     private lateinit var networkLocationListener: LocationListener
 
-    /* Adds a GPS location listener to location manager */
     private fun addGpsLocationListener()
     {
         if (gpsLocationListenerRegistered)
@@ -83,7 +82,7 @@ class TrackerService: Service(), SensorEventListener
             return
         }
 
-        gpsProviderActive = LocationHelper.isGpsEnabled(locationManager)
+        gpsProviderActive = isGpsEnabled(locationManager)
         if (! gpsProviderActive)
         {
             LogHelper.w(TAG, "Device GPS is not enabled.")
@@ -107,7 +106,6 @@ class TrackerService: Service(), SensorEventListener
         LogHelper.v(TAG, "Added GPS location listener.")
     }
 
-    /* Adds a Network location listener to location manager */
     private fun addNetworkLocationListener()
     {
         if (gpsOnly)
@@ -122,7 +120,7 @@ class TrackerService: Service(), SensorEventListener
             return
         }
 
-        networkProviderActive = LocationHelper.isNetworkEnabled(locationManager)
+        networkProviderActive = isNetworkEnabled(locationManager)
         if (!networkProviderActive)
         {
             LogHelper.w(TAG, "Unable to add Network location listener.")
@@ -151,7 +149,7 @@ class TrackerService: Service(), SensorEventListener
         return object : LocationListener {
             override fun onLocationChanged(location: Location)
             {
-                if (LocationHelper.isBetterLocation(location, currentBestLocation)) {
+                if (isBetterLocation(location, currentBestLocation)) {
                     currentBestLocation = location
                 }
             }
@@ -159,16 +157,16 @@ class TrackerService: Service(), SensorEventListener
             {
                 LogHelper.v(TAG, "onProviderEnabled $provider")
                 when (provider) {
-                    LocationManager.GPS_PROVIDER -> gpsProviderActive = LocationHelper.isGpsEnabled(locationManager)
-                    LocationManager.NETWORK_PROVIDER -> networkProviderActive = LocationHelper.isNetworkEnabled(locationManager)
+                    LocationManager.GPS_PROVIDER -> gpsProviderActive = isGpsEnabled(locationManager)
+                    LocationManager.NETWORK_PROVIDER -> networkProviderActive = isNetworkEnabled(locationManager)
                 }
             }
             override fun onProviderDisabled(provider: String)
             {
                 LogHelper.v(TAG, "onProviderDisabled $provider")
                 when (provider) {
-                    LocationManager.GPS_PROVIDER -> gpsProviderActive = LocationHelper.isGpsEnabled(locationManager)
-                    LocationManager.NETWORK_PROVIDER -> networkProviderActive = LocationHelper.isNetworkEnabled(locationManager)
+                    LocationManager.GPS_PROVIDER -> gpsProviderActive = isGpsEnabled(locationManager)
+                    LocationManager.NETWORK_PROVIDER -> networkProviderActive = isNetworkEnabled(locationManager)
                 }
             }
             override fun onStatusChanged(p0: String?, p1: Int, p2: Bundle?)
@@ -179,7 +177,8 @@ class TrackerService: Service(), SensorEventListener
     }
 
     /* Displays or updates notification */
-    private fun displayNotification(): Notification {
+    private fun displayNotification(): Notification
+    {
         val notification: Notification = notificationHelper.createNotification(
             trackingState,
             iso8601(GregorianCalendar.getInstance().time)
@@ -189,7 +188,8 @@ class TrackerService: Service(), SensorEventListener
     }
 
     /* Overrides onAccuracyChanged from SensorEventListener */
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int)
+    {
         LogHelper.v(TAG, "Accuracy changed: $accuracy")
     }
 
@@ -220,24 +220,24 @@ class TrackerService: Service(), SensorEventListener
         sensorManager = this.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationHelper = NotificationHelper(this)
-        gpsProviderActive = LocationHelper.isGpsEnabled(locationManager)
-        networkProviderActive = LocationHelper.isNetworkEnabled(locationManager)
+        gpsProviderActive = isGpsEnabled(locationManager)
+        networkProviderActive = isNetworkEnabled(locationManager)
         gpsLocationListener = createLocationListener()
         networkLocationListener = createLocationListener()
         trackingState = PreferencesHelper.loadTrackingState()
-        currentBestLocation = LocationHelper.getLastKnownLocation(this)
+        currentBestLocation = getLastKnownLocation(this)
         PreferencesHelper.registerPreferenceChangeListener(sharedPreferenceChangeListener)
     }
 
     /* Overrides onDestroy from Service */
     override fun onDestroy() {
+        LogHelper.i("VOUSSOIR", "TrackerService.onDestroy.")
         super.onDestroy()
-        LogHelper.i(TAG, "onDestroy called.")
         if (trackingState == Keys.STATE_TRACKING_ACTIVE)
         {
             pauseTracking()
         }
-        stopForeground(true)
+        stopForeground(STOP_FOREGROUND_REMOVE)
         notificationManager.cancel(Keys.TRACKER_SERVICE_NOTIFICATION_ID) // this call was not necessary prior to Android 12
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
         removeGpsLocationListener()
@@ -316,7 +316,6 @@ class TrackerService: Service(), SensorEventListener
         }
     }
 
-    /* Adds location listeners to location manager */
     fun removeNetworkLocationListener()
     {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -365,15 +364,14 @@ class TrackerService: Service(), SensorEventListener
         stopForeground(STOP_FOREGROUND_DETACH)
     }
 
-    /*
-     * Defines the listener for changes in shared preferences
-     */
     private val sharedPreferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
-        when (key) {
+        when (key)
+        {
             Keys.PREF_GPS_ONLY ->
             {
                 gpsOnly = PreferencesHelper.loadGpsOnly()
-                when (gpsOnly) {
+                when (gpsOnly)
+                {
                     true -> removeNetworkLocationListener()
                     false -> addNetworkLocationListener()
                 }
@@ -418,12 +416,12 @@ class TrackerService: Service(), SensorEventListener
             Log.i("VOUSSOIR", "Omitting due to 0,0 location.")
             return false
         }
-        if (! LocationHelper.isRecentEnough(location))
+        if (! isRecentEnough(location))
         {
             Log.i("VOUSSOIR", "Omitting due to not recent enough.")
             return false
         }
-        if (! LocationHelper.isAccurateEnough(location, Keys.DEFAULT_THRESHOLD_LOCATION_ACCURACY))
+        if (! isAccurateEnough(location, Keys.DEFAULT_THRESHOLD_LOCATION_ACCURACY))
         {
             Log.i("VOUSSOIR", "Omitting due to not accurate enough.")
             return false
@@ -440,7 +438,7 @@ class TrackerService: Service(), SensorEventListener
         {
             return true
         }
-        if (! LocationHelper.isDifferentEnough(track.trkpts.last().toLocation(), location, omitRests))
+        if (! isDifferentEnough(track.trkpts.last().toLocation(), location, omitRests))
         {
             Log.i("VOUSSOIR", "Omitting due to too close to previous.")
             return false

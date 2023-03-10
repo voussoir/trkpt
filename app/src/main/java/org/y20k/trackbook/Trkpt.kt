@@ -17,7 +17,7 @@
 package org.y20k.trackbook
 
 import android.location.Location
-import org.y20k.trackbook.helpers.LocationHelper
+import org.y20k.trackbook.helpers.getNumberOfSatellites
 import java.util.*
 
 /*
@@ -42,7 +42,7 @@ data class Trkpt(
         altitude=location.altitude,
         accuracy=location.accuracy,
         time=location.time,
-        numberSatellites=LocationHelper.getNumberOfSatellites(location),
+        numberSatellites=getNumberOfSatellites(location),
     )
 
     /* Converts WayPoint into Location */

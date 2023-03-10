@@ -134,8 +134,6 @@ fun createSpecialMakersTrackOverlay(context: Context, map_view: MapView, track: 
     map_view.overlays.add(createOverlay(context, overlayItems))
 }
 
-
-
 fun createOverlayItem(context: Context, latitude: Double, longitude: Double, accuracy: Float, provider: String, time: Long): OverlayItem
 {
     val title: String = "${context.getString(R.string.marker_description_time)}: ${SimpleDateFormat.getTimeInstance(SimpleDateFormat.MEDIUM, Locale.getDefault()).format(time)}"

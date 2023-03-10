@@ -20,7 +20,9 @@ import YesNoDialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.preference.*
@@ -118,6 +120,10 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         preferenceDeviceID.summary = getString(R.string.pref_device_id_summary) + "\n" + PreferencesHelper.load_device_id()
         preferenceDeviceID.setDefaultValue(random_device_id())
         preferenceCategoryGeneral.contains(preferenceDeviceID)
+        preferenceDeviceID.setOnPreferenceChangeListener { preference, newValue ->
+            preferenceDeviceID.summary = getString(R.string.pref_device_id_summary) + "\n" + newValue
+            return@setOnPreferenceChangeListener true
+        }
         screen.addPreference(preferenceDeviceID)
 
         val preferenceCategoryAbout: PreferenceCategory = PreferenceCategory(context)
