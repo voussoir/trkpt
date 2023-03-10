@@ -46,16 +46,23 @@ object PreferencesHelper {
 
     fun load_device_id(): String
     {
-        val v = sharedPreferences.getString(Keys.PREF_DEVICE_ID, random_int().toString()).toString();
-        Log.i("VOUSSOIR", "Loaded device_id ${v}.")
+        val fallback = random_device_id()
+        val v = sharedPreferences.getString(Keys.PREF_DEVICE_ID, fallback).toString()
+        if (v == fallback)
+        {
+            sharedPreferences.edit { putString(Keys.PREF_DEVICE_ID, fallback) }
+        }
+        Log.i("VOUSSOIR", "PreferencesHelper.load_device_id: Got ${v}.")
         return v
     }
 
-    fun loadZoomLevel(): Double {
+    fun loadZoomLevel(): Double
+    {
         return sharedPreferences.getDouble(Keys.PREF_MAP_ZOOM_LEVEL, Keys.DEFAULT_ZOOM_LEVEL)
     }
 
-    fun saveZoomLevel(zoomLevel: Double) {
+    fun saveZoomLevel(zoomLevel: Double)
+    {
         sharedPreferences.edit { putDouble(Keys.PREF_MAP_ZOOM_LEVEL, zoomLevel) }
     }
 

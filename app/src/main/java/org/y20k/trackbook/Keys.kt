@@ -14,11 +14,9 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 package org.y20k.trackbook
 
 import java.util.*
-
 
 /*
  * Keys object
@@ -116,7 +114,7 @@ object Keys {
     const val COMMIT_INTERVAL: Int = 30
     const val DEFAULT_ALTITUDE_SMOOTHING_VALUE: Int = 13
     const val DEFAULT_THRESHOLD_LOCATION_ACCURACY: Int = 30                     // 30 meters
-    const val DEFAULT_THRESHOLD_LOCATION_AGE: Long = 60_000_000_000L               // one minute in nanoseconds
+    const val DEFAULT_THRESHOLD_LOCATION_AGE: Long = 5_000_000_000L             // 5s in nanoseconds
     const val DEFAULT_THRESHOLD_DISTANCE: Float = 15f                           // 15 meters
     const val DEFAULT_ZOOM_LEVEL: Double = 16.0
     const val ALTITUDE_MEASUREMENT_ERROR_THRESHOLD = 10 // altitude changes of 10 meter or more (per 15 seconds) are being discarded

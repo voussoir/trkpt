@@ -14,7 +14,6 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 package org.y20k.trackbook.ui
 
 import android.app.Activity
@@ -46,11 +45,10 @@ import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
 import org.y20k.trackbook.Keys
 import org.y20k.trackbook.R
-import org.y20k.trackbook.core.Track
-import org.y20k.trackbook.core.TrackStatistics
+import org.y20k.trackbook.Track
+import org.y20k.trackbook.TrackStatistics
 import org.y20k.trackbook.helpers.*
 import kotlin.math.roundToInt
-
 
 /*
  * TrackFragmentLayoutHolder class
@@ -58,7 +56,6 @@ import kotlin.math.roundToInt
 //data class TrackFragmentLayoutHolder(private var context: Context, private var markerListener: MapOverlayHelper.MarkerListener, private var inflater: LayoutInflater, private var statusBarHeight: Int, private var container: ViewGroup?, var track: Track): MapListener { TODO REMOVE
 data class TrackFragmentLayoutHolder(
     private var context: Context,
-    private var markerListener: MapOverlayHelper.MarkerListener,
     private var inflater: LayoutInflater,
     private var container: ViewGroup?,
     var track: Track
@@ -71,8 +68,6 @@ data class TrackFragmentLayoutHolder(
     val editButton: ImageButton
     val trackNameView: MaterialTextView
     private val mapView: MapView
-    private var trackSpecialMarkersOverlay: ItemizedIconOverlay<OverlayItem>?
-    private var trackOverlay: SimpleFastPointOverlay?
     private var controller: IMapController
     //private var zoomLevel: Double
     private val statisticsSheetBehavior: BottomSheetBehavior<View>
@@ -95,7 +90,6 @@ data class TrackFragmentLayoutHolder(
     private val elevationDataViews: Group
     private val trackManagementViews: Group
     private val useImperialUnits: Boolean
-
 
     /* Init block */
     init {
@@ -152,13 +146,9 @@ data class TrackFragmentLayoutHolder(
 //        compassOverlay.setCompassCenter(36f, 36f + (statusBarHeight / UiHelper.getDensityScalingFactor(context))) TODO REMOVE
         mapView.overlays.add(compassOverlay)
 
-        // create map overlay
-        val mapOverlayHelper: MapOverlayHelper = MapOverlayHelper(markerListener)
-        trackOverlay = mapOverlayHelper.createTrackOverlay(context, track, Keys.STATE_TRACKING_STOPPED)
-        trackSpecialMarkersOverlay = mapOverlayHelper.createSpecialMakersTrackOverlay(context, track, Keys.STATE_TRACKING_STOPPED, displayStartEndMarker = true)
         if (track.trkpts.isNotEmpty()) {
-            mapView.overlays.add(trackSpecialMarkersOverlay)
-            mapView.overlays.add(trackOverlay)
+            createSpecialMakersTrackOverlay(context, mapView, track, Keys.STATE_TRACKING_STOPPED, displayStartEndMarker = true)
+            createTrackOverlay(context, mapView, track, Keys.STATE_TRACKING_STOPPED)
         }
 
         // set up and show statistics sheet
@@ -168,25 +158,6 @@ data class TrackFragmentLayoutHolder(
         setupStatisticsViews()
     }
 
-
-    /* Updates map overlay */
-    fun updateTrackOverlay()
-    {
-        if (trackOverlay != null) {
-            mapView.overlays.remove(trackOverlay)
-        }
-        if (trackSpecialMarkersOverlay != null) {
-            mapView.overlays.remove(trackSpecialMarkersOverlay)
-        }
-        if (track.trkpts.isNotEmpty()) {
-            val mapOverlayHelper: MapOverlayHelper = MapOverlayHelper(markerListener)
-            trackOverlay = mapOverlayHelper.createTrackOverlay(context, track, Keys.STATE_TRACKING_STOPPED)
-            trackSpecialMarkersOverlay = mapOverlayHelper.createSpecialMakersTrackOverlay(context, track, Keys.STATE_TRACKING_STOPPED, displayStartEndMarker = true)
-            mapView.overlays.add(trackOverlay)
-            mapView.overlays.add(trackSpecialMarkersOverlay)
-        }
-    }
-
     /* Saves zoom level and center of this map */
     fun saveViewStateToTrack()
     {
@@ -194,7 +165,6 @@ data class TrackFragmentLayoutHolder(
         {
         }
     }
-
 
     /* Sets up the statistics sheet */
     private fun setupStatisticsViews()
@@ -224,7 +194,6 @@ data class TrackFragmentLayoutHolder(
             toggleStatisticsSheetVisibility()
         }
     }
-
 
     /* Shows/hides the statistics sheet */
     private fun toggleStatisticsSheetVisibility() {
@@ -263,7 +232,6 @@ data class TrackFragmentLayoutHolder(
         }
     }
 
-
     /* Overrides onZoom from MapListener */
     override fun onZoom(event: ZoomEvent?): Boolean {
         if (event == null) {
@@ -273,7 +241,6 @@ data class TrackFragmentLayoutHolder(
             return true
         }
     }
-
 
     /* Overrides onScroll from MapListener */
     override fun onScroll(event: ScrollEvent?): Boolean {

@@ -14,7 +14,6 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 package org.y20k.trackbook.helpers
 
 import java.math.BigDecimal
@@ -22,18 +21,15 @@ import java.math.RoundingMode
 import java.text.NumberFormat
 import java.util.*
 
-
 /*
  * LengthUnitHelper object
  */
 object LengthUnitHelper {
 
-
     /* Converts for the given unit system a distance value to a readable string */
     fun convertDistanceToString(distance: Float, useImperial: Boolean = false): String {
         return convertDistanceToString(distance.toDouble(), useImperial)
     }
-
 
     /* Converts for the given unit system a distance value to a readable string */
     fun convertDistanceToString(distance: Double, useImperial: Boolean = false): String {
@@ -85,7 +81,6 @@ object LengthUnitHelper {
         return "${numberFormat.format(readableDistance)} $unit"
     }
 
-
     /* Determines which unit system the device is using (metric or imperial) */
     fun useImperialUnits(): Boolean {
         // America (US), Liberia (LR), Myanmar(MM) use the imperial system
@@ -93,7 +88,6 @@ object LengthUnitHelper {
         val countryCode = Locale.getDefault().country
         return imperialSystemCountries.contains(countryCode)
     }
-
 
     /* Converts for the given unit System distance and duration values to a readable velocity string */
     fun convertToVelocityString(velocity: Double, useImperialUnits: Boolean = false) : String {
@@ -114,7 +108,6 @@ object LengthUnitHelper {
         }
     }
 
-
     /* Coverts meters per second to either km/h or mph */
     fun convertMetersPerSecond(metersPerSecond: Double, useImperial: Boolean = false): Double {
         if (useImperial) {
@@ -125,6 +118,5 @@ object LengthUnitHelper {
             return metersPerSecond * 3.6
         }
     }
-
 
 }

@@ -14,33 +14,26 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
-package org.y20k.trackbook.core
+package org.y20k.trackbook
 
 import android.location.Location
-import android.os.Parcelable
-import androidx.annotation.Keep
-import com.google.gson.annotations.Expose
-import kotlinx.parcelize.Parcelize
 import org.y20k.trackbook.helpers.LocationHelper
 import java.util.*
 
 /*
  * WayPoint data class
  */
-@Keep
-@Parcelize
-data class Trkpt(@Expose val provider: String,
-                    @Expose val latitude: Double,
-                    @Expose val longitude: Double,
-                    @Expose val altitude: Double,
-                    @Expose val accuracy: Float,
-                    @Expose val time: Date,
-                    @Expose val distanceToStartingPoint: Float = 0f,
-                    @Expose val numberSatellites: Int = 0,
-                    @Expose var isStopOver: Boolean = false,
-                    @Expose var starred: Boolean = false): Parcelable {
-
+data class Trkpt(
+    val provider: String,
+    val latitude: Double,
+    val longitude: Double,
+    val altitude: Double,
+    val accuracy: Float,
+    val time: Long,
+    val numberSatellites: Int = 0,
+    var starred: Boolean = false
+)
+{
     /* Constructor using just Location */
     constructor(location: Location) : this (
         provider=location.provider.toString(),
@@ -48,19 +41,18 @@ data class Trkpt(@Expose val provider: String,
         longitude=location.longitude,
         altitude=location.altitude,
         accuracy=location.accuracy,
-        time=Date(location.time),
-        distanceToStartingPoint=0F,
+        time=location.time,
         numberSatellites=LocationHelper.getNumberOfSatellites(location),
     )
 
     /* Converts WayPoint into Location */
     fun toLocation(): Location {
-        val location: Location = Location(provider)
+        val location = Location(provider)
         location.latitude = latitude
         location.longitude = longitude
         location.altitude = altitude
         location.accuracy = accuracy
-        location.time = this.time.time
+        location.time = this.time
         return location
     }
 

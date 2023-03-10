@@ -14,48 +14,37 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-package org.y20k.trackbook.core
+package org.y20k.trackbook
 
 import android.content.Context
 import android.database.Cursor
-import android.location.Location
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
-import androidx.core.net.toUri
-import org.y20k.trackbook.Keys
-import org.y20k.trackbook.helpers.DateTimeHelper
-import org.y20k.trackbook.helpers.LocationHelper
-import org.y20k.trackbook.helpers.iso8601
 import org.y20k.trackbook.helpers.iso8601_format
-import java.io.File
-import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-/*
- * Track data class
- */
 data class Track (
     val database: Database,
     val device_id: String,
     val start_time: Date,
     val stop_time: Date,
     var name: String = "",
-    var dequelimit: Int = 7200,
+    val trkpts: ArrayDeque<Trkpt> = ArrayDeque<Trkpt>(),
     var view_latitude: Double = Keys.DEFAULT_LATITUDE,
     var view_longitude: Double = Keys.DEFAULT_LONGITUDE,
     var trackFormatVersion: Int = Keys.CURRENT_TRACK_FORMAT_VERSION,
-    val trkpts: ArrayDeque<Trkpt> = ArrayDeque<Trkpt>(dequelimit),
     var zoomLevel: Double = Keys.DEFAULT_ZOOM_LEVEL,
 )
 {
     fun delete()
     {
+        Log.i("VOUSSOIR", "Track.delete.")
     }
 
     suspend fun delete_suspended(context: Context)
@@ -63,12 +52,6 @@ data class Track (
         return suspendCoroutine { cont ->
             cont.resume(this.delete())
         }
-    }
-
-    fun get_export_gpx_file(context: Context): File
-    {
-        val basename: String = DateTimeHelper.convertToSortableDateString(this.start_time) + " " + DateTimeHelper.convertToSortableDateString(this.start_time) + Keys.GPX_FILE_EXTENSION
-        return File(File("/storage/emulated/0/Syncthing/GPX"), basename)
     }
 
     fun export_gpx(context: Context, fileuri: Uri): Uri?
@@ -153,7 +136,8 @@ data class Track (
                 stats.min_altitude = trkpt.altitude
                 continue
             }
-            stats.distance += LocationHelper.calculateDistance(previous.toLocation(), trkpt.toLocation())
+            stats.distance += previous.toLocation().distanceTo(trkpt.toLocation())
+            Log.i("VOUSSOIR", previous.toLocation().distanceTo(trkpt.toLocation()).toString())
             val ascentdiff = trkpt.altitude - previous.altitude
             if (ascentdiff > 0)
             {
@@ -171,28 +155,23 @@ data class Track (
             {
                 stats.min_altitude = trkpt.altitude
             }
+            previous = trkpt
             last = trkpt
         }
         if (first == null || last == null)
         {
             return stats
         }
-        stats.duration = last.time.time - first.time.time
+        stats.duration = last.time - first.time
         stats.velocity = stats.distance / stats.duration
         return stats
     }
 
     fun trkpt_generator() = iterator<Trkpt>
     {
-        val cursor: Cursor = database.connection.query(
-            "trkpt",
-            arrayOf("lat", "lon", "time", "ele", "accuracy", "sat"),
-            "device_id = ? AND time > ? AND time < ?",
-            arrayOf(device_id, iso8601(start_time), iso8601(stop_time)),
-            null,
-            null,
-            "time ASC",
-            null,
+        val cursor: Cursor = database.connection.rawQuery(
+            "SELECT lat, lon, time, ele, accuracy, sat FROM trkpt WHERE device_id = ? AND time > ? AND time < ? ORDER BY time ASC",
+            arrayOf(device_id, start_time.time.toString(), stop_time.time.toString())
         )
         val COLUMN_LAT = cursor.getColumnIndex("lat")
         val COLUMN_LON = cursor.getColumnIndex("lon")
@@ -204,14 +183,13 @@ data class Track (
         {
             while (cursor.moveToNext())
             {
-                val trkpt: Trkpt = Trkpt(
+                val trkpt = Trkpt(
                     provider="",
                     latitude=cursor.getDouble(COLUMN_LAT),
                     longitude=cursor.getDouble(COLUMN_LON),
                     altitude=cursor.getDouble(COLUMN_ELE),
                     accuracy=cursor.getFloat(COLUMN_ACCURACY),
-                    time=iso8601_format.parse(cursor.getString(COLUMN_TIME)),
-                    distanceToStartingPoint=0F,
+                    time=cursor.getLong(COLUMN_TIME),
                     numberSatellites=cursor.getInt(COLUMN_SAT),
                 )
                 yield(trkpt)

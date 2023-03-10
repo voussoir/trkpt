@@ -14,7 +14,6 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 import android.content.Context
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.y20k.trackbook.Keys
@@ -32,10 +31,8 @@ class YesNoDialog (private var yesNoDialogListener: YesNoDialogListener) {
         }
     }
 
-
     /* Define log tag */
     private val TAG = LogHelper.makeLogTag(YesNoDialog::class.java.simpleName)
-
 
     /* Construct and show dialog - variant: message from string  */
     fun show(context: Context,
@@ -49,7 +46,6 @@ class YesNoDialog (private var yesNoDialogListener: YesNoDialogListener) {
         // extract string from message resource and feed into main show method
         show(context, type, title, context.getString(message), yesButton, noButton, payload, payloadString)
     }
-
 
     /* Construct and show dialog */
     fun show(context: Context,
@@ -69,7 +65,6 @@ class YesNoDialog (private var yesNoDialogListener: YesNoDialogListener) {
         if (title != Keys.EMPTY_STRING_RESOURCE) {
             builder.setTitle(context.getString(title))
         }
-
 
         // add yes button
         builder.setPositiveButton(yesButton) { _, _ ->

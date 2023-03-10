@@ -14,33 +14,21 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 package org.y20k.trackbook
-
 
 import YesNoDialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.view.View
-import android.widget.EditText
 import android.widget.Toast
 import androidx.preference.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
 import org.y20k.trackbook.helpers.AppThemeHelper
-import org.y20k.trackbook.helpers.FileHelper
 import org.y20k.trackbook.helpers.LengthUnitHelper
 import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.PreferencesHelper
-import org.y20k.trackbook.helpers.random_int
-import kotlin.random.Random
+import org.y20k.trackbook.helpers.random_device_id
 
 /*
  * SettingsFragment class
@@ -50,14 +38,12 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
     /* Define log tag */
     private val TAG: String = LogHelper.makeLogTag(SettingsFragment::class.java)
 
-
     /* Overrides onViewCreated from PreferenceFragmentCompat */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         // set the background color
         view.setBackgroundColor(resources.getColor(R.color.app_window_background, null))
     }
-
 
     /* Overrides onCreatePreferences from PreferenceFragmentCompat */
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -130,7 +116,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         preferenceDeviceID.setIcon(R.drawable.ic_smartphone_24dp)
         preferenceDeviceID.key = Keys.PREF_DEVICE_ID
         preferenceDeviceID.summary = getString(R.string.pref_device_id_summary) + "\n" + PreferencesHelper.load_device_id()
-        preferenceDeviceID.setDefaultValue(random_int().toString())
+        preferenceDeviceID.setDefaultValue(random_device_id())
         preferenceCategoryGeneral.contains(preferenceDeviceID)
         screen.addPreference(preferenceDeviceID)
 
@@ -142,7 +128,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         val preferenceAppVersion: Preference = Preference(context)
         preferenceAppVersion.title = getString(R.string.pref_app_version_title)
         preferenceAppVersion.setIcon(R.drawable.ic_info_24dp)
-        preferenceAppVersion.summary = "${getString(R.string.pref_app_version_summary)} ${BuildConfig.VERSION_NAME}"
+        preferenceAppVersion.summary = getString(R.string.pref_app_version_summary)
         preferenceAppVersion.setOnPreferenceClickListener {
             // copy to clipboard
             val clip: ClipData = ClipData.newPlainText("simple text", preferenceAppVersion.summary)
@@ -157,7 +143,6 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         // setup preference screen
         preferenceScreen = screen
     }
-
 
     /* Overrides onYesNoDialog from YesNoDialogListener */
     override fun onYesNoDialog(type: Int, dialogResult: Boolean, payload: Int, payloadString: String) {

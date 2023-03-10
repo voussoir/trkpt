@@ -37,11 +37,7 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import java.util.*
 import kotlinx.coroutines.Runnable
-import org.y20k.trackbook.core.Track
-import org.y20k.trackbook.core.Database
-import org.y20k.trackbook.core.Trkpt
 import org.y20k.trackbook.helpers.*
-import java.text.SimpleDateFormat
 
 /*
  * TrackerService class
@@ -58,7 +54,7 @@ class TrackerService: Service(), SensorEventListener
     var useImperial: Boolean = false
     var gpsOnly: Boolean = false
     var omitRests: Boolean = true
-    var device_id: String = random_int().toString()
+    var device_id: String = random_device_id()
     var recording_started: Date = GregorianCalendar.getInstance().time
     var commitInterval: Int = Keys.COMMIT_INTERVAL
     var currentBestLocation: Location = LocationHelper.getDefaultLocation()
@@ -150,21 +146,11 @@ class TrackerService: Service(), SensorEventListener
         LogHelper.v(TAG, "Added Network location listener.")
     }
 
-    fun clearTrack()
-    {
-        trackingState = Keys.STATE_TRACKING_STOPPED
-        PreferencesHelper.saveTrackingState(trackingState)
-        track.delete()
-        track = Track(trackbook.database, device_id, start_time=GregorianCalendar.getInstance().time, stop_time=Date(GregorianCalendar.getInstance().time.time + 86400))
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        notificationManager.cancel(Keys.TRACKER_SERVICE_NOTIFICATION_ID) // this call was not necessary prior to Android 12
-    }
-
     private fun createLocationListener(): LocationListener
     {
         return object : LocationListener {
-            override fun onLocationChanged(location: Location) {
-                // update currentBestLocation if a better location is available
+            override fun onLocationChanged(location: Location)
+            {
                 if (LocationHelper.isBetterLocation(location, currentBestLocation)) {
                     currentBestLocation = location
                 }
@@ -173,26 +159,16 @@ class TrackerService: Service(), SensorEventListener
             {
                 LogHelper.v(TAG, "onProviderEnabled $provider")
                 when (provider) {
-                    LocationManager.GPS_PROVIDER -> gpsProviderActive = LocationHelper.isGpsEnabled(
-                        locationManager
-                    )
-                    LocationManager.NETWORK_PROVIDER -> networkProviderActive =
-                        LocationHelper.isNetworkEnabled(
-                            locationManager
-                        )
+                    LocationManager.GPS_PROVIDER -> gpsProviderActive = LocationHelper.isGpsEnabled(locationManager)
+                    LocationManager.NETWORK_PROVIDER -> networkProviderActive = LocationHelper.isNetworkEnabled(locationManager)
                 }
             }
             override fun onProviderDisabled(provider: String)
             {
                 LogHelper.v(TAG, "onProviderDisabled $provider")
                 when (provider) {
-                    LocationManager.GPS_PROVIDER -> gpsProviderActive = LocationHelper.isGpsEnabled(
-                        locationManager
-                    )
-                    LocationManager.NETWORK_PROVIDER -> networkProviderActive =
-                        LocationHelper.isNetworkEnabled(
-                            locationManager
-                        )
+                    LocationManager.GPS_PROVIDER -> gpsProviderActive = LocationHelper.isGpsEnabled(locationManager)
+                    LocationManager.NETWORK_PROVIDER -> networkProviderActive = LocationHelper.isNetworkEnabled(locationManager)
                 }
             }
             override fun onStatusChanged(p0: String?, p1: Int, p2: Bundle?)
@@ -278,7 +254,7 @@ class TrackerService: Service(), SensorEventListener
 
     /* Overrides onSensorChanged from SensorEventListener */
     override fun onSensorChanged(sensorEvent: SensorEvent?) {
-        var steps: Float = 0f
+        var steps = 0f
         if (sensorEvent != null) {
             if (stepCountOffset == 0f) {
                 // store steps previously recorded by the system
@@ -454,10 +430,10 @@ class TrackerService: Service(), SensorEventListener
         }
         for (homepoint in trackbook.homepoints)
         {
-            if (LocationHelper.calculateDistance(homepoint.location, location) < homepoint.radius)
+            if (homepoint.location.distanceTo(location) < homepoint.radius)
             {
-                Log.i("VOUSSOIR", "Omitting due to homepoint ${homepoint}.")
-                return false;
+                Log.i("VOUSSOIR", "Omitting due to homepoint ${homepoint.name}.")
+                return false
             }
         }
         if (track.trkpts.isEmpty())
@@ -478,16 +454,15 @@ class TrackerService: Service(), SensorEventListener
     {
         override fun run() {
             val now: Date = GregorianCalendar.getInstance().time
-            val nowstr: String = iso8601(now)
             val trkpt: Trkpt = Trkpt(location=currentBestLocation)
-            Log.i("VOUSSOIR", "Processing point ${currentBestLocation.latitude}, ${currentBestLocation.longitude} ${nowstr}.")
+            Log.i("VOUSSOIR", "Processing point ${currentBestLocation.latitude}, ${currentBestLocation.longitude} ${now.time}.")
             if (should_keep_point((currentBestLocation)))
             {
                 val values = ContentValues().apply {
                     put("device_id", device_id)
                     put("lat", trkpt.latitude)
                     put("lon", trkpt.longitude)
-                    put("time", nowstr)
+                    put("time", now.time)
                     put("accuracy", trkpt.accuracy)
                     put("sat", trkpt.numberSatellites)
                     put("ele", trkpt.altitude)
@@ -499,7 +474,7 @@ class TrackerService: Service(), SensorEventListener
                 }
                 trackbook.database.connection.insert("trkpt", null, values)
                 track.trkpts.add(trkpt)
-                if (track.trkpts.size > track.dequelimit)
+                while (track.trkpts.size > 7200)
                 {
                     track.trkpts.removeFirst()
                 }

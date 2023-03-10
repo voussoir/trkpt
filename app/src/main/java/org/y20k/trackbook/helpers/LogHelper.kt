@@ -14,12 +14,10 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 package org.y20k.trackbook.helpers
 
 import android.util.Log
 import org.y20k.trackbook.BuildConfig
-
 
 /*
  * LogHelper object

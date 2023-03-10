@@ -1,5 +1,4 @@
-package org.y20k.trackbook.core
-
+package org.y20k.trackbook
 import android.location.Location
 import java.util.*
 

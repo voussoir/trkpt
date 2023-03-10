@@ -14,7 +14,6 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 package org.y20k.trackbook.helpers
 
 import android.app.*
@@ -30,7 +29,6 @@ import org.y20k.trackbook.MainActivity
 import org.y20k.trackbook.R
 import org.y20k.trackbook.TrackerService
 
-
 /*
  * NotificationHelper class
  */
@@ -39,10 +37,8 @@ class NotificationHelper(private val trackerService: TrackerService) {
     /* Define log tag */
     private val TAG: String = LogHelper.makeLogTag(NotificationHelper::class.java)
 
-
     /* Main class variables */
     private val notificationManager: NotificationManager = trackerService.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
 
     /* Creates notification */
     fun createNotification(trackingState: Int, timestamp: String): Notification {

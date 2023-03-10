@@ -14,7 +14,6 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 package org.y20k.trackbook
 
 import android.content.Intent
@@ -26,7 +25,6 @@ import android.service.quicksettings.TileService
 import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.PreferencesHelper
 
-
 /*
  * TrackingToggleTileService class
  */
@@ -35,12 +33,10 @@ class TrackingToggleTileService: TileService() {
     /* Define log tag */
     private val TAG: String = LogHelper.makeLogTag(TrackingToggleTileService::class.java)
 
-
     /* Main class variables */
     private var bound: Boolean = false
     private var trackingState: Int = Keys.STATE_TRACKING_STOPPED
     private lateinit var trackerService: TrackerService
-
 
     /* Overrides onTileAdded from TileService */
     override fun onTileAdded() {
@@ -56,7 +52,6 @@ class TrackingToggleTileService: TileService() {
         super.onTileRemoved()
     }
 
-
     /* Overrides onStartListening from TileService (tile becomes visible) */
     override fun onStartListening() {
         super.onStartListening()
@@ -68,7 +63,6 @@ class TrackingToggleTileService: TileService() {
         PreferencesHelper.registerPreferenceChangeListener(sharedPreferenceChangeListener)
     }
 
-
     /* Overrides onClick from TileService */
     override fun onClick() {
         super.onClick()
@@ -78,7 +72,6 @@ class TrackingToggleTileService: TileService() {
         }
     }
 
-
     /* Overrides onStopListening from TileService (tile no longer visible) */
     override fun onStopListening() {
         super.onStopListening()
@@ -86,12 +79,10 @@ class TrackingToggleTileService: TileService() {
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
     }
 
-
     /* Overrides onDestroy from Service */
     override fun onDestroy() {
         super.onDestroy()
     }
-
 
     /* Update quick settings tile */
     private fun updateTile() {
@@ -112,7 +103,6 @@ class TrackingToggleTileService: TileService() {
         tile.updateTile()
     }
 
-
     /* Start tracking */
     private fun startTracking() {
         val intent = Intent(application, TrackerService::class.java)
@@ -125,14 +115,12 @@ class TrackingToggleTileService: TileService() {
         }
     }
 
-
     /* Stop tracking */
     private fun stopTracking() {
         val intent = Intent(application, TrackerService::class.java)
         intent.action = Keys.ACTION_STOP
         application.startService(intent)
     }
-
 
     /*
      * Defines the listener for changes in shared preferences
@@ -148,7 +136,6 @@ class TrackingToggleTileService: TileService() {
     /*
      * End of declaration
      */
-
 
 
 

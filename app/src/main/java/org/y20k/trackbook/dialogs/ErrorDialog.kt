@@ -14,7 +14,6 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 package org.y20k.trackbook.dialogs
 
 import android.content.Context
@@ -29,7 +28,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.y20k.trackbook.R
 import org.y20k.trackbook.helpers.LogHelper
 
-
 /*
  * ErrorDialog object
  */
@@ -37,7 +35,6 @@ object ErrorDialog {
 
     /* Define log tag */
     private val TAG: String = LogHelper.makeLogTag(ErrorDialog::class.java)
-
 
     /* Construct and show dialog */
     fun show(context: Context, errorTitle: Int, errorMessage: Int, errorDetails: String = String()) {

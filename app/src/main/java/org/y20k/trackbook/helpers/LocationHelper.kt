@@ -14,7 +14,6 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 package org.y20k.trackbook.helpers
 
 import android.Manifest
@@ -26,10 +25,7 @@ import android.os.Bundle
 import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import org.y20k.trackbook.Keys
-import org.y20k.trackbook.core.Track
-import java.util.*
 import kotlin.math.pow
-
 
 /*
  * Keys object
@@ -38,7 +34,6 @@ object LocationHelper {
 
     /* Define log tag */
     private val TAG: String = LogHelper.makeLogTag(LocationHelper::class.java)
-
 
     /* Get default location */
     fun getDefaultLocation(): Location {
@@ -68,9 +63,9 @@ object LocationHelper {
         return lastKnownLocation
     }
 
-
     /* Determines whether one location reading is better than the current location fix */
-    fun isBetterLocation(location: Location, currentBestLocation: Location?): Boolean {
+    fun isBetterLocation(location: Location, currentBestLocation: Location?): Boolean
+    {
         // Credit: https://developer.android.com/guide/topics/location/strategies.html#BestEstimate
 
         if (currentBestLocation == null) {
@@ -110,14 +105,17 @@ object LocationHelper {
     }
 
     /* Checks if GPS location provider is available and enabled */
-    fun isGpsEnabled(locationManager: LocationManager): Boolean {
-        if (locationManager.allProviders.contains(LocationManager.GPS_PROVIDER)) {
+    fun isGpsEnabled(locationManager: LocationManager): Boolean
+    {
+        if (locationManager.allProviders.contains(LocationManager.GPS_PROVIDER))
+        {
             return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-        } else {
+        }
+        else
+        {
             return false
         }
     }
-
 
     /* Checks if Network location provider is available and enabled */
     fun isNetworkEnabled(locationManager: LocationManager): Boolean {
@@ -129,13 +127,11 @@ object LocationHelper {
     }
 
 
-
     /* Checks if given location is new */
     fun isRecentEnough(location: Location): Boolean {
         val locationAge: Long = SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos
         return locationAge < Keys.DEFAULT_THRESHOLD_LOCATION_AGE
     }
-
 
     /* Checks if given location is accurate */
     fun isAccurateEnough(location: Location, locationAccuracyThreshold: Int): Boolean {
@@ -166,24 +162,12 @@ object LocationHelper {
         val accuracy: Float = if (location.accuracy != 0.0f) location.accuracy else Keys.DEFAULT_THRESHOLD_DISTANCE
         val previousAccuracy: Float = if (previousLocation.accuracy != 0.0f) previousLocation.accuracy else Keys.DEFAULT_THRESHOLD_DISTANCE
         val accuracyDelta: Double = Math.sqrt((accuracy.pow(2) + previousAccuracy.pow(2)).toDouble())
-        val distance: Float = calculateDistance(previousLocation, location)
+        val distance: Float = previousLocation.distanceTo(location)
 
         // With 1*accuracyDelta we have 68% confidence that the points are
         // different. We can multiply this number to increase confidence but
         // decrease point recording frequency if needed.
         return distance > accuracyDelta
-    }
-
-
-    /* Calculates distance in meters between two locations */
-    fun calculateDistance(previousLocation: Location?, location: Location): Float  {
-        var distance: Float = 0f
-        // two data points needed to calculate distance
-        if (previousLocation != null) {
-            // add up distance
-            distance = previousLocation.distanceTo(location)
-        }
-        return distance
     }
 
     /* Get number of satellites from Location extras */
@@ -197,6 +181,5 @@ object LocationHelper {
         }
         return numberOfSatellites
     }
-
 
 }

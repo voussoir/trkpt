@@ -14,19 +14,21 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 package org.y20k.trackbook
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -35,55 +37,22 @@ import org.y20k.trackbook.helpers.AppThemeHelper
 import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.PreferencesHelper
 
-private const val REQUEST_EXTERNAL_STORAGE = 1
-private val PERMISSIONS_STORAGE = arrayOf<String>(
-    Manifest.permission.READ_EXTERNAL_STORAGE,
-    Manifest.permission.WRITE_EXTERNAL_STORAGE
-)
-
-/**
- * Checks if the app has permission to write to device storage
- *
- * If the app does not has permission then the user will be prompted to grant permissions
- *
- * @param activity
- */
-fun verifyStoragePermissions(activity: Activity?)
+class MainActivity: AppCompatActivity()
 {
-    // Check if we have write permission
-    val permission = ActivityCompat.checkSelfPermission(activity!!,
-        Manifest.permission.WRITE_EXTERNAL_STORAGE)
-    if (permission != PackageManager.PERMISSION_GRANTED)
-    {
-        // We don't have permission so prompt the user
-        ActivityCompat.requestPermissions(
-            activity,
-            PERMISSIONS_STORAGE,
-            REQUEST_EXTERNAL_STORAGE
-        )
-    }
-}
-
-/*
- * MainActivity class
- */
-class MainActivity : AppCompatActivity() {
-
-    /* Define log tag */
-    private val TAG: String = LogHelper.makeLogTag(MainActivity::class.java)
-
-
     /* Main class variables */
+    lateinit var trackbook: Trackbook
     private lateinit var navHostFragment: NavHostFragment
     private lateinit var bottomNavigationView: BottomNavigationView
 
-
     /* Overrides onCreate from AppCompatActivity */
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
+        trackbook = (applicationContext as Trackbook)
         super.onCreate(savedInstanceState)
-        verifyStoragePermissions(this)
+        request_permissions(this)
         // todo: remove after testing finished
-        if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+        {
             StrictMode.setVmPolicy(
                 VmPolicy.Builder()
                     .detectNonSdkApiUsage()
@@ -109,8 +78,10 @@ class MainActivity : AppCompatActivity() {
 
         // listen for navigation changes
         navHostFragment.navController.addOnDestinationChangedListener { _, destination, _ ->
-            when (destination.id) {
-                R.id.fragment_track -> {
+            when (destination.id)
+            {
+                R.id.fragment_track ->
+                {
                     runOnUiThread {
                         run {
                             // mark menu item "Tracks" as checked
@@ -118,7 +89,8 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
-                else -> {
+                else ->
+                {
                     // do nothing
                 }
             }
@@ -128,26 +100,62 @@ class MainActivity : AppCompatActivity() {
         PreferencesHelper.registerPreferenceChangeListener(sharedPreferenceChangeListener)
     }
 
+    private fun request_permissions(activity: Activity)
+    {
+        Log.i("VOUSSOIR", "MainActivity requests permissions.")
+        val permissions_wanted = arrayOf(
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+        )
+        val permissions_needed = ArrayList<String>()
+        for (permission in permissions_wanted)
+        {
+            if (ContextCompat.checkSelfPermission(applicationContext, permission) != PackageManager.PERMISSION_GRANTED)
+            {
+                Log.i("VOUSSOIR", "We need " + permission)
+                permissions_needed.add(permission)
+            }
+        }
+        val result = requestPermissions(permissions_wanted, 1);
+        Log.i("VOUSSOIR", "Permissions result " + result)
+    }
 
     /* Overrides onDestroy from AppCompatActivity */
-    override fun onDestroy() {
+    override fun onDestroy()
+    {
         super.onDestroy()
         // unregister listener for changes in shared preferences
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
     }
 
-
     /*
      * Defines the listener for changes in shared preferences
      */
     private val sharedPreferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
-        when (key) {
-            Keys.PREF_THEME_SELECTION -> {
+        when (key)
+        {
+            Keys.PREF_THEME_SELECTION ->
+            {
                 AppThemeHelper.setTheme(PreferencesHelper.loadThemeSelection())
+            }
+
+            Keys.PREF_DEVICE_ID ->
+            {
+                Log.i("VOUSSOIR", "MainActivity: device_id has changed.")
+                trackbook.load_database()
             }
         }
     }
-    /*
-     * End of declaration
-     */
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    )
+    {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        Log.i("VOUSSOIR", "MainActivity tries to load the database.")
+        trackbook.load_database()
+    }
 }

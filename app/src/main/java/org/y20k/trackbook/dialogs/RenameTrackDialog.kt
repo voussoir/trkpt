@@ -14,7 +14,6 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 package org.y20k.trackbook.dialogs
 
 import android.content.Context
@@ -25,7 +24,6 @@ import android.widget.TextView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.y20k.trackbook.R
 import org.y20k.trackbook.helpers.LogHelper
-
 
 /*
  * RenameTrackDialog class
@@ -40,7 +38,6 @@ class RenameTrackDialog (private var renameTrackListener: RenameTrackListener) {
 
     /* Define log tag */
     private val TAG = LogHelper.makeLogTag(RenameTrackDialog::class.java.simpleName)
-
 
     /* Construct and show dialog */
     fun show(context: Context, trackName: String) {

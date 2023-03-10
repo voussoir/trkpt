@@ -14,7 +14,6 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 package org.y20k.trackbook.helpers
 
 import android.content.Context
@@ -31,7 +30,6 @@ import androidx.recyclerview.widget.RecyclerView
 import org.y20k.trackbook.R
 import org.y20k.trackbook.tracklist.TracklistAdapter
 
-
 /*
  * UiHelper object
  */
@@ -39,7 +37,6 @@ object UiHelper {
 
     /* Define log tag */
     private val TAG: String = LogHelper.makeLogTag(UiHelper::class.java)
-
 
     /* Sets layout margins for given view in DP */
     fun setViewMargins(context: Context, view: View, left: Int = 0, right: Int = 0, top: Int= 0, bottom: Int = 0) {
@@ -55,7 +52,6 @@ object UiHelper {
         }
     }
 
-
     /* Sets layout margins for given view in percent */
     fun setViewMarginsPercentage(context: Context, view: View, height: Int, width: Int, left: Int = 0, right: Int = 0, top: Int= 0, bottom: Int = 0) {
         val l: Int = ((width / 100.0f) * left).toInt()
@@ -64,7 +60,6 @@ object UiHelper {
         val b: Int = ((height / 100.0f) * bottom).toInt()
         setViewMargins(context, view, l, r, t, b)
     }
-
 
     /* Get the height of the system's top status bar */
     fun getStatusBarHeight(context: Context): Int {
@@ -76,12 +71,10 @@ object UiHelper {
         return result
     }
 
-
     /* Get scaling factor from display density */
     fun getDensityScalingFactor(context: Context): Float {
         return context.resources.displayMetrics.density
     }
-
 
 
     /*

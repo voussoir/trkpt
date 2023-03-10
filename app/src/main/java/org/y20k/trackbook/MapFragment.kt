@@ -14,7 +14,6 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 package org.y20k.trackbook
 
 import android.Manifest
@@ -25,17 +24,18 @@ import android.os.*
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import org.y20k.trackbook.core.Track
+import org.y20k.trackbook.Track
 import org.y20k.trackbook.helpers.*
 import org.y20k.trackbook.ui.MapFragmentLayoutHolder
 
 /*
  * MapFragment class
  */
-class MapFragment : Fragment(), MapOverlayHelper.MarkerListener
+class MapFragment : Fragment()
 {
     /* Define log tag */
     private val TAG: String = LogHelper.makeLogTag(MapFragment::class.java)
@@ -61,13 +61,14 @@ class MapFragment : Fragment(), MapOverlayHelper.MarkerListener
         currentBestLocation = LocationHelper.getLastKnownLocation(activity as Context)
         // get saved tracking state
         trackingState = PreferencesHelper.loadTrackingState()
+        requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     /* Overrides onStop from Fragment */
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         // initialize layout
         val statusBarHeight: Int = UiHelper.getStatusBarHeight(activity as Context)
-        layout = MapFragmentLayoutHolder(activity as Context, this as MapOverlayHelper.MarkerListener, inflater, container, statusBarHeight, currentBestLocation, trackingState)
+        layout = MapFragmentLayoutHolder(activity as Context, inflater, container, statusBarHeight, currentBestLocation, trackingState)
 
         // set up buttons
         layout.currentLocationButton.setOnClickListener {

@@ -14,7 +14,6 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 package org.y20k.trackbook
 
 import YesNoDialog
@@ -34,12 +33,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.Main
-import org.y20k.trackbook.core.Track
 import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.UiHelper
 import org.y20k.trackbook.helpers.iso8601_format
 import org.y20k.trackbook.tracklist.TracklistAdapter
-
 
 /*
  * TracklistFragment class

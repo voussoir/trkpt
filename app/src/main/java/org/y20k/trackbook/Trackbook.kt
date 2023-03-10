@@ -14,27 +14,21 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
-
 package org.y20k.trackbook
 
-import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+import android.Manifest
+import android.app.Activity
 import android.app.Application
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.util.Log
-import androidx.core.app.ActivityCompat.shouldShowRequestPermissionRationale
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.material.color.DynamicColors
-import org.y20k.trackbook.core.Database
-import org.y20k.trackbook.core.Homepoint
-import org.y20k.trackbook.core.Trkpt
 import org.y20k.trackbook.helpers.AppThemeHelper
 import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.PreferencesHelper
 import org.y20k.trackbook.helpers.PreferencesHelper.initPreferences
-import org.y20k.trackbook.helpers.iso8601
-import org.y20k.trackbook.helpers.iso8601_format
 import java.io.File
 
 /*
@@ -54,17 +48,25 @@ class Trackbook(): Application() {
         // set Dark / Light theme state
         AppThemeHelper.setTheme(PreferencesHelper.loadThemeSelection())
 
-        ContextCompat.checkSelfPermission(applicationContext, android.Manifest.permission.ACCESS_COARSE_LOCATION)
-        ContextCompat.checkSelfPermission(applicationContext, android.Manifest.permission.ACCESS_FINE_LOCATION)
         Log.i("VOUSSOIR", "Device ID = ${PreferencesHelper.load_device_id()}")
-        if (ContextCompat.checkSelfPermission(applicationContext, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
-        {
-            this.database.connect(File("/storage/emulated/0/Syncthing/GPX/trkpt_${PreferencesHelper.load_device_id()}.db"))
-        }
     }
 
+    fun load_database()
+    {
+        Log.i("VOUSSOIR", "Trackbook.load_database")
+        if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
+        {
+            this.database.connect(File("/storage/emulated/0/Syncthing/GPX/trkpt_${PreferencesHelper.load_device_id()}.db"))
+            this.load_homepoints()
+        }
+        else
+        {
+            this.database.ready = false
+        }
+    }
     fun load_homepoints()
     {
+        Log.i("VOUSSOIR", "Trackbook.load_homepoints")
         this.homepoints.clear()
         homepoint_generator().forEach { homepoint -> this.homepoints.add(homepoint) }
     }
@@ -73,18 +75,14 @@ class Trackbook(): Application() {
     {
         if (! database.ready)
         {
+            Log.i("VOUSSOIR", "Trackbook.homepoint_generator: database is not ready.")
             return@iterator
         }
-        val cursor: Cursor = database.connection.query(
-            "homepoints",
-            arrayOf("lat", "lon", "radius", "name"),
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
+        val cursor: Cursor = database.connection.rawQuery(
+            "SELECT lat, lon, radius, name FROM homepoints",
+            arrayOf()
         )
+        Log.i("VOUSSOIR", "Trackbook.homepoint_generator: Got ${cursor.count} homepoints.")
         val COLUMN_LAT = cursor.getColumnIndex("lat")
         val COLUMN_LON = cursor.getColumnIndex("lon")
         val COLUMN_RADIUS = cursor.getColumnIndex("radius")

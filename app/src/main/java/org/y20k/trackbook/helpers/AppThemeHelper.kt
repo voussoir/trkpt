@@ -14,17 +14,13 @@
  * https://github.com/osmdroid/osmdroid
  */
 
-
 package org.y20k.trackbook.helpers
 
-import android.app.Activity
 import android.content.Context
 import android.content.res.Configuration
-import android.view.View
 import androidx.appcompat.app.AppCompatDelegate
 import org.y20k.trackbook.Keys
 import org.y20k.trackbook.R
-
 
 /*
  * AppThemeHelper object
@@ -33,7 +29,6 @@ object AppThemeHelper {
 
     /* Define log tag */
     private val TAG: String = LogHelper.makeLogTag(AppThemeHelper::class.java)
-
 
     /* Sets app theme */
     fun setTheme(nightModeState: String) {
@@ -67,13 +62,11 @@ object AppThemeHelper {
         }
     }
 
-
     /* Return weather Night Mode is on, or not  */
     fun isDarkModeOn(context: Context): Boolean {
         val nightMode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
         return nightMode == Configuration.UI_MODE_NIGHT_YES
     }
-
 
     /* Returns a readable String for currently selected App Theme */
     fun getCurrentTheme(context: Context): String {
@@ -83,22 +76,4 @@ object AppThemeHelper {
             else -> context.getString(R.string.pref_theme_selection_mode_device_default)
         }
     }
-
-
-    /* Displays the default status bar */
-    private fun displayDefaultStatusBar(activity: Activity) {
-        val decorView = activity.window.decorView
-        decorView.systemUiVisibility = 0
-    }
-
-
-    /* Displays the light (inverted) status bar */
-    private fun displayLightStatusBar(activity: Activity) {
-        val decorView = activity.window.decorView
-        decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-    }
-
-
-
-
 }
