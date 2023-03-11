@@ -1,11 +1,14 @@
 package org.y20k.trackbook
+import android.content.ContentValues
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteDatabase.openOrCreateDatabase
 import android.util.Log
 import java.io.File
+import java.util.*
 
-class Database()
+class Database(trackbook: Trackbook)
 {
+    val trackbook = trackbook
     var ready: Boolean = false
     lateinit var file: File
     lateinit var connection: SQLiteDatabase
@@ -14,6 +17,7 @@ class Database()
     {
         this.connection.close()
         this.ready = false
+        this.trackbook.call_database_changed_listeners()
     }
 
     fun connect(file: File)
@@ -23,6 +27,7 @@ class Database()
         this.connection = openOrCreateDatabase(file, null)
         this.initialize_tables()
         this.ready = true
+        Log.i("VOUSSOIR", "Database.open: Calling all listeners")
     }
 
     fun commit()
@@ -40,11 +45,29 @@ class Database()
         this.connection.endTransaction()
     }
 
+    fun insert_trkpt(device_id: String, trkpt: Trkpt)
+    {
+        val values = ContentValues().apply {
+            put("device_id", device_id)
+            put("lat", trkpt.latitude)
+            put("lon", trkpt.longitude)
+            put("time", GregorianCalendar.getInstance().time.time)
+            put("accuracy", trkpt.accuracy)
+            put("sat", trkpt.numberSatellites)
+            put("ele", trkpt.altitude)
+        }
+        if (! connection.inTransaction())
+        {
+            connection.beginTransaction()
+        }
+        connection.insert("trkpt", null, values)
+    }
+
     private fun initialize_tables()
     {
         this.connection.beginTransaction()
         this.connection.execSQL("CREATE TABLE IF NOT EXISTS meta(name TEXT PRIMARY KEY, value TEXT)")
-        this.connection.execSQL("CREATE TABLE IF NOT EXISTS trkpt(lat REAL NOT NULL, lon REAL NOT NULL, time INTEGER NOT NULL, accuracy REAL, device_id INTEGER NOT NULL, ele INTEGER, sat INTEGER, star INTEGER, PRIMARY KEY(lat, lon, time, device_id))")
+        this.connection.execSQL("CREATE TABLE IF NOT EXISTS trkpt(lat REAL NOT NULL, lon REAL NOT NULL, time INTEGER NOT NULL, accuracy REAL, device_id INTEGER NOT NULL, ele INTEGER, sat INTEGER, PRIMARY KEY(lat, lon, time, device_id))")
         this.connection.execSQL("CREATE TABLE IF NOT EXISTS homepoints(lat REAL NOT NULL, lon REAL NOT NULL, radius REAL NOT NULL, name TEXT, PRIMARY KEY(lat, lon))")
         this.connection.setTransactionSuccessful()
         this.connection.endTransaction()

@@ -30,12 +30,10 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.ItemizedIconOverlay
 import org.osmdroid.views.overlay.OverlayItem
-import org.osmdroid.views.overlay.Polygon
 import org.osmdroid.views.overlay.simplefastpoint.LabelledGeoPoint
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlayOptions
 import org.osmdroid.views.overlay.simplefastpoint.SimplePointTheme
-import org.y20k.trackbook.Homepoint
 import org.y20k.trackbook.Keys
 import org.y20k.trackbook.R
 import org.y20k.trackbook.Track
@@ -43,15 +41,6 @@ import org.y20k.trackbook.Trkpt
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.*
-
-//private var currentPositionOverlay: ItemizedIconOverlay<OverlayItem>
-
-
-/* Creates icon overlay for current position (used in MapFragment) */
-fun createMyLocationOverlay(context: Context, map_view: MapView, currentPositionOverlay: ItemizedIconOverlay<OverlayItem>, location: Location, trackingState: Int)
-{
-
-}
 
 
 /* Creates icon overlay for track */
@@ -149,12 +138,12 @@ fun createOverlay(context: Context, overlayItems: ArrayList<OverlayItem>): Itemi
 {
     return ItemizedIconOverlay<OverlayItem>(context, overlayItems,
         object : ItemizedIconOverlay.OnItemGestureListener<OverlayItem> {
-            override fun onItemSingleTapUp(index: Int, item: OverlayItem): Boolean {
+            override fun onItemSingleTapUp(index: Int, item: OverlayItem): Boolean
+            {
                 return false
             }
-            override fun onItemLongPress(index: Int, item: OverlayItem): Boolean {
-                val v = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-                v.vibrate(50)
+            override fun onItemLongPress(index: Int, item: OverlayItem): Boolean
+            {
                 Toast.makeText(context, item.snippet, Toast.LENGTH_LONG).show()
                 return true
             }

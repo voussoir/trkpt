@@ -31,12 +31,24 @@ import org.y20k.trackbook.helpers.PreferencesHelper
 import org.y20k.trackbook.helpers.PreferencesHelper.initPreferences
 import java.io.File
 
-/*
- * Trackbook.class
- */
+
+interface DatabaseChangedListener
+{
+    fun database_changed()
+}
+
 class Trackbook(): Application() {
-    val database: Database = Database()
+    val database: Database = Database(this)
     val homepoints: ArrayList<Homepoint> = ArrayList()
+    val database_changed_listeners = ArrayList<DatabaseChangedListener>()
+
+    fun call_database_changed_listeners()
+    {
+        for (listener in this.database_changed_listeners)
+        {
+            listener.database_changed()
+        }
+    }
 
     override fun onCreate()
     {
@@ -63,6 +75,7 @@ class Trackbook(): Application() {
         {
             this.database.ready = false
         }
+        this.call_database_changed_listeners()
     }
     fun load_homepoints()
     {

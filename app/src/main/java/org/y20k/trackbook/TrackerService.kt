@@ -230,7 +230,8 @@ class TrackerService: Service(), SensorEventListener
     }
 
     /* Overrides onDestroy from Service */
-    override fun onDestroy() {
+    override fun onDestroy()
+    {
         LogHelper.i("VOUSSOIR", "TrackerService.onDestroy.")
         super.onDestroy()
         if (trackingState == Keys.STATE_TRACKING_ACTIVE)
@@ -255,8 +256,10 @@ class TrackerService: Service(), SensorEventListener
     /* Overrides onSensorChanged from SensorEventListener */
     override fun onSensorChanged(sensorEvent: SensorEvent?) {
         var steps = 0f
-        if (sensorEvent != null) {
-            if (stepCountOffset == 0f) {
+        if (sensorEvent != null)
+        {
+            if (stepCountOffset == 0f)
+            {
                 // store steps previously recorded by the system
                 stepCountOffset = (sensorEvent.values[0] - 1) - 0 // subtract any steps recorded during this session in case the app was killed
             }
@@ -307,22 +310,28 @@ class TrackerService: Service(), SensorEventListener
     /* Adds location listeners to location manager */
     fun removeGpsLocationListener()
     {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+        {
             locationManager.removeUpdates(gpsLocationListener)
             gpsLocationListenerRegistered = false
             LogHelper.v(TAG, "Removed GPS location listener.")
-        } else {
+        }
+        else
+        {
             LogHelper.w(TAG, "Unable to remove GPS location listener. Location permission is needed.")
         }
     }
 
     fun removeNetworkLocationListener()
     {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+        {
             locationManager.removeUpdates(networkLocationListener)
             networkLocationListenerRegistered = false
             LogHelper.v(TAG, "Removed Network location listener.")
-        } else {
+        }
+        else
+        {
             LogHelper.w(TAG, "Unable to remove Network location listener. Location permission is needed.")
         }
     }
@@ -330,7 +339,8 @@ class TrackerService: Service(), SensorEventListener
     private fun startStepCounter()
     {
         val stepCounterAvailable = sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER), SensorManager.SENSOR_DELAY_UI)
-        if (!stepCounterAvailable) {
+        if (!stepCounterAvailable)
+        {
             LogHelper.w(TAG, "Pedometer sensor not available.")
         }
     }
@@ -445,33 +455,18 @@ class TrackerService: Service(), SensorEventListener
         }
         return true
     }
-    /*
-     * Runnable: Periodically track updates (if recording active)
-     */
+
     private val periodicTrackUpdate: Runnable = object : Runnable
     {
         override fun run() {
             val now: Date = GregorianCalendar.getInstance().time
-            val trkpt: Trkpt = Trkpt(location=currentBestLocation)
+            val trkpt = Trkpt(location=currentBestLocation)
             Log.i("VOUSSOIR", "Processing point ${currentBestLocation.latitude}, ${currentBestLocation.longitude} ${now.time}.")
             if (should_keep_point((currentBestLocation)))
             {
-                val values = ContentValues().apply {
-                    put("device_id", device_id)
-                    put("lat", trkpt.latitude)
-                    put("lon", trkpt.longitude)
-                    put("time", now.time)
-                    put("accuracy", trkpt.accuracy)
-                    put("sat", trkpt.numberSatellites)
-                    put("ele", trkpt.altitude)
-                    put("star", 0)
-                }
-                if (! trackbook.database.connection.inTransaction())
-                {
-                    trackbook.database.connection.beginTransaction()
-                }
-                trackbook.database.connection.insert("trkpt", null, values)
+                trackbook.database.insert_trkpt(device_id, trkpt)
                 track.trkpts.add(trkpt)
+
                 while (track.trkpts.size > 7200)
                 {
                     track.trkpts.removeFirst()
@@ -479,20 +474,12 @@ class TrackerService: Service(), SensorEventListener
 
                 if (now.time - lastCommit.time > Keys.SAVE_TEMP_TRACK_INTERVAL)
                 {
-                    if (trackbook.database.connection.inTransaction())
-                    {
-                        trackbook.database.commit()
-                    }
+                    trackbook.database.commit()
                     lastCommit  = now
                 }
             }
-            // update notification
             displayNotification()
-            // re-run this in set interval
             handler.postDelayed(this, Keys.TRACKING_INTERVAL)
         }
     }
-    /*
-     * End of declaration
-     */
 }
