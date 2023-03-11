@@ -91,12 +91,20 @@ data class Track (
         write("\t\t<name>${this.name}</name>")
         write("\t\t<trkseg>")
 
-        trkpt_generator().forEach { trkpt ->
+        var previous: Trkpt? = null
+        for (trkpt in trkpt_generator())
+        {
+            if (previous != null && (trkpt.time - previous.time) > (5 * Keys.ONE_MINUTE_IN_MILLISECONDS))
+            {
+                write("\t\t</trkseg>")
+                write("\t\t<trkseg>")
+            }
             write("\t\t\t<trkpt lat=\"${trkpt.latitude}\" lon=\"${trkpt.longitude}\">")
             write("\t\t\t\t<ele>${trkpt.altitude}</ele>")
             write("\t\t\t\t<time>${iso8601_format.format(trkpt.time)}</time>")
             write("\t\t\t\t<sat>${trkpt.numberSatellites}</sat>")
             write("\t\t\t</trkpt>")
+            previous = trkpt
         }
 
         write("\t\t</trkseg>")
