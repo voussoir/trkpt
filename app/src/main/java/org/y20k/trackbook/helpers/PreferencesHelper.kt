@@ -56,6 +56,16 @@ object PreferencesHelper {
         return v
     }
 
+    fun load_database_folder(): String
+    {
+        return sharedPreferences.getString(Keys.PREF_DATABASE_DIRECTORY, "") ?: ""
+    }
+
+    fun save_database_folder(path: String)
+    {
+        sharedPreferences.edit { putString(Keys.PREF_DATABASE_DIRECTORY, path) }
+    }
+
     fun loadZoomLevel(): Double
     {
         return sharedPreferences.getDouble(Keys.PREF_MAP_ZOOM_LEVEL, Keys.DEFAULT_ZOOM_LEVEL)

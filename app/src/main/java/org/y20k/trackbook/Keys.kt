@@ -58,6 +58,7 @@ object Keys {
     const val PREF_OMIT_RESTS: String = "prefOmitRests"
     const val PREF_COMMIT_INTERVAL: String = "prefCommitInterval"
     const val PREF_DEVICE_ID: String = "prefDeviceID"
+    const val PREF_DATABASE_DIRECTORY: String = "prefDatabaseDirectory"
 
     // states
     const val STATE_TRACKING_STOPPED: Int = 0
@@ -117,6 +118,7 @@ object Keys {
     const val DEFAULT_THRESHOLD_LOCATION_AGE: Long = 5_000_000_000L             // 5s in nanoseconds
     const val DEFAULT_THRESHOLD_DISTANCE: Float = 15f                           // 15 meters
     const val DEFAULT_ZOOM_LEVEL: Double = 16.0
+    const val DEFAULT_OMIT_RESTS: Boolean = true
     const val ALTITUDE_MEASUREMENT_ERROR_THRESHOLD = 10 // altitude changes of 10 meter or more (per 15 seconds) are being discarded
 
     // notification

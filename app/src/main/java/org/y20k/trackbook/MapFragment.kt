@@ -72,6 +72,8 @@ class MapFragment : Fragment()
     lateinit var rootView: View
     var userInteraction: Boolean = false
     lateinit var currentLocationButton: FloatingActionButton
+    lateinit var zoom_in_button: FloatingActionButton
+    lateinit var zoom_out_button: FloatingActionButton
     lateinit var mainButton: ExtendedFloatingActionButton
     private lateinit var mapView: MapView
     private var current_position_overlays = ArrayList<Overlay>()
@@ -117,6 +119,8 @@ class MapFragment : Fragment()
         rootView = inflater.inflate(R.layout.fragment_map, container, false)
         mapView = rootView.findViewById(R.id.map)
         currentLocationButton = rootView.findViewById(R.id.location_button)
+        zoom_in_button = rootView.findViewById(R.id.zoom_in_button)
+        zoom_out_button = rootView.findViewById(R.id.zoom_out_button)
         mainButton = rootView.findViewById(R.id.main_button)
         locationErrorBar = Snackbar.make(mapView, String(), Snackbar.LENGTH_INDEFINITE)
 
@@ -167,11 +171,17 @@ class MapFragment : Fragment()
         addInteractionListener()
 
         // set up buttons
+        mainButton.setOnClickListener {
+            handleTrackingManagementMenu()
+        }
         currentLocationButton.setOnClickListener {
             centerMap(currentBestLocation, animated = true)
         }
-        mainButton.setOnClickListener {
-            handleTrackingManagementMenu()
+        zoom_in_button.setOnClickListener {
+            controller.zoomTo(mapView.zoomLevelDouble + 0.5, 250)
+        }
+        zoom_out_button.setOnClickListener {
+            controller.zoomTo(mapView.zoomLevelDouble - 0.5, 250)
         }
 
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -481,7 +491,7 @@ class MapFragment : Fragment()
         currentLocationButton.isVisible = true
         if (! trackbook.database.ready)
         {
-            mainButton.text = "Database not ready"
+            mainButton.text = requireContext().getString(R.string.button_not_ready)
             mainButton.icon = null
         }
         else if (trackingState == Keys.STATE_TRACKING_STOPPED)

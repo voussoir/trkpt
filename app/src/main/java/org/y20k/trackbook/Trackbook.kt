@@ -66,9 +66,20 @@ class Trackbook(): Application() {
     fun load_database()
     {
         Log.i("VOUSSOIR", "Trackbook.load_database")
+        val folder = PreferencesHelper.load_database_folder()
+        this.database.commit()
+        if (this.database.ready)
+        {
+            this.database.close()
+        }
+        if (folder == "")
+        {
+            this.database.ready = false
+            return
+        }
         if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
         {
-            this.database.connect(File("/storage/emulated/0/Syncthing/GPX/trkpt_${PreferencesHelper.load_device_id()}.db"))
+            this.database.connect(File(folder + "/trkpt_${PreferencesHelper.load_device_id()}.db"))
             this.load_homepoints()
         }
         else
@@ -77,6 +88,7 @@ class Trackbook(): Application() {
         }
         this.call_database_changed_listeners()
     }
+
     fun load_homepoints()
     {
         Log.i("VOUSSOIR", "Trackbook.load_homepoints")

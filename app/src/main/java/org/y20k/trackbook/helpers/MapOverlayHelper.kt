@@ -71,7 +71,7 @@ fun createTrackOverlay(context: Context, map_view: MapView, track: Track, tracki
         .setPointStyle(style)
         .setRadius(6F * scalingFactor) // radius is set in px - scaling factor makes that display density independent (= dp)
         .setIsClickable(true)
-        .setCellSize(15) // Sets the grid cell size used for indexing, in pixels. Larger cells result in faster rendering speed, but worse fidelity. Default is 10 pixels, for large datasets (>10k points), use 15.
+        .setCellSize(12) // Sets the grid cell size used for indexing, in pixels. Larger cells result in faster rendering speed, but worse fidelity. Default is 10 pixels, for large datasets (>10k points), use 15.
     val overlay = SimpleFastPointOverlay(pointTheme, overlayOptions)
     map_view.overlays.add(overlay)
 }

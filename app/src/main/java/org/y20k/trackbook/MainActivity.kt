@@ -19,6 +19,7 @@ package org.y20k.trackbook
 import android.Manifest
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
@@ -143,6 +144,11 @@ class MainActivity: AppCompatActivity()
             Keys.PREF_DEVICE_ID ->
             {
                 Log.i("VOUSSOIR", "MainActivity: device_id has changed.")
+                trackbook.load_database()
+            }
+
+            Keys.PREF_DATABASE_DIRECTORY ->
+            {
                 trackbook.load_database()
             }
         }

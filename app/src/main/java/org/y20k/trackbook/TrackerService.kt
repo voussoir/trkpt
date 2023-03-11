@@ -59,6 +59,7 @@ class TrackerService: Service(), SensorEventListener
     var commitInterval: Int = Keys.COMMIT_INTERVAL
     var currentBestLocation: Location = getDefaultLocation()
     var lastCommit: Date = Keys.DEFAULT_DATE
+    var location_min_time_ms: Long = 0
     var stepCountOffset: Float = 0f
     lateinit var track: Track
     var gpsLocationListenerRegistered: Boolean = false
@@ -98,7 +99,7 @@ class TrackerService: Service(), SensorEventListener
 
         locationManager.requestLocationUpdates(
             LocationManager.GPS_PROVIDER,
-            0,
+            location_min_time_ms,
             0f,
             gpsLocationListener,
         )

@@ -17,20 +17,34 @@
 package org.y20k.trackbook
 
 import YesNoDialog
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.SharedPreferences
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.DocumentsContract
 import android.util.Log
 import android.view.View
 import android.widget.Toast
-import androidx.preference.*
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.preference.EditTextPreference
+import androidx.preference.ListPreference
+import androidx.preference.Preference
+import androidx.preference.PreferenceCategory
+import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.SwitchPreferenceCompat
+import androidx.preference.contains
+import get_path_from_uri
 import org.y20k.trackbook.helpers.AppThemeHelper
 import org.y20k.trackbook.helpers.LengthUnitHelper
 import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.PreferencesHelper
 import org.y20k.trackbook.helpers.random_device_id
+
+const val INTENT_DATABASE_DIRECTORY_PICKER = 12121
 
 /*
  * SettingsFragment class
@@ -101,7 +115,6 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         screen.addPreference(preferenceThemeSelection)
 
         // set up "Recording Accuracy" preference
-        val DEFAULT_OMIT_RESTS = true
         val preferenceOmitRests: SwitchPreferenceCompat = SwitchPreferenceCompat(activity as Context)
         preferenceOmitRests.isSingleLineTitle = false
         preferenceOmitRests.title = getString(R.string.pref_omit_rests_title)
@@ -109,7 +122,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         preferenceOmitRests.key = Keys.PREF_OMIT_RESTS
         preferenceOmitRests.summaryOn = getString(R.string.pref_omit_rests_on)
         preferenceOmitRests.summaryOff = getString(R.string.pref_omit_rests_off)
-        preferenceOmitRests.setDefaultValue(DEFAULT_OMIT_RESTS)
+        preferenceOmitRests.setDefaultValue(Keys.DEFAULT_OMIT_RESTS)
         preferenceCategoryGeneral.contains(preferenceOmitRests)
         screen.addPreference(preferenceOmitRests)
 
@@ -119,12 +132,55 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         preferenceDeviceID.key = Keys.PREF_DEVICE_ID
         preferenceDeviceID.summary = getString(R.string.pref_device_id_summary) + "\n" + PreferencesHelper.load_device_id()
         preferenceDeviceID.setDefaultValue(random_device_id())
-        preferenceCategoryGeneral.contains(preferenceDeviceID)
         preferenceDeviceID.setOnPreferenceChangeListener { preference, newValue ->
             preferenceDeviceID.summary = getString(R.string.pref_device_id_summary) + "\n" + newValue
             return@setOnPreferenceChangeListener true
         }
+        preferenceCategoryGeneral.contains(preferenceDeviceID)
         screen.addPreference(preferenceDeviceID)
+
+        val preferenceDatabaseFolder: Preference = Preference(context)
+        var resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            Log.i("VOUSSOIR", "I'm not dead yet.")
+            if (result.resultCode != Activity.RESULT_OK)
+            {
+                return@registerForActivityResult
+            }
+            if (result.data == null)
+            {
+                return@registerForActivityResult
+            }
+            if (result.data!!.data == null)
+            {
+                return@registerForActivityResult
+            }
+            val uri: Uri = result.data!!.data!!
+            val docUri = DocumentsContract.buildDocumentUriUsingTree(uri, DocumentsContract.getTreeDocumentId(uri))
+            val path: String = get_path_from_uri(context, docUri) ?: ""
+            Log.i("VOUSSOIR", "We got " + path)
+            PreferencesHelper.save_database_folder(path)
+            preferenceDatabaseFolder.summary = (getString(R.string.pref_database_folder_summary) + "\n" + path).trim()
+        }
+        preferenceDatabaseFolder.title = "Database Directory"
+        preferenceDatabaseFolder.setIcon(R.drawable.ic_save_to_storage_24dp)
+        preferenceDatabaseFolder.key = Keys.PREF_DATABASE_DIRECTORY
+        preferenceDatabaseFolder.summary = (getString(R.string.pref_database_folder_summary) + "\n" + PreferencesHelper.load_database_folder()).trim()
+        preferenceDatabaseFolder.setOnPreferenceClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+            {
+                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+                resultLauncher.launch(intent)
+            }
+
+            return@setOnPreferenceClickListener true
+        }
+        preferenceDatabaseFolder.setOnPreferenceChangeListener { preference, newValue ->
+            preferenceDatabaseFolder.summary = "Directory to contain your database file." + "\n" + newValue
+            return@setOnPreferenceChangeListener true
+        }
+
+        preferenceCategoryGeneral.contains(preferenceDatabaseFolder)
+        screen.addPreference(preferenceDatabaseFolder)
 
         val preferenceCategoryAbout: PreferenceCategory = PreferenceCategory(context)
         preferenceCategoryAbout.title = getString(R.string.pref_about_title)

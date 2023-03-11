@@ -1,0 +1,16 @@
+<vector
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:name="vector"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:name="path"
+        android:fillColor="@color/location_button_background"
+        android:pathData="M 1.98 11 L 22.02 11 L 22.02 13 L 1.98 13 Z"/>
+    <path
+        android:name="path_1"
+        android:fillColor="@color/location_button_background"
+        android:pathData="M 11 22.02 L 11 1.98 L 13 1.98 L 13 22.02 Z"/>
+</vector>
