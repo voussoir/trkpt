@@ -30,6 +30,14 @@ class Database(trackbook: Trackbook)
         Log.i("VOUSSOIR", "Database.open: Calling all listeners")
     }
 
+    fun begin_transaction()
+    {
+        if (! connection.inTransaction())
+        {
+            connection.beginTransaction()
+        }
+    }
+
     fun commit()
     {
         if (! this.ready)
@@ -57,29 +65,40 @@ class Database(trackbook: Trackbook)
             put("sat", trkpt.numberSatellites)
             put("ele", trkpt.altitude)
         }
-        if (! connection.inTransaction())
-        {
-            connection.beginTransaction()
-        }
+        begin_transaction()
         connection.insert("trkpt", null, values)
     }
 
-    fun insert_homepoint(name: String, latitude: Double, longitude: Double, radius: Double)
+    fun insert_homepoint(id: Long, name: String, latitude: Double, longitude: Double, radius: Double)
     {
         Log.i("VOUSSOIR", "Database.insert_homepoint")
         val values = ContentValues().apply {
+            put("id", id)
             put("lat", latitude)
             put("lon", longitude)
             put("radius", radius)
             put("name", name)
         }
-        if (! connection.inTransaction())
-        {
-            connection.beginTransaction()
-        }
+        begin_transaction()
         connection.insert("homepoints", null, values)
         commit()
         trackbook.load_homepoints()
+    }
+
+    fun delete_homepoint(id: Long)
+    {
+        Log.i("VOUSSOIR", "Database.delete_homepoint")
+        begin_transaction()
+        connection.delete("homepoints", "id = ?", arrayOf(id.toString()))
+        commit()
+    }
+
+    fun update_homepoint(id: Long, name: String, radius: Double)
+    {
+        Log.i("VOUSSOIR", "Database.update_homepoint")
+        begin_transaction()
+        connection.rawQuery("UPDATE homepoints SET name = ?, radius = ? WHERE id = ?", arrayOf(name, radius.toString(), id.toString()))
+        commit()
     }
 
     private fun initialize_tables()
@@ -87,7 +106,7 @@ class Database(trackbook: Trackbook)
         this.connection.beginTransaction()
         this.connection.execSQL("CREATE TABLE IF NOT EXISTS meta(name TEXT PRIMARY KEY, value TEXT)")
         this.connection.execSQL("CREATE TABLE IF NOT EXISTS trkpt(lat REAL NOT NULL, lon REAL NOT NULL, time INTEGER NOT NULL, accuracy REAL, device_id INTEGER NOT NULL, ele INTEGER, sat INTEGER, PRIMARY KEY(lat, lon, time, device_id))")
-        this.connection.execSQL("CREATE TABLE IF NOT EXISTS homepoints(lat REAL NOT NULL, lon REAL NOT NULL, radius REAL NOT NULL, name TEXT, PRIMARY KEY(lat, lon))")
+        this.connection.execSQL("CREATE TABLE IF NOT EXISTS homepoints(id INTEGER PRIMARY KEY, lat REAL NOT NULL, lon REAL NOT NULL, radius REAL NOT NULL, name TEXT)")
         this.connection.setTransactionSuccessful()
         this.connection.endTransaction()
     }

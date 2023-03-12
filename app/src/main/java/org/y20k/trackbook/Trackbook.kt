@@ -104,10 +104,11 @@ class Trackbook(): Application() {
             return@iterator
         }
         val cursor: Cursor = database.connection.rawQuery(
-            "SELECT lat, lon, radius, name FROM homepoints",
+            "SELECT id, lat, lon, radius, name FROM homepoints",
             arrayOf()
         )
         Log.i("VOUSSOIR", "Trackbook.homepoint_generator: Got ${cursor.count} homepoints.")
+        val COLUMN_ID = cursor.getColumnIndex("id")
         val COLUMN_LAT = cursor.getColumnIndex("lat")
         val COLUMN_LON = cursor.getColumnIndex("lon")
         val COLUMN_RADIUS = cursor.getColumnIndex("radius")
@@ -117,6 +118,7 @@ class Trackbook(): Application() {
             while (cursor.moveToNext())
             {
                 val homepoint = Homepoint(
+                    id=cursor.getLong(COLUMN_ID),
                     latitude=cursor.getDouble(COLUMN_LAT),
                     longitude=cursor.getDouble(COLUMN_LON),
                     radius=cursor.getDouble(COLUMN_RADIUS),

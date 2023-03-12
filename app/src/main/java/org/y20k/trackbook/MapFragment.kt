@@ -33,6 +33,7 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -159,9 +160,8 @@ class MapFragment : Fragment()
         compassOverlay.setCompassCenter((screen_width / densityScalingFactor) - 36f, 36f)
         mapView.overlays.add(compassOverlay)
 
-        val app: Trackbook = (requireContext().applicationContext as Trackbook)
-        app.load_homepoints()
-        create_homepoint_overlays(requireContext(), mapView, app.homepoints)
+        trackbook.load_homepoints()
+        create_homepoint_overlays(requireContext(), mapView, trackbook.homepoints)
         if (database_changed_listener !in trackbook.database_changed_listeners)
         {
             trackbook.database_changed_listeners.add(database_changed_listener)
@@ -206,9 +206,15 @@ class MapFragment : Fragment()
                     dialog.cancel()
                 }
                 save_button.setOnClickListener {
-                    app.database.insert_homepoint(name=name_input.text.toString(), latitude=point.latitude, longitude=point.longitude, radius=radius_input.text.toString().toDouble())
-                    app.load_homepoints()
-                    create_homepoint_overlays(requireContext(), mapView, app.homepoints)
+                    trackbook.database.insert_homepoint(
+                        id=random_long(),
+                        name=name_input.text.toString(),
+                        latitude=point.latitude,
+                        longitude=point.longitude,
+                        radius=radius_input.text.toString().toDouble(),
+                    )
+                    trackbook.load_homepoints()
+                    create_homepoint_overlays(requireContext(), mapView, trackbook.homepoints)
                     dialog.dismiss()
                 }
 
@@ -483,7 +489,6 @@ class MapFragment : Fragment()
     fun create_homepoint_overlays(context: Context, map_view: MapView, homepoints: List<Homepoint>)
     {
         Log.i("VOUSSOIR", "MapFragmentLayoutHolder.createHomepointOverlays")
-        val overlayItems: java.util.ArrayList<OverlayItem> = java.util.ArrayList<OverlayItem>()
 
         val newMarker: Drawable = ContextCompat.getDrawable(context, R.drawable.ic_homepoint_24dp)!!
 
@@ -497,10 +502,51 @@ class MapFragment : Fragment()
             p.outlinePaint.color = Color.argb(0, 0, 0, 0)
             homepoints_overlays.add(p)
 
+            val overlayItems: java.util.ArrayList<OverlayItem> = java.util.ArrayList<OverlayItem>()
             val overlayItem: OverlayItem = createOverlayItem(context, homepoint.location.latitude, homepoint.location.longitude, homepoint.location.accuracy, homepoint.location.provider.toString(), homepoint.location.time)
             overlayItem.setMarker(newMarker)
             overlayItems.add(overlayItem)
-            homepoints_overlays.add(createOverlay(context, overlayItems))
+            val homepoint_overlay = ItemizedIconOverlay<OverlayItem>(context, overlayItems,
+                object : ItemizedIconOverlay.OnItemGestureListener<OverlayItem> {
+                    override fun onItemSingleTapUp(index: Int, item: OverlayItem): Boolean
+                    {
+                        return false
+                    }
+                    override fun onItemLongPress(index: Int, item: OverlayItem): Boolean
+                    {
+                        Log.i("VOUSSOIR", "MapFragment homepoint.longpress")
+                        val dialog = Dialog(activity as Context)
+                        dialog.setContentView(R.layout.dialog_homepoint)
+                        dialog.setTitle("Homepoint")
+
+                        (dialog.findViewById(R.id.homepoint_dialog_title) as TextView).text = "Edit homepoint"
+
+                        val name_input: EditText = dialog.findViewById(R.id.homepoint_name_input)
+                        name_input.setText(homepoint.name)
+                        val radius_input: EditText = dialog.findViewById(R.id.homepoint_radius_input)
+                        radius_input.setText(homepoint.radius.toString())
+                        val delete_button: Button = dialog.findViewById(R.id.homepoint_delete_cancel_button)
+                        val save_button: Button = dialog.findViewById(R.id.homepoint_save_button)
+                        delete_button.text = "Delete"
+                        delete_button.setOnClickListener {
+                            trackbook.database.delete_homepoint(homepoint.id)
+                            trackbook.load_homepoints()
+                            create_homepoint_overlays(requireContext(), mapView, trackbook.homepoints)
+                            dialog.dismiss()
+                        }
+                        save_button.setOnClickListener {
+                            trackbook.database.update_homepoint(homepoint.id, name=name_input.text.toString(), radius=radius_input.text.toString().toDouble())
+                            trackbook.load_homepoints()
+                            create_homepoint_overlays(requireContext(), mapView, trackbook.homepoints)
+                            dialog.dismiss()
+                        }
+
+                        dialog.show()
+                        return true
+                    }
+                }
+            )
+            homepoints_overlays.add(homepoint_overlay)
         }
 
         for (ov in homepoints_overlays)

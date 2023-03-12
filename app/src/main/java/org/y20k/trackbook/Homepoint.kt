@@ -2,7 +2,7 @@ package org.y20k.trackbook
 import android.location.Location
 import java.util.*
 
-class Homepoint(val latitude: Double, val longitude: Double, val radius: Double, val name: String)
+class Homepoint(val id: Long, val latitude: Double, val longitude: Double, val radius: Double, val name: String)
 {
     val location: Location = this.to_location()
 

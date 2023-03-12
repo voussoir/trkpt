@@ -13,6 +13,7 @@ import java.lang.Math.abs
 import java.security.SecureRandom
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.random.Random.Default.nextBits
 
 val iso8601_format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US)
 private val RNG = SecureRandom()
@@ -25,6 +26,11 @@ fun iso8601(datetime: Date): String
 fun random_int(): Int
 {
     return abs(RNG.nextInt())
+}
+
+fun random_long(): Long
+{
+    return abs(RNG.nextLong())
 }
 
 fun random_device_id(): String
