@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="16dp">
+
+    <TextView
+        android:id="@+id/homepoint_dialog_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Homepoint"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/homepoint_name_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Name"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/homepoint_dialog_title" />
+
+    <EditText
+        android:id="@+id/homepoint_name_input"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:minHeight="48dp"
+        android:text=""
+        app:layout_constraintStart_toStartOf="@+id/homepoint_name_label"
+        app:layout_constraintTop_toBottomOf="@+id/homepoint_name_label" />
+
+    <TextView
+        android:id="@+id/homepoint_radius_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Radius"
+        app:layout_constraintStart_toStartOf="@+id/homepoint_name_input"
+        app:layout_constraintTop_toBottomOf="@+id/homepoint_name_input" />
+
+    <EditText
+        android:id="@+id/homepoint_radius_input"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="number"
+        android:minHeight="48dp"
+        app:layout_constraintStart_toStartOf="@+id/homepoint_radius_label"
+        app:layout_constraintTop_toBottomOf="@+id/homepoint_radius_label" />
+
+    <Button
+        android:id="@+id/homepoint_save_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Save"
+        app:cornerRadius="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/homepoint_radius_input" />
+
+    <Button
+        android:id="@+id/homepoint_delete_cancel_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Delete"
+        app:cornerRadius="8dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/homepoint_radius_input" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

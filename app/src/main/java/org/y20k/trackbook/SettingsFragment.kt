@@ -161,7 +161,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
             PreferencesHelper.save_database_folder(path)
             preferenceDatabaseFolder.summary = (getString(R.string.pref_database_folder_summary) + "\n" + path).trim()
         }
-        preferenceDatabaseFolder.title = "Database Directory"
+        preferenceDatabaseFolder.title = getString(R.string.pref_database_folder)
         preferenceDatabaseFolder.setIcon(R.drawable.ic_save_to_storage_24dp)
         preferenceDatabaseFolder.key = Keys.PREF_DATABASE_DIRECTORY
         preferenceDatabaseFolder.summary = (getString(R.string.pref_database_folder_summary) + "\n" + PreferencesHelper.load_database_folder()).trim()
@@ -175,7 +175,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
             return@setOnPreferenceClickListener true
         }
         preferenceDatabaseFolder.setOnPreferenceChangeListener { preference, newValue ->
-            preferenceDatabaseFolder.summary = "Directory to contain your database file." + "\n" + newValue
+            preferenceDatabaseFolder.summary = getString(R.string.pref_database_folder_summary) + "\n" + newValue
             return@setOnPreferenceChangeListener true
         }
 

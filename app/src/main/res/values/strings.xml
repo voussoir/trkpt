@@ -86,9 +86,10 @@
     <string name="pref_altitude_smoothing_value_title" translatable="false">Altitude Smoothing</string>
     <string name="pref_auto_export_interval_summary">Automatically export GPX file after this many hours.</string>
     <string name="pref_device_id_summary">A unique ID to distinguish tracks recorded across multiple devices:</string>
-    <string name="pref_database_folder_summary">Directory to contain your database file:</string>
+    <string name="pref_database_folder_summary">Directory to contain your database file. You could use Syncthing to sync with your PC!</string>
     <string name="pref_auto_export_interval_title">Auto Export Interval</string>
     <string name="pref_device_id">Device ID</string>
+    <string name="pref_database_folder">Database directory</string>
     <string name="pref_advanced_title">Advanced</string>
     <string name="pref_delete_non_starred_summary">Delete all recordings in \"Tracks\" that are not starred.</string>
     <string name="pref_delete_non_starred_title">Delete Non-Starred Recordings</string>

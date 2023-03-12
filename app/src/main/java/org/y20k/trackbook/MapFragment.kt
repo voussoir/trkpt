@@ -17,6 +17,7 @@
 package org.y20k.trackbook
 
 import android.Manifest
+import android.app.Dialog
 import android.content.*
 import android.content.pm.PackageManager
 import android.content.res.Resources
@@ -29,6 +30,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -37,10 +41,12 @@ import com.google.android.material.floatingactionbutton.ExtendedFloatingActionBu
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import org.osmdroid.api.IMapController
+import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.ItemizedIconOverlay
+import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Overlay
 import org.osmdroid.views.overlay.OverlayItem
 import org.osmdroid.views.overlay.Polygon
@@ -70,7 +76,7 @@ class MapFragment : Fragment()
 
     private lateinit var trackbook: Trackbook
     lateinit var rootView: View
-    var userInteraction: Boolean = false
+    var continuous_auto_center: Boolean = true
     lateinit var currentLocationButton: FloatingActionButton
     lateinit var zoom_in_button: FloatingActionButton
     lateinit var zoom_out_button: FloatingActionButton
@@ -124,6 +130,12 @@ class MapFragment : Fragment()
         mainButton = rootView.findViewById(R.id.main_button)
         locationErrorBar = Snackbar.make(mapView, String(), Snackbar.LENGTH_INDEFINITE)
 
+        mapView.setOnLongClickListener{
+            Log.i("VOUSSOIR", "mapview longpress")
+            true
+        }
+        mapView.isLongClickable = true
+
         // basic map setup
         controller = mapView.controller
         mapView.isTilesScaledToDpi = true
@@ -133,16 +145,13 @@ class MapFragment : Fragment()
         zoomLevel = PreferencesHelper.loadZoomLevel()
         controller.setZoom(zoomLevel)
 
-        // set dark map tiles, if necessary
         if (AppThemeHelper.isDarkModeOn(requireActivity()))
         {
             mapView.overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
         }
 
-        // store Density Scaling Factor
         val densityScalingFactor: Float = UiHelper.getDensityScalingFactor(requireContext())
 
-        // add compass to map
         val compassOverlay = CompassOverlay(requireContext(), InternalCompassOrientationProvider(requireContext()), mapView)
         compassOverlay.enableCompass()
         // compassOverlay.setCompassCenter(36f, 36f + (statusBarHeight / densityScalingFactor)) // TODO uncomment when transparent status bar is re-implemented
@@ -167,8 +176,47 @@ class MapFragment : Fragment()
         // initialize main button state
         update_main_button()
 
-        // listen for user interaction
-        addInteractionListener()
+        mapView.setOnTouchListener { v, event ->
+            continuous_auto_center = false
+            false
+        }
+
+        val receiver: MapEventsReceiver = object: MapEventsReceiver
+        {
+            override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean
+            {
+                return true
+            }
+
+            override fun longPressHelper(point: GeoPoint): Boolean
+            {
+                Log.i("VOUSSOIR", "MapFragment MapEventsReceiver.longPressHelper")
+                val dialog = Dialog(activity as Context)
+                dialog.setContentView(R.layout.dialog_homepoint)
+                dialog.setTitle("Homepoint")
+
+                (dialog.findViewById(R.id.homepoint_dialog_title) as TextView).text = "Add a homepoint"
+
+                val name_input: EditText = dialog.findViewById(R.id.homepoint_name_input)
+                val radius_input: EditText = dialog.findViewById(R.id.homepoint_radius_input)
+                val cancel_button: Button = dialog.findViewById(R.id.homepoint_delete_cancel_button)
+                val save_button: Button = dialog.findViewById(R.id.homepoint_save_button)
+                cancel_button.text = "Cancel"
+                cancel_button.setOnClickListener {
+                    dialog.cancel()
+                }
+                save_button.setOnClickListener {
+                    app.database.insert_homepoint(name=name_input.text.toString(), latitude=point.latitude, longitude=point.longitude, radius=radius_input.text.toString().toDouble())
+                    app.load_homepoints()
+                    create_homepoint_overlays(requireContext(), mapView, app.homepoints)
+                    dialog.dismiss()
+                }
+
+                dialog.show()
+                return true
+            }
+        }
+        mapView.overlays.add(MapEventsOverlay(receiver))
 
         // set up buttons
         mainButton.setOnClickListener {
@@ -338,28 +386,19 @@ class MapFragment : Fragment()
         }
     }
 
-    private fun addInteractionListener()
-    {
-        mapView.setOnTouchListener { v, event ->
-            userInteraction = true
-            false
-        }
-    }
-
     fun centerMap(location: Location, animated: Boolean = false) {
         val position = GeoPoint(location.latitude, location.longitude)
         when (animated) {
             true -> controller.animateTo(position)
             false -> controller.setCenter(position)
         }
-        userInteraction = false
+        continuous_auto_center = true
     }
 
     fun saveBestLocationState(currentBestLocation: Location) {
         PreferencesHelper.saveCurrentBestLocation(currentBestLocation)
         PreferencesHelper.saveZoomLevel(mapView.zoomLevelDouble)
-        // reset user interaction state
-        userInteraction = false
+        continuous_auto_center = true
     }
 
     fun clear_current_position_overlays()
@@ -377,7 +416,7 @@ class MapFragment : Fragment()
     /* Mark current position on map */
     fun create_current_position_overlays(location: Location, trackingState: Int = Keys.STATE_TRACKING_STOPPED)
     {
-        Log.i("VOUSSOIR", "MapFragmentLayoutHolder.markCurrentPosition")
+        // Log.i("VOUSSOIR", "MapFragmentLayoutHolder.markCurrentPosition")
 
         clear_current_position_overlays()
 
@@ -555,7 +594,7 @@ class MapFragment : Fragment()
             create_current_position_overlays(currentBestLocation, trackingState)
             create_current_track_overlay(track, trackingState)
             // center map, if it had not been dragged/zoomed before
-            if (!userInteraction)
+            if (continuous_auto_center)
             {
                 centerMap(currentBestLocation, true)
             }

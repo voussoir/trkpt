@@ -47,6 +47,7 @@ class Database(trackbook: Trackbook)
 
     fun insert_trkpt(device_id: String, trkpt: Trkpt)
     {
+        Log.i("VOUSSOIR", "Database.insert_trkpt")
         val values = ContentValues().apply {
             put("device_id", device_id)
             put("lat", trkpt.latitude)
@@ -61,6 +62,24 @@ class Database(trackbook: Trackbook)
             connection.beginTransaction()
         }
         connection.insert("trkpt", null, values)
+    }
+
+    fun insert_homepoint(name: String, latitude: Double, longitude: Double, radius: Double)
+    {
+        Log.i("VOUSSOIR", "Database.insert_homepoint")
+        val values = ContentValues().apply {
+            put("lat", latitude)
+            put("lon", longitude)
+            put("radius", radius)
+            put("name", name)
+        }
+        if (! connection.inTransaction())
+        {
+            connection.beginTransaction()
+        }
+        connection.insert("homepoints", null, values)
+        commit()
+        trackbook.load_homepoints()
     }
 
     private fun initialize_tables()

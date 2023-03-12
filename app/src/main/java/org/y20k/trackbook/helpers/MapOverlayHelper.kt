@@ -29,6 +29,7 @@ import org.osmdroid.api.IGeoPoint
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.ItemizedIconOverlay
+import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.OverlayItem
 import org.osmdroid.views.overlay.simplefastpoint.LabelledGeoPoint
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
@@ -125,11 +126,10 @@ fun createSpecialMakersTrackOverlay(context: Context, map_view: MapView, track: 
 
 fun createOverlayItem(context: Context, latitude: Double, longitude: Double, accuracy: Float, provider: String, time: Long): OverlayItem
 {
-    val title: String = "${context.getString(R.string.marker_description_time)}: ${SimpleDateFormat.getTimeInstance(SimpleDateFormat.MEDIUM, Locale.getDefault()).format(time)}"
-    //val description: String = "${context.getString(R.string.marker_description_accuracy)}: ${DecimalFormat("#0.00").format(accuracy)} (${provider})"
-    val description: String = "${context.getString(R.string.marker_description_time)}: ${SimpleDateFormat.getTimeInstance(SimpleDateFormat.MEDIUM, Locale.getDefault()).format(time)} | ${context.getString(R.string.marker_description_accuracy)}: ${DecimalFormat("#0.00").format(accuracy)} (${provider})"
-    val position: GeoPoint = GeoPoint(latitude, longitude)
-    val item: OverlayItem = OverlayItem(title, description, position)
+    val title = "${context.getString(R.string.marker_description_time)}: ${SimpleDateFormat.getTimeInstance(SimpleDateFormat.MEDIUM, Locale.getDefault()).format(time)}"
+    val description = "${context.getString(R.string.marker_description_time)}: ${SimpleDateFormat.getTimeInstance(SimpleDateFormat.MEDIUM, Locale.getDefault()).format(time)} | ${context.getString(R.string.marker_description_accuracy)}: ${DecimalFormat("#0.00").format(accuracy)} (${provider})"
+    val position = GeoPoint(latitude, longitude)
+    val item = OverlayItem(title, description, position)
     item.markerHotspot = OverlayItem.HotspotPlace.CENTER
     return item
 }
