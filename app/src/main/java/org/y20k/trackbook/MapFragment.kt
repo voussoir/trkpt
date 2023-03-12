@@ -160,27 +160,6 @@ class MapFragment : Fragment()
         compassOverlay.setCompassCenter((screen_width / densityScalingFactor) - 36f, 36f)
         mapView.overlays.add(compassOverlay)
 
-        trackbook.load_homepoints()
-        create_homepoint_overlays(requireContext(), mapView, trackbook.homepoints)
-        if (database_changed_listener !in trackbook.database_changed_listeners)
-        {
-            trackbook.database_changed_listeners.add(database_changed_listener)
-        }
-
-        centerMap(currentBestLocation)
-
-        // initialize track overlays
-        currentTrackOverlay = null
-        currentTrackSpecialMarkerOverlay = null
-
-        // initialize main button state
-        update_main_button()
-
-        mapView.setOnTouchListener { v, event ->
-            continuous_auto_center = false
-            false
-        }
-
         val receiver: MapEventsReceiver = object: MapEventsReceiver
         {
             override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean
@@ -223,6 +202,27 @@ class MapFragment : Fragment()
             }
         }
         mapView.overlays.add(MapEventsOverlay(receiver))
+
+        trackbook.load_homepoints()
+        create_homepoint_overlays(requireContext(), mapView, trackbook.homepoints)
+        if (database_changed_listener !in trackbook.database_changed_listeners)
+        {
+            trackbook.database_changed_listeners.add(database_changed_listener)
+        }
+
+        centerMap(currentBestLocation)
+
+        // initialize track overlays
+        currentTrackOverlay = null
+        currentTrackSpecialMarkerOverlay = null
+
+        // initialize main button state
+        update_main_button()
+
+        mapView.setOnTouchListener { v, event ->
+            continuous_auto_center = false
+            false
+        }
 
         // set up buttons
         mainButton.setOnClickListener {
