@@ -47,13 +47,6 @@ data class Track (
         Log.i("VOUSSOIR", "Track.delete.")
     }
 
-    suspend fun delete_suspended(context: Context)
-    {
-        return suspendCoroutine { cont ->
-            cont.resume(this.delete())
-        }
-    }
-
     fun export_gpx(context: Context, fileuri: Uri): Uri?
     {
         if (! database.ready)
@@ -205,7 +198,7 @@ data class Track (
         }
         finally
         {
-            cursor.close();
+            cursor.close()
         }
     }
 }

@@ -34,15 +34,9 @@ import org.y20k.trackbook.helpers.*
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
-/*
- * TracklistAdapter class
- */
 class TracklistAdapter(val fragment: Fragment, val database: Database) : RecyclerView.Adapter<RecyclerView.ViewHolder>()
 {
-    /* Main class variables */
     private val context: Context = fragment.activity as Context
     private lateinit var tracklistListener: TracklistAdapterListener
     private var useImperial: Boolean = PreferencesHelper.loadUseImperialUnits()
@@ -86,7 +80,7 @@ class TracklistAdapter(val fragment: Fragment, val database: Database) : Recycle
         }
         finally
         {
-            cursor.close();
+            cursor.close()
         }
     }
 
@@ -136,13 +130,6 @@ class TracklistAdapter(val fragment: Fragment, val database: Database) : Recycle
         // notifyItemRangeChanged(index, this.itemCount);
     }
 
-    suspend fun delete_track_at_position_suspended(context: Context, position: Int)
-    {
-        return suspendCoroutine { cont ->
-            cont.resume(delete_track_at_position(context, position))
-        }
-    }
-
     fun delete_track_by_id(context: Context, trackId: Long)
     {
         // val index: Int = tracklist.tracks.indexOfFirst {it.id == trackId}
@@ -178,15 +165,9 @@ class TracklistAdapter(val fragment: Fragment, val database: Database) : Recycle
         // return trackDataString
     }
 
-    /*
-     * Inner class: ViewHolder for a track element
-     */
     inner class ElementTrackViewHolder (elementTrackLayout: View): RecyclerView.ViewHolder(elementTrackLayout) {
         val trackElement: ConstraintLayout = elementTrackLayout.findViewById(R.id.track_element)
         val trackNameView: TextView = elementTrackLayout.findViewById(R.id.track_name)
         val trackDataView: TextView = elementTrackLayout.findViewById(R.id.track_data)
     }
-    /*
-     * End of inner class
-     */
 }

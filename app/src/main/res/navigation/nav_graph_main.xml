@@ -17,10 +17,6 @@
         <action
             android:id="@+id/action_map_fragment_to_tracks_fragment"
             app:destination="@id/tracklist_fragment" />
-        <action
-            android:id="@+id/action_map_fragment_to_fragment_track"
-            app:destination="@id/fragment_track"
-            app:popUpToInclusive="false" />
     </fragment>
 
     <!-- SETTINGS -->

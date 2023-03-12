@@ -34,43 +34,6 @@ import org.y20k.trackbook.tracklist.TracklistAdapter
  * UiHelper object
  */
 object UiHelper {
-
-    /* Define log tag */
-    private val TAG: String = LogHelper.makeLogTag(UiHelper::class.java)
-
-    /* Sets layout margins for given view in DP */
-    fun setViewMargins(context: Context, view: View, left: Int = 0, right: Int = 0, top: Int= 0, bottom: Int = 0) {
-        val scalingFactor: Float = context.resources.displayMetrics.density
-        val l: Int = (left * scalingFactor).toInt()
-        val r: Int = (right * scalingFactor).toInt()
-        val t: Int = (top * scalingFactor).toInt()
-        val b: Int = (bottom * scalingFactor).toInt()
-        if (view.layoutParams is ViewGroup.MarginLayoutParams) {
-            val p = view.layoutParams as ViewGroup.MarginLayoutParams
-            p.setMargins(l, t, r, b)
-            view.requestLayout()
-        }
-    }
-
-    /* Sets layout margins for given view in percent */
-    fun setViewMarginsPercentage(context: Context, view: View, height: Int, width: Int, left: Int = 0, right: Int = 0, top: Int= 0, bottom: Int = 0) {
-        val l: Int = ((width / 100.0f) * left).toInt()
-        val r: Int = ((width / 100.0f) * right).toInt()
-        val t: Int = ((height / 100.0f) * top).toInt()
-        val b: Int = ((height / 100.0f) * bottom).toInt()
-        setViewMargins(context, view, l, r, t, b)
-    }
-
-    /* Get the height of the system's top status bar */
-    fun getStatusBarHeight(context: Context): Int {
-        var result: Int = 0
-        val resourceId: Int = context.resources.getIdentifier("status_bar_height", "dimen", "android")
-        if (resourceId > 0) {
-            result = context.resources.getDimensionPixelSize(resourceId)
-        }
-        return result
-    }
-
     /* Get scaling factor from display density */
     fun getDensityScalingFactor(context: Context): Float {
         return context.resources.displayMetrics.density
@@ -93,11 +56,6 @@ object UiHelper {
         override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
             // do nothing
             return false
-        }
-
-        override fun getSwipeDirs(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder): Int {
-            // disable swipe for statistics element
-            return super.getSwipeDirs(recyclerView, viewHolder)
         }
 
         override fun onChildDraw(c: Canvas, recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, dX: Float, dY: Float, actionState: Int, isCurrentlyActive: Boolean) {

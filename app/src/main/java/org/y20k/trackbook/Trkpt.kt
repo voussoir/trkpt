@@ -18,11 +18,7 @@ package org.y20k.trackbook
 
 import android.location.Location
 import org.y20k.trackbook.helpers.getNumberOfSatellites
-import java.util.*
 
-/*
- * WayPoint data class
- */
 data class Trkpt(
     val provider: String,
     val latitude: Double,
@@ -34,7 +30,6 @@ data class Trkpt(
     var starred: Boolean = false
 )
 {
-    /* Constructor using just Location */
     constructor(location: Location) : this (
         provider=location.provider.toString(),
         latitude=location.latitude,
@@ -45,7 +40,6 @@ data class Trkpt(
         numberSatellites=getNumberOfSatellites(location),
     )
 
-    /* Converts WayPoint into Location */
     fun toLocation(): Location {
         val location = Location(provider)
         location.latitude = latitude
@@ -55,5 +49,4 @@ data class Trkpt(
         location.time = this.time
         return location
     }
-
 }

@@ -105,5 +105,4 @@ object DateTimeHelper {
         }
         return timeDifference
     }
-
 }

@@ -28,11 +28,8 @@ import org.y20k.trackbook.helpers.PreferencesHelper
 /*
  * TrackingToggleTileService class
  */
-class TrackingToggleTileService: TileService() {
-
-    /* Define log tag */
-    private val TAG: String = LogHelper.makeLogTag(TrackingToggleTileService::class.java)
-
+class TrackingToggleTileService: TileService()
+{
     /* Main class variables */
     private var bound: Boolean = false
     private var trackingState: Int = Keys.STATE_TRACKING_STOPPED

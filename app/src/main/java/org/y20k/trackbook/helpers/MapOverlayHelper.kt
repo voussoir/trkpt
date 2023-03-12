@@ -17,19 +17,13 @@
 package org.y20k.trackbook.helpers
 
 import android.content.Context
-import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.drawable.Drawable
-import android.location.Location
-import android.os.Vibrator
-import android.util.Log
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import org.osmdroid.api.IGeoPoint
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.ItemizedIconOverlay
-import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.OverlayItem
 import org.osmdroid.views.overlay.simplefastpoint.LabelledGeoPoint
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
@@ -42,7 +36,6 @@ import org.y20k.trackbook.Trkpt
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.*
-
 
 /* Creates icon overlay for track */
 fun createTrackOverlay(context: Context, map_view: MapView, track: Track, trackingState: Int)

@@ -67,12 +67,12 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         val context = preferenceManager.context
         val screen = preferenceManager.createPreferenceScreen(context)
 
-        val preferenceCategoryGeneral: PreferenceCategory = PreferenceCategory(activity as Context)
+        val preferenceCategoryGeneral = PreferenceCategory(activity as Context)
         preferenceCategoryGeneral.title = getString(R.string.pref_general_title)
         screen.addPreference(preferenceCategoryGeneral)
 
         // set up "Restrict to GPS" preference
-        val preferenceGpsOnly: SwitchPreferenceCompat = SwitchPreferenceCompat(activity as Context)
+        val preferenceGpsOnly = SwitchPreferenceCompat(activity as Context)
         preferenceGpsOnly.isSingleLineTitle = false
         preferenceGpsOnly.title = getString(R.string.pref_gps_only_title)
         preferenceGpsOnly.setIcon(R.drawable.ic_gps_24dp)
@@ -84,7 +84,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         screen.addPreference(preferenceGpsOnly)
 
         // set up "Use Imperial Measurements" preference
-        val preferenceImperialMeasurementUnits: SwitchPreferenceCompat = SwitchPreferenceCompat(activity as Context)
+        val preferenceImperialMeasurementUnits = SwitchPreferenceCompat(activity as Context)
         preferenceImperialMeasurementUnits.isSingleLineTitle = false
         preferenceImperialMeasurementUnits.title = getString(R.string.pref_imperial_measurement_units_title)
         preferenceImperialMeasurementUnits.setIcon(R.drawable.ic_square_foot_24px)
@@ -96,7 +96,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         screen.addPreference(preferenceImperialMeasurementUnits)
 
         // set up "App Theme" preference
-        val preferenceThemeSelection: ListPreference = ListPreference(activity as Context)
+        val preferenceThemeSelection = ListPreference(activity as Context)
         preferenceThemeSelection.title = getString(R.string.pref_theme_selection_title)
         preferenceThemeSelection.setIcon(R.drawable.ic_smartphone_24dp)
         preferenceThemeSelection.key = Keys.PREF_THEME_SELECTION
@@ -115,7 +115,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         screen.addPreference(preferenceThemeSelection)
 
         // set up "Recording Accuracy" preference
-        val preferenceOmitRests: SwitchPreferenceCompat = SwitchPreferenceCompat(activity as Context)
+        val preferenceOmitRests = SwitchPreferenceCompat(activity as Context)
         preferenceOmitRests.isSingleLineTitle = false
         preferenceOmitRests.title = getString(R.string.pref_omit_rests_title)
         preferenceOmitRests.setIcon(R.drawable.ic_timeline_24dp)
@@ -126,7 +126,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         preferenceCategoryGeneral.contains(preferenceOmitRests)
         screen.addPreference(preferenceOmitRests)
 
-        val preferenceDeviceID: EditTextPreference = EditTextPreference(activity as Context)
+        val preferenceDeviceID = EditTextPreference(activity as Context)
         preferenceDeviceID.title = getString(R.string.pref_device_id)
         preferenceDeviceID.setIcon(R.drawable.ic_smartphone_24dp)
         preferenceDeviceID.key = Keys.PREF_DEVICE_ID
@@ -139,7 +139,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         preferenceCategoryGeneral.contains(preferenceDeviceID)
         screen.addPreference(preferenceDeviceID)
 
-        val preferenceDatabaseFolder: Preference = Preference(context)
+        val preferenceDatabaseFolder = Preference(context)
         var resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             Log.i("VOUSSOIR", "I'm not dead yet.")
             if (result.resultCode != Activity.RESULT_OK)
@@ -182,12 +182,12 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         preferenceCategoryGeneral.contains(preferenceDatabaseFolder)
         screen.addPreference(preferenceDatabaseFolder)
 
-        val preferenceCategoryAbout: PreferenceCategory = PreferenceCategory(context)
+        val preferenceCategoryAbout = PreferenceCategory(context)
         preferenceCategoryAbout.title = getString(R.string.pref_about_title)
         screen.addPreference(preferenceCategoryAbout)
 
         // set up "App Version" preference
-        val preferenceAppVersion: Preference = Preference(context)
+        val preferenceAppVersion = Preference(context)
         preferenceAppVersion.title = getString(R.string.pref_app_version_title)
         preferenceAppVersion.setIcon(R.drawable.ic_info_24dp)
         preferenceAppVersion.summary = getString(R.string.pref_app_version_summary)

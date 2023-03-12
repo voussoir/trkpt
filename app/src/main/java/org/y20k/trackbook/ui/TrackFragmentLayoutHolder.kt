@@ -69,7 +69,6 @@ data class TrackFragmentLayoutHolder(
     val trackNameView: MaterialTextView
     private val mapView: MapView
     private var controller: IMapController
-    //private var zoomLevel: Double
     private val statisticsSheetBehavior: BottomSheetBehavior<View>
     private val statisticsSheet: NestedScrollView
     private val statisticsView: View
@@ -156,14 +155,6 @@ data class TrackFragmentLayoutHolder(
         statisticsSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
         statisticsSheetBehavior.addBottomSheetCallback(getStatisticsSheetCallback())
         setupStatisticsViews()
-    }
-
-    /* Saves zoom level and center of this map */
-    fun saveViewStateToTrack()
-    {
-        if (track.view_latitude != 0.0 && track.view_longitude != 0.0)
-        {
-        }
     }
 
     /* Sets up the statistics sheet */

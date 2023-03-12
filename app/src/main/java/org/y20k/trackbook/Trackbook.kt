@@ -37,7 +37,7 @@ interface DatabaseChangedListener
     fun database_changed()
 }
 
-class Trackbook(): Application() {
+class Trackbook : Application() {
     val database: Database = Database(this)
     val homepoints: ArrayList<Homepoint> = ArrayList()
     val database_changed_listeners = ArrayList<DatabaseChangedListener>()
@@ -77,7 +77,7 @@ class Trackbook(): Application() {
             this.database.ready = false
             return
         }
-        if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
+        if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
         {
             this.database.connect(File(folder + "/trkpt_${PreferencesHelper.load_device_id()}.db"))
             this.load_homepoints()
@@ -129,7 +129,7 @@ class Trackbook(): Application() {
         }
         finally
         {
-            cursor.close();
+            cursor.close()
         }
     }
 

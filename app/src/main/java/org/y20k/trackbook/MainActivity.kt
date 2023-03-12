@@ -18,8 +18,6 @@ package org.y20k.trackbook
 
 import android.Manifest
 import android.app.Activity
-import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
@@ -28,19 +26,16 @@ import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import org.osmdroid.config.Configuration
 import org.y20k.trackbook.helpers.AppThemeHelper
-import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.PreferencesHelper
 
 class MainActivity: AppCompatActivity()
 {
-    /* Main class variables */
     lateinit var trackbook: Trackbook
     private lateinit var navHostFragment: NavHostFragment
     private lateinit var bottomNavigationView: BottomNavigationView
@@ -118,7 +113,7 @@ class MainActivity: AppCompatActivity()
                 permissions_needed.add(permission)
             }
         }
-        val result = requestPermissions(permissions_wanted, 1);
+        val result = requestPermissions(permissions_wanted, 1)
         Log.i("VOUSSOIR", "Permissions result " + result)
     }
 

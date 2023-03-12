@@ -30,7 +30,7 @@ import kotlin.math.pow
 /* Get default location */
 fun getDefaultLocation(): Location
 {
-    val defaultLocation: Location = Location(LocationManager.NETWORK_PROVIDER)
+    val defaultLocation = Location(LocationManager.NETWORK_PROVIDER)
     defaultLocation.latitude = Keys.DEFAULT_LATITUDE
     defaultLocation.longitude = Keys.DEFAULT_LONGITUDE
     defaultLocation.accuracy = Keys.DEFAULT_ACCURACY
@@ -124,7 +124,6 @@ fun isNetworkEnabled(locationManager: LocationManager): Boolean
         return false
     }
 }
-
 
 /* Checks if given location is new */
 fun isRecentEnough(location: Location): Boolean

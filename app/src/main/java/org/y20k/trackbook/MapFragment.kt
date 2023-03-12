@@ -156,7 +156,7 @@ class MapFragment : Fragment()
         val compassOverlay = CompassOverlay(requireContext(), InternalCompassOrientationProvider(requireContext()), mapView)
         compassOverlay.enableCompass()
         // compassOverlay.setCompassCenter(36f, 36f + (statusBarHeight / densityScalingFactor)) // TODO uncomment when transparent status bar is re-implemented
-        val screen_width = Resources.getSystem().displayMetrics.widthPixels;
+        val screen_width = Resources.getSystem().displayMetrics.widthPixels
         compassOverlay.setCompassCenter((screen_width / densityScalingFactor) - 36f, 36f)
         mapView.overlays.add(compassOverlay)
 
@@ -416,7 +416,7 @@ class MapFragment : Fragment()
                 mapView.overlays.remove(ov)
             }
         }
-        current_position_overlays.clear();
+        current_position_overlays.clear()
     }
 
     /* Mark current position on map */
@@ -483,7 +483,7 @@ class MapFragment : Fragment()
                 mapView.overlays.remove(ov)
             }
         }
-        homepoints_overlays.clear();
+        homepoints_overlays.clear()
     }
 
     fun create_homepoint_overlays(context: Context, map_view: MapView, homepoints: List<Homepoint>)
@@ -629,8 +629,8 @@ class MapFragment : Fragment()
     }
 
     private val periodicLocationRequestRunnable: Runnable = object : Runnable {
-        override fun run() {
-            // pull current state from service
+        override fun run()
+        {
             currentBestLocation = trackerService.currentBestLocation
             track = trackerService.track
             gpsProviderActive = trackerService.gpsProviderActive
@@ -644,9 +644,6 @@ class MapFragment : Fragment()
             {
                 centerMap(currentBestLocation, true)
             }
-            // show error snackbar if necessary
-            // toggleLocationErrorBar(gpsProviderActive, networkProviderActive)
-            // use the handler to start runnable again after specified delay
             handler.postDelayed(this, Keys.REQUEST_CURRENT_LOCATION_INTERVAL)
         }
     }

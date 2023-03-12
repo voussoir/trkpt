@@ -48,7 +48,7 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         // initialize layout
         val database: Database = (requireActivity().applicationContext as Trackbook).database
-        val track: Track = Track(
+        val track = Track(
             database=database,
             name=this.requireArguments().getString(Keys.ARG_TRACK_TITLE, ""),
             device_id= this.requireArguments().getString(Keys.ARG_TRACK_DEVICE_ID, ""),
@@ -64,7 +64,7 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
         }
         // set up delete button
         layout.deleteButton.setOnClickListener {
-            val dialogMessage: String = "${getString(R.string.dialog_yes_no_message_delete_recording)}\n\n- ${layout.trackNameView.text}"
+            val dialogMessage = "${getString(R.string.dialog_yes_no_message_delete_recording)}\n\n- ${layout.trackNameView.text}"
             YesNoDialog(this@TrackFragment as YesNoDialog.YesNoDialogListener).show(
                 context = activity as Context,
                 type = Keys.DIALOG_DELETE_TRACK,
@@ -84,14 +84,6 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
     override fun onResume()
     {
         super.onResume()
-    }
-
-    /* Overrides onPause from Fragment */
-    override fun onPause()
-    {
-        super.onPause()
-        // save zoom level and map center
-        layout.saveViewStateToTrack()
     }
 
     /* Register the ActivityResultLauncher for saving GPX */
