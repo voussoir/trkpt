@@ -5,7 +5,7 @@
     <!-- please do not translate app_name - transcription into different alphabet types is fine though -->
     <!-- Tabs -->
     <string name="tab_map">Map</string>
-    <string name="tab_tracks">Tracks</string>
+    <string name="tab_tracks">History</string>
     <string name="tab_settings">Settings</string>
     <!-- Notification -->
     <string name="notification_title_trackbook_running">Trackbook running</string>

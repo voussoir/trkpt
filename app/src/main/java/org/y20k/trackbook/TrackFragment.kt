@@ -29,14 +29,13 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.fragment.app.Fragment
-import org.y20k.trackbook.dialogs.RenameTrackDialog
 import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.iso8601_format
 import org.y20k.trackbook.ui.TrackFragmentLayoutHolder
 import java.text.SimpleDateFormat
 import java.util.*
 
-class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDialog.YesNoDialogListener
+class TrackFragment : Fragment(), YesNoDialog.YesNoDialogListener
 {
     /* Define log tag */
     private val TAG: String = LogHelper.makeLogTag(TrackFragment::class.java)
@@ -59,22 +58,18 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
         layout = TrackFragmentLayoutHolder(activity as Context, inflater, container, track)
 
         // set up share button
-        layout.shareButton.setOnClickListener {
+        layout.save_track_button.setOnClickListener {
             openSaveGpxDialog()
         }
         // set up delete button
         layout.deleteButton.setOnClickListener {
-            val dialogMessage = "${getString(R.string.dialog_yes_no_message_delete_recording)}\n\n- ${layout.trackNameView.text}"
+            val dialogMessage = "${getString(R.string.dialog_yes_no_message_delete_recording)}\n\n${layout.trackNameView.text}"
             YesNoDialog(this@TrackFragment as YesNoDialog.YesNoDialogListener).show(
                 context = activity as Context,
                 type = Keys.DIALOG_DELETE_TRACK,
                 messageString = dialogMessage,
                 yesButton = R.string.dialog_yes_no_positive_button_delete_recording
             )
-        }
-        // set up rename button
-        layout.editButton.setOnClickListener {
-            RenameTrackDialog(this as RenameTrackDialog.RenameTrackListener).show(activity as Context, layout.trackNameView.text.toString())
         }
 
         return layout.rootView
@@ -135,7 +130,6 @@ class TrackFragment : Fragment(), RenameTrackDialog.RenameTrackListener, YesNoDi
     /* Opens up a file picker to select the save location */
     private fun openSaveGpxDialog()
     {
-        val context = this.activity as Context
         val export_name: String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(layout.track.start_time) + " " + layout.track.device_id + Keys.GPX_FILE_EXTENSION
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)

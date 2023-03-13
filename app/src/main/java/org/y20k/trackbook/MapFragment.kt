@@ -33,7 +33,6 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -71,7 +70,6 @@ class MapFragment : Fragment()
     private var trackingState: Int = Keys.STATE_TRACKING_STOPPED
     private var gpsProviderActive: Boolean = false
     private var networkProviderActive: Boolean = false
-    private lateinit var track: Track
     private lateinit var currentBestLocation: Location
     private lateinit var trackerService: TrackerService
 
@@ -185,12 +183,13 @@ class MapFragment : Fragment()
                     dialog.cancel()
                 }
                 save_button.setOnClickListener {
+                    val radius = radius_input.text.toString().toDoubleOrNull() ?: 25.0
                     trackbook.database.insert_homepoint(
                         id=random_long(),
                         name=name_input.text.toString(),
                         latitude=point.latitude,
                         longitude=point.longitude,
-                        radius=radius_input.text.toString().toDouble(),
+                        radius=radius,
                     )
                     trackbook.load_homepoints()
                     create_homepoint_overlays(requireContext(), mapView, trackbook.homepoints)
@@ -221,6 +220,7 @@ class MapFragment : Fragment()
 
         mapView.setOnTouchListener { v, event ->
             continuous_auto_center = false
+            zoomLevel = mapView.zoomLevelDouble
             false
         }
 
@@ -229,13 +229,15 @@ class MapFragment : Fragment()
             handleTrackingManagementMenu()
         }
         currentLocationButton.setOnClickListener {
-            centerMap(currentBestLocation, animated = true)
+            centerMap(currentBestLocation, animated=true)
         }
         zoom_in_button.setOnClickListener {
-            controller.zoomTo(mapView.zoomLevelDouble + 0.5, 250)
+            zoomLevel += 0.5
+            controller.zoomTo(mapView.zoomLevelDouble + 0.5, 0)
         }
         zoom_out_button.setOnClickListener {
-            controller.zoomTo(mapView.zoomLevelDouble - 0.5, 250)
+            zoomLevel -= 0.5
+            controller.zoomTo(mapView.zoomLevelDouble - 0.5, 0)
         }
 
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -247,7 +249,8 @@ class MapFragment : Fragment()
     {
         super.onStart()
         // request location permission if denied
-        if (ContextCompat.checkSelfPermission(activity as Context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED) {
+        if (ContextCompat.checkSelfPermission(activity as Context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED)
+        {
             requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
         // bind to TrackerService
@@ -556,7 +559,7 @@ class MapFragment : Fragment()
     }
 
     /* Overlay current track on map */
-    fun create_current_track_overlay(track: Track, trackingState: Int)
+    fun create_current_track_overlay(trkpts: Collection<Trkpt>, trackingState: Int)
     {
         if (currentTrackOverlay != null) {
             mapView.overlays.remove(currentTrackOverlay)
@@ -564,9 +567,9 @@ class MapFragment : Fragment()
         if (currentTrackSpecialMarkerOverlay != null) {
             mapView.overlays.remove(currentTrackSpecialMarkerOverlay)
         }
-        if (track.trkpts.isNotEmpty()) {
-            createTrackOverlay(requireContext(), mapView, track, trackingState)
-            createSpecialMakersTrackOverlay(requireContext(), mapView, track, trackingState)
+        if (trkpts.isNotEmpty()) {
+            createTrackOverlay(requireContext(), mapView, trkpts, trackingState)
+            createSpecialMakersTrackOverlay(requireContext(), mapView, trkpts, trackingState)
         }
     }
 
@@ -608,7 +611,8 @@ class MapFragment : Fragment()
     }
 
     private val connection = object : ServiceConnection {
-        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+        override fun onServiceConnected(className: ComponentName, service: IBinder)
+        {
             bound = true
             // get reference to tracker service
             val binder = service as TrackerService.LocalBinder
@@ -622,7 +626,8 @@ class MapFragment : Fragment()
             handler.removeCallbacks(periodicLocationRequestRunnable)
             handler.postDelayed(periodicLocationRequestRunnable, 0)
         }
-        override fun onServiceDisconnected(arg0: ComponentName) {
+        override fun onServiceDisconnected(arg0: ComponentName)
+        {
             // service has crashed, or was killed by the system
             handleServiceUnbind()
         }
@@ -632,17 +637,16 @@ class MapFragment : Fragment()
         override fun run()
         {
             currentBestLocation = trackerService.currentBestLocation
-            track = trackerService.track
             gpsProviderActive = trackerService.gpsProviderActive
             networkProviderActive = trackerService.networkProviderActive
             trackingState = trackerService.trackingState
             // update location and track
             create_current_position_overlays(currentBestLocation, trackingState)
-            create_current_track_overlay(track, trackingState)
+            create_current_track_overlay(trackerService.recent_trkpts, trackingState)
             // center map, if it had not been dragged/zoomed before
             if (continuous_auto_center)
             {
-                centerMap(currentBestLocation, true)
+                centerMap(currentBestLocation, animated=false)
             }
             handler.postDelayed(this, Keys.REQUEST_CURRENT_LOCATION_INTERVAL)
         }

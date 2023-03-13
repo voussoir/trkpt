@@ -37,18 +37,14 @@ import org.osmdroid.events.ZoomEvent
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.ItemizedIconOverlay
-import org.osmdroid.views.overlay.OverlayItem
 import org.osmdroid.views.overlay.TilesOverlay
 import org.osmdroid.views.overlay.compass.CompassOverlay
 import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider
-import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
 import org.y20k.trackbook.Keys
 import org.y20k.trackbook.R
 import org.y20k.trackbook.Track
 import org.y20k.trackbook.TrackStatistics
 import org.y20k.trackbook.helpers.*
-import kotlin.math.roundToInt
 
 /*
  * TrackFragmentLayoutHolder class
@@ -63,9 +59,8 @@ data class TrackFragmentLayoutHolder(
 {
     /* Main class variables */
     val rootView: View
-    val shareButton: ImageButton
+    val save_track_button: ImageButton
     val deleteButton: ImageButton
-    val editButton: ImageButton
     val trackNameView: MaterialTextView
     private val mapView: MapView
     private var controller: IMapController
@@ -87,17 +82,15 @@ data class TrackFragmentLayoutHolder(
     private val positiveElevationView: MaterialTextView
     private val negativeElevationView: MaterialTextView
     private val elevationDataViews: Group
-    private val trackManagementViews: Group
     private val useImperialUnits: Boolean
 
-    /* Init block */
-    init {
+    init
+    {
         // find views
         rootView = inflater.inflate(R.layout.fragment_track, container, false)
         mapView = rootView.findViewById(R.id.map)
-        shareButton = rootView.findViewById(R.id.save_button)
+        save_track_button = rootView.findViewById(R.id.save_button)
         deleteButton = rootView.findViewById(R.id.delete_button)
-        editButton = rootView.findViewById(R.id.edit_button)
         trackNameView = rootView.findViewById(R.id.statistics_track_name_headline)
 
         // basic map setup
@@ -128,7 +121,6 @@ data class TrackFragmentLayoutHolder(
         positiveElevationView = rootView.findViewById(R.id.statistics_data_positive_elevation)
         negativeElevationView = rootView.findViewById(R.id.statistics_data_negative_elevation)
         elevationDataViews = rootView.findViewById(R.id.elevation_data)
-        trackManagementViews = rootView.findViewById(R.id.management_icons)
 
         // get measurement unit system
         useImperialUnits = PreferencesHelper.loadUseImperialUnits()
@@ -146,14 +138,13 @@ data class TrackFragmentLayoutHolder(
         mapView.overlays.add(compassOverlay)
 
         if (track.trkpts.isNotEmpty()) {
-            createSpecialMakersTrackOverlay(context, mapView, track, Keys.STATE_TRACKING_STOPPED, displayStartEndMarker = true)
-            createTrackOverlay(context, mapView, track, Keys.STATE_TRACKING_STOPPED)
+            createSpecialMakersTrackOverlay(context, mapView, track.trkpts, Keys.STATE_TRACKING_STOPPED, displayStartEndMarker = true)
+            createTrackOverlay(context, mapView, track.trkpts, Keys.STATE_TRACKING_STOPPED)
         }
 
         // set up and show statistics sheet
         statisticsSheetBehavior = BottomSheetBehavior.from<View>(statisticsSheet)
         statisticsSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
-        statisticsSheetBehavior.addBottomSheetCallback(getStatisticsSheetCallback())
         setupStatisticsViews()
     }
 
@@ -187,44 +178,17 @@ data class TrackFragmentLayoutHolder(
     }
 
     /* Shows/hides the statistics sheet */
-    private fun toggleStatisticsSheetVisibility() {
+    private fun toggleStatisticsSheetVisibility()
+    {
         when (statisticsSheetBehavior.state) {
             BottomSheetBehavior.STATE_EXPANDED -> statisticsSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
             else -> statisticsSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
         }
     }
 
-    /* Defines the behavior of the statistics sheet  */
-    private fun getStatisticsSheetCallback(): BottomSheetBehavior.BottomSheetCallback {
-        return object : BottomSheetBehavior.BottomSheetCallback() {
-            override fun onStateChanged(bottomSheet: View, newState: Int) {
-                when (newState) {
-                    BottomSheetBehavior.STATE_EXPANDED -> {
-                        trackManagementViews.isVisible = true
-                        shareButton.isGone = true
-                        // bottomSheet.setPadding(0,24,0,0)
-                    }
-                    else -> {
-                        trackManagementViews.isGone = true
-                        shareButton.isVisible = true
-                        // bottomSheet.setPadding(0,0,0,0)
-                    }
-                }
-            }
-            override fun onSlide(bottomSheet: View, slideOffset: Float) {
-                if (slideOffset < 0.125f) {
-                    trackManagementViews.isGone = true
-                    shareButton.isVisible = true
-                } else {
-                    trackManagementViews.isVisible = true
-                    shareButton.isGone = true
-                }
-            }
-        }
-    }
-
     /* Overrides onZoom from MapListener */
-    override fun onZoom(event: ZoomEvent?): Boolean {
+    override fun onZoom(event: ZoomEvent?): Boolean
+    {
         if (event == null) {
             return false
         } else {
@@ -234,7 +198,8 @@ data class TrackFragmentLayoutHolder(
     }
 
     /* Overrides onScroll from MapListener */
-    override fun onScroll(event: ScrollEvent?): Boolean {
+    override fun onScroll(event: ScrollEvent?): Boolean
+    {
         if (event == null) {
             return false
         } else {

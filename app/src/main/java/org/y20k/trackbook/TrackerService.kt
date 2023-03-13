@@ -31,7 +31,6 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.Manifest
-import android.content.ContentValues
 import android.os.*
 import android.util.Log
 import androidx.core.content.ContextCompat
@@ -60,8 +59,9 @@ class TrackerService: Service(), SensorEventListener
     var currentBestLocation: Location = getDefaultLocation()
     var lastCommit: Date = Keys.DEFAULT_DATE
     var location_min_time_ms: Long = 0
+    private val RECENT_TRKPT_COUNT = 7200
     var stepCountOffset: Float = 0f
-    lateinit var track: Track
+    lateinit var recent_trkpts: Deque<Trkpt>
     var gpsLocationListenerRegistered: Boolean = false
     var networkLocationListenerRegistered: Boolean = false
     var bound: Boolean = false
@@ -170,10 +170,6 @@ class TrackerService: Service(), SensorEventListener
                     LocationManager.NETWORK_PROVIDER -> networkProviderActive = isNetworkEnabled(locationManager)
                 }
             }
-            override fun onStatusChanged(p0: String?, p1: Int, p2: Bundle?)
-            {
-                // deprecated method
-            }
         }
     }
 
@@ -211,9 +207,9 @@ class TrackerService: Service(), SensorEventListener
         super.onCreate()
         trackbook = (applicationContext as Trackbook)
         trackbook.load_homepoints()
+        recent_trkpts = ArrayDeque<Trkpt>(RECENT_TRKPT_COUNT)
         gpsOnly = PreferencesHelper.loadGpsOnly()
         device_id = PreferencesHelper.load_device_id()
-        track = Track(trackbook.database, device_id, start_time=GregorianCalendar.getInstance().time, stop_time=Date(GregorianCalendar.getInstance().time.time + 86400))
         useImperial = PreferencesHelper.loadUseImperialUnits()
         omitRests = PreferencesHelper.loadOmitRests()
         commitInterval = PreferencesHelper.loadCommitInterval()
@@ -445,11 +441,11 @@ class TrackerService: Service(), SensorEventListener
                 return false
             }
         }
-        if (track.trkpts.isEmpty())
+        if (recent_trkpts.isEmpty())
         {
             return true
         }
-        if (! isDifferentEnough(track.trkpts.last().toLocation(), location, omitRests))
+        if (! isDifferentEnough(recent_trkpts.last().toLocation(), location, omitRests))
         {
             Log.i("VOUSSOIR", "Omitting due to too close to previous.")
             return false
@@ -466,11 +462,11 @@ class TrackerService: Service(), SensorEventListener
             if (should_keep_point((currentBestLocation)))
             {
                 trackbook.database.insert_trkpt(device_id, trkpt)
-                track.trkpts.add(trkpt)
+                recent_trkpts.add(trkpt)
 
-                while (track.trkpts.size > 7200)
+                while (recent_trkpts.size > RECENT_TRKPT_COUNT)
                 {
-                    track.trkpts.removeFirst()
+                    recent_trkpts.removeFirst()
                 }
 
                 if (now.time - lastCommit.time > Keys.SAVE_TEMP_TRACK_INTERVAL)

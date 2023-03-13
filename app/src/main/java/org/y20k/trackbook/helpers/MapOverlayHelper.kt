@@ -31,30 +31,26 @@ import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlayOptions
 import org.osmdroid.views.overlay.simplefastpoint.SimplePointTheme
 import org.y20k.trackbook.Keys
 import org.y20k.trackbook.R
-import org.y20k.trackbook.Track
 import org.y20k.trackbook.Trkpt
 import java.text.DecimalFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
 /* Creates icon overlay for track */
-fun createTrackOverlay(context: Context, map_view: MapView, track: Track, trackingState: Int)
+fun createTrackOverlay(context: Context, map_view: MapView, trkpts: Collection<Trkpt>, trackingState: Int)
 {
-    // get marker color
     val color = if (trackingState == Keys.STATE_TRACKING_ACTIVE) context.getColor(R.color.default_red) else context.getColor(R.color.default_blue)
-    // gather points for overlay
     val points: MutableList<IGeoPoint> = mutableListOf()
-    track.trkpts.forEach { wayPoint ->
-        val label: String = "${context.getString(R.string.marker_description_time)}: ${SimpleDateFormat.getTimeInstance(SimpleDateFormat.MEDIUM, Locale.getDefault()).format(wayPoint.time)} | ${context.getString(R.string.marker_description_accuracy)}: ${DecimalFormat("#0.00").format(wayPoint.accuracy)} (${wayPoint.provider})"
+    trkpts.forEach { trkpt ->
+        val label = "${context.getString(R.string.marker_description_time)}: ${SimpleDateFormat.getTimeInstance(SimpleDateFormat.MEDIUM, Locale.getDefault()).format(trkpt.time)} | ${context.getString(R.string.marker_description_accuracy)}: ${DecimalFormat("#0.00").format(trkpt.accuracy)} (${trkpt.provider})"
         // only add normal points
-        if (!wayPoint.starred)
+        if (!trkpt.starred)
         {
-            points.add(LabelledGeoPoint(wayPoint.latitude, wayPoint.longitude, wayPoint.altitude, label))
+            points.add(LabelledGeoPoint(trkpt.latitude, trkpt.longitude, trkpt.altitude, label))
         }
     }
     val pointTheme: SimplePointTheme = SimplePointTheme(points, false)
-    // set styling for overlay
-    val style: Paint = Paint()
+    val style = Paint()
     style.style = Paint.Style.FILL
     style.color = color
     style.flags = Paint.ANTI_ALIAS_FLAG
@@ -64,20 +60,20 @@ fun createTrackOverlay(context: Context, map_view: MapView, track: Track, tracki
         .setSymbol(SimpleFastPointOverlayOptions.Shape.CIRCLE)
         .setPointStyle(style)
         .setRadius(6F * scalingFactor) // radius is set in px - scaling factor makes that display density independent (= dp)
-        .setIsClickable(true)
+        .setIsClickable(false)
         .setCellSize(12) // Sets the grid cell size used for indexing, in pixels. Larger cells result in faster rendering speed, but worse fidelity. Default is 10 pixels, for large datasets (>10k points), use 15.
     val overlay = SimpleFastPointOverlay(pointTheme, overlayOptions)
     map_view.overlays.add(overlay)
 }
 
 /* Creates overlay containing start, stop, stopover and starred markers for track */
-fun createSpecialMakersTrackOverlay(context: Context, map_view: MapView, track: Track, trackingState: Int, displayStartEndMarker: Boolean = false)
+fun createSpecialMakersTrackOverlay(context: Context, map_view: MapView, trkpts: Collection<Trkpt>, trackingState: Int, displayStartEndMarker: Boolean = false)
 {
     val overlayItems: ArrayList<OverlayItem> = ArrayList<OverlayItem>()
     val trackingActive: Boolean = trackingState == Keys.STATE_TRACKING_ACTIVE
-    val maxIndex: Int = track.trkpts.size - 1
+    val maxIndex: Int = trkpts.size - 1
 
-    track.trkpts.forEachIndexed { index: Int, trkpt: Trkpt ->
+    trkpts.forEachIndexed { index: Int, trkpt: Trkpt ->
         var overlayItem: OverlayItem? = null
         if (!trackingActive && index == 0 && displayStartEndMarker && trkpt.starred)
         {
