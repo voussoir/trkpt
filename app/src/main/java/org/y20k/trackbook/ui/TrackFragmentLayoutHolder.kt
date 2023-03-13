@@ -98,6 +98,7 @@ data class TrackFragmentLayoutHolder(
         mapView.addMapListener(this)
         mapView.isTilesScaledToDpi = true
         mapView.setTileSource(TileSourceFactory.MAPNIK)
+        mapView.isVerticalMapRepetitionEnabled = false
         mapView.setMultiTouchControls(true)
         mapView.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
         controller.setCenter(GeoPoint(track.view_latitude, track.view_longitude))

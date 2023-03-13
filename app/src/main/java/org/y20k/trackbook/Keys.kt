@@ -28,7 +28,7 @@ object Keys {
 
     // version numbers
     const val CURRENT_TRACK_FORMAT_VERSION: Int = 4
-    const val CURRENT_TRACKLIST_FORMAT_VERSION: Int = 0
+    const val DATABASE_VERSION: Int = 1
 
     // intent actions
     const val ACTION_START: String = "org.y20k.trackbook.action.START"

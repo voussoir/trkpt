@@ -1,5 +1,6 @@
 package org.y20k.trackbook
 import android.content.ContentValues
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteDatabase.openOrCreateDatabase
 import android.util.Log
@@ -68,6 +69,14 @@ class Database(val trackbook: Trackbook)
         connection.insert("trkpt", null, values)
     }
 
+    fun delete_homepoint(id: Long)
+    {
+        Log.i("VOUSSOIR", "Database.delete_homepoint")
+        begin_transaction()
+        connection.delete("homepoints", "id = ?", arrayOf(id.toString()))
+        commit()
+    }
+
     fun insert_homepoint(id: Long, name: String, latitude: Double, longitude: Double, radius: Double)
     {
         Log.i("VOUSSOIR", "Database.insert_homepoint")
@@ -80,15 +89,6 @@ class Database(val trackbook: Trackbook)
         }
         begin_transaction()
         connection.insert("homepoints", null, values)
-        commit()
-        trackbook.load_homepoints()
-    }
-
-    fun delete_homepoint(id: Long)
-    {
-        Log.i("VOUSSOIR", "Database.delete_homepoint")
-        begin_transaction()
-        connection.delete("homepoints", "id = ?", arrayOf(id.toString()))
         commit()
     }
 
@@ -106,11 +106,19 @@ class Database(val trackbook: Trackbook)
 
     private fun initialize_tables()
     {
-        this.connection.beginTransaction()
+        begin_transaction()
         this.connection.execSQL("CREATE TABLE IF NOT EXISTS meta(name TEXT PRIMARY KEY, value TEXT)")
         this.connection.execSQL("CREATE TABLE IF NOT EXISTS trkpt(lat REAL NOT NULL, lon REAL NOT NULL, time INTEGER NOT NULL, accuracy REAL, device_id INTEGER NOT NULL, ele INTEGER, sat INTEGER, PRIMARY KEY(lat, lon, time, device_id))")
         this.connection.execSQL("CREATE TABLE IF NOT EXISTS homepoints(id INTEGER PRIMARY KEY, lat REAL NOT NULL, lon REAL NOT NULL, radius REAL NOT NULL, name TEXT)")
-        this.connection.execSQL("PRAGMA user_version = ${Keys.CURRENT_TRACKLIST_FORMAT_VERSION}")
+        // The pragmas don't seem to execute unless you call moveToNext.
+        var cursor: Cursor
+        cursor = this.connection.rawQuery("PRAGMA journal_mode = DELETE", null)
+        cursor.moveToNext()
+        cursor.close()
+        cursor = this.connection.rawQuery("PRAGMA user_version = ${Keys.DATABASE_VERSION}", null)
+        cursor.moveToNext()
+        cursor.close()
+        // Not using this.commit because this.ready is not true yet.
         this.connection.setTransactionSuccessful()
         this.connection.endTransaction()
     }
