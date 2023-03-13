@@ -138,6 +138,7 @@ class MapFragment : Fragment()
         // basic map setup
         controller = mapView.controller
         mapView.isTilesScaledToDpi = true
+        mapView.isVerticalMapRepetitionEnabled = false
         mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.setMultiTouchControls(true)
         mapView.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
@@ -538,7 +539,8 @@ class MapFragment : Fragment()
                             dialog.dismiss()
                         }
                         save_button.setOnClickListener {
-                            trackbook.database.update_homepoint(homepoint.id, name=name_input.text.toString(), radius=radius_input.text.toString().toDouble())
+                            val radius = radius_input.text.toString().toDoubleOrNull() ?: 25.0
+                            trackbook.database.update_homepoint(homepoint.id, name=name_input.text.toString(), radius=radius)
                             trackbook.load_homepoints()
                             create_homepoint_overlays(requireContext(), mapView, trackbook.homepoints)
                             dialog.dismiss()
@@ -568,8 +570,8 @@ class MapFragment : Fragment()
             mapView.overlays.remove(currentTrackSpecialMarkerOverlay)
         }
         if (trkpts.isNotEmpty()) {
-            createTrackOverlay(requireContext(), mapView, trkpts, trackingState)
-            createSpecialMakersTrackOverlay(requireContext(), mapView, trkpts, trackingState)
+            currentTrackOverlay = createTrackOverlay(requireContext(), mapView, trkpts, trackingState)
+            currentTrackSpecialMarkerOverlay = createSpecialMakersTrackOverlay(requireContext(), mapView, trkpts, trackingState)
         }
     }
 

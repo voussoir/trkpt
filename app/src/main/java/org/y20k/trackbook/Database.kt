@@ -6,9 +6,8 @@ import android.util.Log
 import java.io.File
 import java.util.*
 
-class Database(trackbook: Trackbook)
+class Database(val trackbook: Trackbook)
 {
-    val trackbook = trackbook
     var ready: Boolean = false
     lateinit var file: File
     lateinit var connection: SQLiteDatabase
@@ -96,8 +95,12 @@ class Database(trackbook: Trackbook)
     fun update_homepoint(id: Long, name: String, radius: Double)
     {
         Log.i("VOUSSOIR", "Database.update_homepoint")
+        val values = ContentValues().apply {
+            put("name", name)
+            put("radius", radius)
+        }
         begin_transaction()
-        connection.rawQuery("UPDATE homepoints SET name = ?, radius = ? WHERE id = ?", arrayOf(name, radius.toString(), id.toString()))
+        connection.update("homepoints", values, "id = ?", arrayOf(id.toString()))
         commit()
     }
 
@@ -107,6 +110,7 @@ class Database(trackbook: Trackbook)
         this.connection.execSQL("CREATE TABLE IF NOT EXISTS meta(name TEXT PRIMARY KEY, value TEXT)")
         this.connection.execSQL("CREATE TABLE IF NOT EXISTS trkpt(lat REAL NOT NULL, lon REAL NOT NULL, time INTEGER NOT NULL, accuracy REAL, device_id INTEGER NOT NULL, ele INTEGER, sat INTEGER, PRIMARY KEY(lat, lon, time, device_id))")
         this.connection.execSQL("CREATE TABLE IF NOT EXISTS homepoints(id INTEGER PRIMARY KEY, lat REAL NOT NULL, lon REAL NOT NULL, radius REAL NOT NULL, name TEXT)")
+        this.connection.execSQL("PRAGMA user_version = ${Keys.CURRENT_TRACKLIST_FORMAT_VERSION}")
         this.connection.setTransactionSuccessful()
         this.connection.endTransaction()
     }

@@ -57,7 +57,7 @@ class TrackerService: Service(), SensorEventListener
     var recording_started: Date = GregorianCalendar.getInstance().time
     var commitInterval: Int = Keys.COMMIT_INTERVAL
     var currentBestLocation: Location = getDefaultLocation()
-    var lastCommit: Date = Keys.DEFAULT_DATE
+    var lastCommit: Long = 0
     var location_min_time_ms: Long = 0
     private val RECENT_TRKPT_COUNT = 7200
     var stepCountOffset: Float = 0f
@@ -150,9 +150,36 @@ class TrackerService: Service(), SensorEventListener
         return object : LocationListener {
             override fun onLocationChanged(location: Location)
             {
-                if (isBetterLocation(location, currentBestLocation)) {
-                    currentBestLocation = location
+                if (! isBetterLocation(location, currentBestLocation))
+                {
+                    return
                 }
+                currentBestLocation = location
+                if (trackingState != Keys.STATE_TRACKING_ACTIVE)
+                {
+                    return
+                }
+                Log.i("VOUSSOIR", "Processing point ${location.latitude}, ${location.longitude} ${location.time}.")
+                if (should_keep_point((location)))
+                {
+                    val now: Long = location.time
+                    // val now: Date = GregorianCalendar.getInstance().time
+                    val trkpt = Trkpt(location=location)
+                    trackbook.database.insert_trkpt(device_id, trkpt)
+                    recent_trkpts.add(trkpt)
+
+                    while (recent_trkpts.size > RECENT_TRKPT_COUNT)
+                    {
+                        recent_trkpts.removeFirst()
+                    }
+
+                    if (now - lastCommit > Keys.SAVE_TEMP_TRACK_INTERVAL)
+                    {
+                        trackbook.database.commit()
+                        lastCommit  = now
+                    }
+                }
+                displayNotification()
             }
             override fun onProviderEnabled(provider: String)
             {
@@ -353,7 +380,6 @@ class TrackerService: Service(), SensorEventListener
         }
         PreferencesHelper.saveTrackingState(trackingState)
         startStepCounter()
-        handler.postDelayed(periodicTrackUpdate, 0)
         startForeground(Keys.TRACKER_SERVICE_NOTIFICATION_ID, displayNotification())
     }
 
@@ -365,7 +391,6 @@ class TrackerService: Service(), SensorEventListener
         PreferencesHelper.saveTrackingState(trackingState)
 
         sensorManager.unregisterListener(this)
-        handler.removeCallbacks(periodicTrackUpdate)
 
         displayNotification()
         stopForeground(STOP_FOREGROUND_DETACH)
@@ -451,32 +476,5 @@ class TrackerService: Service(), SensorEventListener
             return false
         }
         return true
-    }
-
-    private val periodicTrackUpdate: Runnable = object : Runnable
-    {
-        override fun run() {
-            val now: Date = GregorianCalendar.getInstance().time
-            val trkpt = Trkpt(location=currentBestLocation)
-            Log.i("VOUSSOIR", "Processing point ${currentBestLocation.latitude}, ${currentBestLocation.longitude} ${now.time}.")
-            if (should_keep_point((currentBestLocation)))
-            {
-                trackbook.database.insert_trkpt(device_id, trkpt)
-                recent_trkpts.add(trkpt)
-
-                while (recent_trkpts.size > RECENT_TRKPT_COUNT)
-                {
-                    recent_trkpts.removeFirst()
-                }
-
-                if (now.time - lastCommit.time > Keys.SAVE_TEMP_TRACK_INTERVAL)
-                {
-                    trackbook.database.commit()
-                    lastCommit  = now
-                }
-            }
-            displayNotification()
-            handler.postDelayed(this, Keys.TRACKING_INTERVAL)
-        }
     }
 }

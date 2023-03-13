@@ -77,18 +77,9 @@ object Keys {
     const val DIALOG_EMPTY_PAYLOAD_STRING: String = ""
     const val DIALOG_EMPTY_PAYLOAD_INT: Int = -1
 
-    // folder names
-    const val FOLDER_TEMP: String  = "temp"
-    const val FOLDER_TRACKS: String = "tracks"
-    const val FOLDER_GPX: String = "gpx"
-
     // file names and extensions
     const val MIME_TYPE_GPX: String = "application/gpx+xml"
     const val GPX_FILE_EXTENSION: String = ".gpx"
-    const val TRACKBOOK_LEGACY_FILE_EXTENSION: String = ".trackbook"
-    const val TRACKBOOK_FILE_EXTENSION: String = ".json"
-    const val TEMP_FILE: String = "temp.json"
-    const val TRACKLIST_FILE: String = "tracklist.json"
 
     // view types
     const val VIEW_TYPE_STATISTICS: Int = 1
@@ -96,13 +87,11 @@ object Keys {
 
     // default values
     val DEFAULT_DATE: Date = Date(0L)
-    const val DEFAULT_RFC2822_DATE: String = "Thu, 01 Jan 1970 01:00:00 +0100"  // --> Date(0)
     const val ONE_SECOND_IN_MILLISECONDS: Long = 1000
     const val ONE_MINUTE_IN_MILLISECONDS: Long = 60 * ONE_SECOND_IN_MILLISECONDS
     const val ONE_HOUR_IN_MILLISECONDS: Long = 60 * ONE_MINUTE_IN_MILLISECONDS
     const val EMPTY_STRING_RESOURCE: Int = 0
     const val REQUEST_CURRENT_LOCATION_INTERVAL: Long = 1 * ONE_SECOND_IN_MILLISECONDS
-    const val TRACKING_INTERVAL: Long = 1 * ONE_SECOND_IN_MILLISECONDS
     const val SAVE_TEMP_TRACK_INTERVAL: Long = 30 * ONE_SECOND_IN_MILLISECONDS
     const val SIGNIFICANT_TIME_DIFFERENCE: Long = 1 * ONE_MINUTE_IN_MILLISECONDS
     const val STOP_OVER_THRESHOLD: Long = 5 * ONE_MINUTE_IN_MILLISECONDS
@@ -113,7 +102,6 @@ object Keys {
     const val DEFAULT_ALTITUDE: Double = 0.0
     const val DEFAULT_TIME: Long = 0L
     const val COMMIT_INTERVAL: Int = 30
-    const val DEFAULT_ALTITUDE_SMOOTHING_VALUE: Int = 13
     const val DEFAULT_THRESHOLD_LOCATION_ACCURACY: Int = 30                     // 30 meters
     const val DEFAULT_THRESHOLD_LOCATION_AGE: Long = 5_000_000_000L             // 5s in nanoseconds
     const val DEFAULT_THRESHOLD_DISTANCE: Float = 15f                           // 15 meters

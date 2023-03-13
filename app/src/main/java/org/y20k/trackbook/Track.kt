@@ -85,7 +85,7 @@ data class Track (
         var previous: Trkpt? = null
         for (trkpt in trkpt_generator())
         {
-            if (previous != null && (trkpt.time - previous.time) > (5 * Keys.ONE_MINUTE_IN_MILLISECONDS))
+            if (previous != null && (trkpt.time - previous.time) > (Keys.STOP_OVER_THRESHOLD))
             {
                 write("\t\t</trkseg>")
                 write("\t\t<trkseg>")

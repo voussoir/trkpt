@@ -37,7 +37,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 /* Creates icon overlay for track */
-fun createTrackOverlay(context: Context, map_view: MapView, trkpts: Collection<Trkpt>, trackingState: Int)
+fun createTrackOverlay(context: Context, map_view: MapView, trkpts: Collection<Trkpt>, trackingState: Int): SimpleFastPointOverlay
 {
     val color = if (trackingState == Keys.STATE_TRACKING_ACTIVE) context.getColor(R.color.default_red) else context.getColor(R.color.default_blue)
     val points: MutableList<IGeoPoint> = mutableListOf()
@@ -64,10 +64,11 @@ fun createTrackOverlay(context: Context, map_view: MapView, trkpts: Collection<T
         .setCellSize(12) // Sets the grid cell size used for indexing, in pixels. Larger cells result in faster rendering speed, but worse fidelity. Default is 10 pixels, for large datasets (>10k points), use 15.
     val overlay = SimpleFastPointOverlay(pointTheme, overlayOptions)
     map_view.overlays.add(overlay)
+    return overlay
 }
 
 /* Creates overlay containing start, stop, stopover and starred markers for track */
-fun createSpecialMakersTrackOverlay(context: Context, map_view: MapView, trkpts: Collection<Trkpt>, trackingState: Int, displayStartEndMarker: Boolean = false)
+fun createSpecialMakersTrackOverlay(context: Context, map_view: MapView, trkpts: Collection<Trkpt>, trackingState: Int, displayStartEndMarker: Boolean = false): ItemizedIconOverlay<OverlayItem>
 {
     val overlayItems: ArrayList<OverlayItem> = ArrayList<OverlayItem>()
     val trackingActive: Boolean = trackingState == Keys.STATE_TRACKING_ACTIVE
@@ -110,7 +111,9 @@ fun createSpecialMakersTrackOverlay(context: Context, map_view: MapView, trkpts:
             overlayItems.add(overlayItem)
         }
     }
-    map_view.overlays.add(createOverlay(context, overlayItems))
+    val overlay: ItemizedIconOverlay<OverlayItem> = createOverlay(context, overlayItems)
+    map_view.overlays.add(overlay)
+    return overlay
 }
 
 fun createOverlayItem(context: Context, latitude: Double, longitude: Double, accuracy: Float, provider: String, time: Long): OverlayItem

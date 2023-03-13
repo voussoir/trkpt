@@ -86,7 +86,7 @@
     <string name="pref_altitude_smoothing_value_title" translatable="false">Altitude Smoothing</string>
     <string name="pref_auto_export_interval_summary">Automatically export GPX file after this many hours.</string>
     <string name="pref_device_id_summary">A unique ID to distinguish tracks recorded across multiple devices:</string>
-    <string name="pref_database_folder_summary">Directory to contain your database file. You could use Syncthing to sync with your PC!</string>
+    <string name="pref_database_folder_summary">Directory to contain your database file. You could use Syncthing to sync with your PC.</string>
     <string name="pref_auto_export_interval_title">Auto Export Interval</string>
     <string name="pref_device_id">Device ID</string>
     <string name="pref_database_folder">Database directory</string>
@@ -96,8 +96,8 @@
     <string name="pref_general_title">General</string>
     <string name="pref_maintenance_title">Maintenance</string>
     <string name="pref_gps_only_title">Restrict to GPS</string>
-    <string name="pref_gps_only_summary_gps_and_network">Currently using GPS and Network for localization.</string>
-    <string name="pref_gps_only_summary_gps_only">Currently using only GPS for localization.</string>
+    <string name="pref_gps_only_summary_gps_and_network">Currently using GPS and Network for location.</string>
+    <string name="pref_gps_only_summary_gps_only">Currently using only GPS for location.</string>
     <string name="pref_imperial_measurement_units_summary_metric">Currently using metric units (Kilometer, Meter).</string>
     <string name="pref_imperial_measurement_units_summary_imperial">Currently using imperial units (Miles, Feet).</string>
     <string name="pref_imperial_measurement_units_title">Use Imperial Measurements</string>
