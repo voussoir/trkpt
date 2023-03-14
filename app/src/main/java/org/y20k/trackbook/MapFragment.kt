@@ -309,51 +309,24 @@ class MapFragment : Fragment()
     }
 
     private val requestLocationPermissionLauncher = registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
-        if (isGranted) {
+        if (isGranted)
+        {
             // permission was granted - re-bind service
             activity?.unbindService(connection)
             activity?.bindService(Intent(activity, TrackerService::class.java),  connection,  Context.BIND_AUTO_CREATE)
             LogHelper.i(TAG, "Request result: Location permission has been granted.")
-        } else {
+        }
+        else
+        {
             // permission denied - unbind service
             activity?.unbindService(connection)
         }
         toggleLocationErrorBar(gpsProviderActive, networkProviderActive)
     }
 
-    /* Register the permission launcher for starting the tracking service */
-    private val startTrackingPermissionLauncher = registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
-        if (isGranted)
-        {
-            LogHelper.i(TAG, "Request result: Activity Recognition permission has been granted.")
-        }
-        else
-        {
-            LogHelper.i(TAG, "Request result: Activity Recognition permission has NOT been granted.")
-        }
-        // start service via intent so that it keeps running after unbind
-        startTrackerService()
-        trackerService.startTracking()
-    }
-
     /* Start recording waypoints */
     private fun startTracking() {
-        // request activity recognition permission on Android Q+ if denied
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && ContextCompat.checkSelfPermission(activity as Context, Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_DENIED)
-        {
-            startTrackingPermissionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION)
-        }
-        else
-        {
-            // start service via intent so that it keeps running after unbind
-            startTrackerService()
-            trackerService.startTracking()
-        }
-    }
-
-    /* Start tracker service */
-    private fun startTrackerService()
-    {
+        // start service via intent so that it keeps running after unbind
         val intent = Intent(activity, TrackerService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // ... start service in foreground to prevent it being killed on Oreo
@@ -361,7 +334,9 @@ class MapFragment : Fragment()
         } else {
             activity?.startService(intent)
         }
+        trackerService.startTracking()
     }
+
 
     /* Handles state when service is being unbound */
     private fun handleServiceUnbind()
@@ -377,7 +352,7 @@ class MapFragment : Fragment()
     private fun handleTrackingManagementMenu()
     {
         when (trackingState) {
-            Keys.STATE_TRACKING_ACTIVE -> trackerService.pauseTracking()
+            Keys.STATE_TRACKING_ACTIVE -> trackerService.stopTracking()
             Keys.STATE_TRACKING_STOPPED -> startTracking()
         }
     }
@@ -390,10 +365,10 @@ class MapFragment : Fragment()
                 if (activity != null)
                 {
                     trackingState = PreferencesHelper.loadTrackingState()
-                    update_main_button()
                 }
             }
         }
+        update_main_button()
     }
 
     fun centerMap(location: Location, animated: Boolean = false) {
@@ -598,16 +573,22 @@ class MapFragment : Fragment()
         }
     }
 
-    fun toggleLocationErrorBar(gpsProviderActive: Boolean, networkProviderActive: Boolean) {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED) {
+    fun toggleLocationErrorBar(gpsProviderActive: Boolean, networkProviderActive: Boolean)
+    {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED)
+        {
             // CASE: Location permission not granted
             locationErrorBar.setText(R.string.snackbar_message_location_permission_denied)
             if (!locationErrorBar.isShown) locationErrorBar.show()
-        } else if (!gpsProviderActive && !networkProviderActive) {
+        }
+        else if (!gpsProviderActive && !networkProviderActive)
+        {
             // CASE: Location setting is off
             locationErrorBar.setText(R.string.snackbar_message_location_offline)
             if (!locationErrorBar.isShown) locationErrorBar.show()
-        } else {
+        }
+        else
+        {
             if (locationErrorBar.isShown) locationErrorBar.dismiss()
         }
     }

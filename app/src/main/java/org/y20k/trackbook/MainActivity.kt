@@ -18,12 +18,16 @@ package org.y20k.trackbook
 
 import android.Manifest
 import android.app.Activity
+import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
+import android.provider.Settings
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -152,7 +156,7 @@ class MainActivity: AppCompatActivity()
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
-        grantResults: IntArray
+        grantResults: IntArray,
     )
     {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)

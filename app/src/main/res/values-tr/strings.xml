@@ -28,9 +28,6 @@
     <string name="pref_imperial_measurement_units_title">İngiliz Ölçülerini Kullan</string>
     <string name="pref_imperial_measurement_units_summary_imperial">Şu anda İngiliz ölçü birimleri (mil, fit) kullanılıyor.</string>
     <string name="pref_imperial_measurement_units_summary_metric">Şu anda metrik birimler (kilometre, metre) kullanılıyor.</string>
-    <string name="pref_gps_only_summary_gps_only">Konumu belirlemek için şu anda yalnızca GPS kullanılıyor.</string>
-    <string name="pref_gps_only_summary_gps_and_network">Konumu belirlemek için şu anda GPS ve ağ kullanılıyor.</string>
-    <string name="pref_gps_only_title">Yalnızca GPS kullan</string>
     <string name="pref_maintenance_title">Bakım</string>
     <string name="pref_general_title">Genel</string>
     <string name="pref_delete_non_starred_title">Yıldızlı Olmayan Kayıtları Sil</string>

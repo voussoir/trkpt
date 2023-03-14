@@ -5,7 +5,6 @@
     <string name="statistics_sheet_p_velocity">Prosječna brzina:</string>
     <string name="toast_message_save_gpx">Spremanje snimanja kao GPX.</string>
     <string name="dialog_share_gpx">Dijeli GPX datoteku s</string>
-    <string name="pref_gps_only_title">Ograniči na GPS</string>
     <string name="statistics_sheet_p_steps_no_pedometer">brojač koraka nije dostupan</string>
     <string name="dialog_generic_details_button">Prikaži detalje</string>
     <string name="descr_statistics_sheet_edit_button">Gumb za uređivanje puta</string>
@@ -39,7 +38,6 @@
     <string name="statistics_sheet_p_recording_stop">Snimanje prekinuto:</string>
     <string name="dialog_rename_track_input_hint">Unesi novo ime</string>
     <string name="pref_reset_advanced_summary">Vrati sve napredne postavke na standardne vrijednosti.</string>
-    <string name="pref_gps_only_summary_gps_and_network">Za određivanje lokacije trenutačno se koristi GPS i mreža.</string>
     <string name="quick_settings_tile_title_default">Snima se</string>
     <string name="pref_theme_selection_mode_device_default">Isto kao uređaj</string>
     <string name="tab_map">Karta</string>
@@ -80,7 +78,6 @@
     <string name="layout_onboarding_description_app_icon">Ikona programa Trackbook</string>
     <string name="dialog_error_empty_recording_button_resume">Nastavi snimati</string>
     <string name="pref_maintenance_title">Održavanje</string>
-    <string name="pref_gps_only_summary_gps_only">Za određivanje lokacije trenutačno se koristi samo GPS.</string>
     <string name="dialog_yes_no_positive_button_delete_non_starred">Izbriši</string>
     <string name="track_list_onboarding_h1_part_2">… će se ovdje prikazati.</string>
     <string name="statistics_sheet_p_min_altitude">Najniža točka rute:</string>

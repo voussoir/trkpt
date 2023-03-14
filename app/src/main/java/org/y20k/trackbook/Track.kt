@@ -37,7 +37,6 @@ data class Track (
     var view_latitude: Double = Keys.DEFAULT_LATITUDE,
     var view_longitude: Double = Keys.DEFAULT_LONGITUDE,
     var trackFormatVersion: Int = Keys.CURRENT_TRACK_FORMAT_VERSION,
-    var zoomLevel: Double = Keys.DEFAULT_ZOOM_LEVEL,
 )
 {
     fun delete()

@@ -25,9 +25,12 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.DocumentsContract
+import android.provider.Settings
 import android.util.Log
 import android.view.View
+import android.widget.Button
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.preference.EditTextPreference
@@ -71,17 +74,27 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         preferenceCategoryGeneral.title = getString(R.string.pref_general_title)
         screen.addPreference(preferenceCategoryGeneral)
 
-        // set up "Restrict to GPS" preference
-        val preferenceGpsOnly = SwitchPreferenceCompat(activity as Context)
-        preferenceGpsOnly.isSingleLineTitle = false
-        preferenceGpsOnly.title = getString(R.string.pref_gps_only_title)
-        preferenceGpsOnly.setIcon(R.drawable.ic_gps_24dp)
-        preferenceGpsOnly.key = Keys.PREF_GPS_ONLY
-        preferenceGpsOnly.summaryOn = getString(R.string.pref_gps_only_summary_gps_only)
-        preferenceGpsOnly.summaryOff = getString(R.string.pref_gps_only_summary_gps_and_network)
-        preferenceGpsOnly.setDefaultValue(false)
-        preferenceCategoryGeneral.contains(preferenceGpsOnly)
-        screen.addPreference(preferenceGpsOnly)
+        val prefLocationGPS = SwitchPreferenceCompat(activity as Context)
+        prefLocationGPS.isSingleLineTitle = false
+        prefLocationGPS.title = getString(R.string.pref_location_gps_title)
+        prefLocationGPS.setIcon(R.drawable.ic_gps_24dp)
+        prefLocationGPS.key = Keys.PREF_LOCATION_GPS
+        prefLocationGPS.summaryOn = getString(R.string.pref_location_gps_summary_on)
+        prefLocationGPS.summaryOff = getString(R.string.pref_location_gps_summary_off)
+        prefLocationGPS.setDefaultValue(true)
+        preferenceCategoryGeneral.contains(prefLocationGPS)
+        screen.addPreference(prefLocationGPS)
+
+        val prefLocationNetwork = SwitchPreferenceCompat(activity as Context)
+        prefLocationNetwork.isSingleLineTitle = false
+        prefLocationNetwork.title = getString(R.string.pref_location_network_title)
+        prefLocationNetwork.setIcon(R.drawable.ic_gps_24dp)
+        prefLocationNetwork.key = Keys.PREF_LOCATION_NETWORK
+        prefLocationNetwork.summaryOn = getString(R.string.pref_location_network_summary_on)
+        prefLocationNetwork.summaryOff = getString(R.string.pref_location_network_summary_off)
+        prefLocationNetwork.setDefaultValue(false)
+        preferenceCategoryGeneral.contains(prefLocationNetwork)
+        screen.addPreference(prefLocationNetwork)
 
         // set up "Use Imperial Measurements" preference
         val preferenceImperialMeasurementUnits = SwitchPreferenceCompat(activity as Context)
@@ -114,7 +127,6 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         }
         screen.addPreference(preferenceThemeSelection)
 
-        // set up "Recording Accuracy" preference
         val preferenceOmitRests = SwitchPreferenceCompat(activity as Context)
         preferenceOmitRests.isSingleLineTitle = false
         preferenceOmitRests.title = getString(R.string.pref_omit_rests_title)
@@ -178,9 +190,25 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
             preferenceDatabaseFolder.summary = getString(R.string.pref_database_folder_summary) + "\n" + newValue
             return@setOnPreferenceChangeListener true
         }
-
         preferenceCategoryGeneral.contains(preferenceDatabaseFolder)
         screen.addPreference(preferenceDatabaseFolder)
+
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1)
+        {
+            if (!context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(context.packageName))
+            {
+                val battery_optimization_button = Preference(context)
+                battery_optimization_button.title = "Disable battery optimization"
+                battery_optimization_button.summary = "If your device kills the app, you can give this a try"
+                battery_optimization_button.setOnPreferenceClickListener {
+                    val i: Intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).setData(Uri.parse("package:${context.packageName}"))
+                    context.startActivity(i)
+                    return@setOnPreferenceClickListener true
+                }
+                preferenceCategoryGeneral.contains(battery_optimization_button)
+                screen.addPreference(battery_optimization_button)
+            }
+        }
 
         val preferenceCategoryAbout = PreferenceCategory(context)
         preferenceCategoryAbout.title = getString(R.string.pref_about_title)

@@ -24,12 +24,9 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.constraintlayout.widget.Group
-import androidx.core.view.isGone
-import androidx.core.view.isVisible
 import androidx.core.widget.NestedScrollView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.textview.MaterialTextView
-import org.osmdroid.api.IGeoPoint
 import org.osmdroid.api.IMapController
 import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
@@ -68,8 +65,6 @@ data class TrackFragmentLayoutHolder(
     private val statisticsSheet: NestedScrollView
     private val statisticsView: View
     private val distanceView: MaterialTextView
-    private val stepsTitleView: MaterialTextView
-    private val stepsView: MaterialTextView
     private val waypointsView: MaterialTextView
     private val durationView: MaterialTextView
     private val velocityView: MaterialTextView
@@ -102,14 +97,12 @@ data class TrackFragmentLayoutHolder(
         mapView.setMultiTouchControls(true)
         mapView.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
         controller.setCenter(GeoPoint(track.view_latitude, track.view_longitude))
-        controller.setZoom(track.zoomLevel)
+        controller.setZoom(Keys.DEFAULT_ZOOM_LEVEL)
 
         // get views for statistics sheet
         statisticsSheet = rootView.findViewById(R.id.statistics_sheet)
         statisticsView = rootView.findViewById(R.id.statistics_view)
         distanceView = rootView.findViewById(R.id.statistics_data_distance)
-        stepsTitleView = rootView.findViewById(R.id.statistics_p_steps)
-        stepsView = rootView.findViewById(R.id.statistics_data_steps)
         waypointsView = rootView.findViewById(R.id.statistics_data_waypoints)
         durationView = rootView.findViewById(R.id.statistics_data_duration)
         velocityView = rootView.findViewById(R.id.statistics_data_velocity)
@@ -190,25 +183,13 @@ data class TrackFragmentLayoutHolder(
     /* Overrides onZoom from MapListener */
     override fun onZoom(event: ZoomEvent?): Boolean
     {
-        if (event == null) {
-            return false
-        } else {
-            track.zoomLevel = event.zoomLevel
-            return true
-        }
+        return (event != null)
     }
 
     /* Overrides onScroll from MapListener */
     override fun onScroll(event: ScrollEvent?): Boolean
     {
-        if (event == null) {
-            return false
-        } else {
-            val center: IGeoPoint = mapView.mapCenter
-            track.view_latitude = center.latitude
-            track.view_longitude = center.longitude
-            return true
-        }
+        return (event != null)
     }
 
 }

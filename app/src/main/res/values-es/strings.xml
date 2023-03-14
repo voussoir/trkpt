@@ -7,7 +7,6 @@
     <string name="abbreviation_seconds">Segundos</string>
     <string name="track_list_onboarding_h1_part_2">...se mostrara aqui.</string>
     <string name="pref_about_title">Acerca de</string>
-    <string name="pref_gps_only_summary_gps_only">Actualmente se usa solo GPS para la localización.</string>
     <string name="pref_imperial_measurement_units_summary_imperial">Actualmente se utilizan unidades imperiales (millas, pies).</string>
     <string name="pref_report_issue_summary">Informar errores y sugerir mejoras en GitHub.</string>
     <string name="descr_button_resume">Resumir grabación</string>
@@ -72,8 +71,6 @@
     <string name="pref_delete_non_starred_title">Eliminar grabaciones no destacadas</string>
     <string name="pref_general_title">General</string>
     <string name="pref_maintenance_title">Mantenimiento</string>
-    <string name="pref_gps_only_title">Restringir a GPS</string>
-    <string name="pref_gps_only_summary_gps_and_network">Actualmente usando GPS y Red para localización.</string>
     <string name="pref_imperial_measurement_units_summary_metric">Actualmente se utilizan unidades métricas (Kilómetro, Metro).</string>
     <string name="pref_imperial_measurement_units_title">Utilizar medidas imperiales</string>
     <string name="pref_report_issue_title">Reportar problema</string>

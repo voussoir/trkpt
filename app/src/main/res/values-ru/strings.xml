@@ -63,9 +63,7 @@
     <string name="pref_accuracy_threshold_title">Порог точности</string>
     <string name="pref_accuracy_threshold_summary">Отбросьте исправления местоположения с точностью более (метров):</string>
     <string name="pref_delete_non_starred_summary">Удалите все записи в \"Дорожках\", не отмеченные звездочками.</string>
-    <string name="pref_gps_only_summary_gps_and_network">В настоящее время для локализации используется GPS и сеть.</string>
     <string name="pref_imperial_measurement_units_summary_metric">В настоящее время используются метрические единицы (километр, метр).</string>
-    <string name="pref_gps_only_summary_gps_only">В настоящее время для локализации используется только GPS.</string>
     <string name="pref_reset_advanced_summary">Сброс расширенных настроек до значений по умолчанию.</string>
     <string name="pref_report_issue_title">Выпуск отчета</string>
     <string name="pref_theme_selection_mode_dark">Темный режим</string>
@@ -80,7 +78,6 @@
     <string name="pref_report_issue_summary">Сообщайте об ошибках и предлагайте улучшения на GitHub.</string>
     <string name="pref_imperial_measurement_units_title">Используйте имперские меры</string>
     <string name="pref_imperial_measurement_units_summary_imperial">В настоящее время используются имперские единицы (мили, футы).</string>
-    <string name="pref_gps_only_title">Ограничение на GPS</string>
     <string name="pref_maintenance_title">Обслуживание</string>
     <string name="pref_delete_non_starred_title">Удаление записей, не включенных в список</string>
     <string name="track_list_p_element_statistics">Общее зарегистрированное расстояние</string>

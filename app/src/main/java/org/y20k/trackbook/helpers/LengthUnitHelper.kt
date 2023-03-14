@@ -24,13 +24,8 @@ import java.util.*
 /*
  * LengthUnitHelper object
  */
-object LengthUnitHelper {
-
-    /* Converts for the given unit system a distance value to a readable string */
-    fun convertDistanceToString(distance: Float, useImperial: Boolean = false): String {
-        return convertDistanceToString(distance.toDouble(), useImperial)
-    }
-
+object LengthUnitHelper
+{
     /* Converts for the given unit system a distance value to a readable string */
     fun convertDistanceToString(distance: Double, useImperial: Boolean = false): String {
         val readableDistance: Double

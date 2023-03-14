@@ -79,29 +79,6 @@
         tools:text="@string/sample_text_default_data" />
 
     <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/statistics_p_steps"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="@string/statistics_sheet_p_steps"
-        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-        android:textColor="@color/text_lightweight"
-        app:layout_constraintStart_toStartOf="@+id/statistics_p_distance"
-        app:layout_constraintTop_toBottomOf="@+id/statistics_p_distance" />
-
-    <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/statistics_data_steps"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-        android:textColor="@color/text_default"
-        app:layout_constraintBottom_toBottomOf="@+id/statistics_p_steps"
-        app:layout_constraintStart_toEndOf="@+id/statistics_p_steps"
-        app:layout_constraintTop_toTopOf="@+id/statistics_p_steps"
-        tools:text="@string/sample_text_default_data" />
-
-    <com.google.android.material.textview.MaterialTextView
         android:id="@+id/statistics_p_waypoints"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
@@ -109,8 +86,8 @@
         android:text="@string/statistics_sheet_p_waypoints"
         android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
         android:textColor="@color/text_lightweight"
-        app:layout_constraintStart_toStartOf="@+id/statistics_p_steps"
-        app:layout_constraintTop_toBottomOf="@+id/statistics_p_steps" />
+        app:layout_constraintStart_toStartOf="@+id/statistics_p_distance"
+        app:layout_constraintTop_toBottomOf="@+id/statistics_p_distance" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/statistics_data_waypoints"

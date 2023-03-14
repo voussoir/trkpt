@@ -32,11 +32,8 @@ import org.y20k.trackbook.TrackerService
 /*
  * NotificationHelper class
  */
-class NotificationHelper(private val trackerService: TrackerService) {
-
-    /* Define log tag */
-    private val TAG: String = LogHelper.makeLogTag(NotificationHelper::class.java)
-
+class NotificationHelper(private val trackerService: TrackerService)
+{
     /* Main class variables */
     private val notificationManager: NotificationManager = trackerService.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 

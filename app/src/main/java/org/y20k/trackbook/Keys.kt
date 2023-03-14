@@ -53,9 +53,9 @@ object Keys {
     const val PREF_MAP_ZOOM_LEVEL: String = "prefMapZoomLevel"
     const val PREF_TRACKING_STATE: String = "prefTrackingState"
     const val PREF_USE_IMPERIAL_UNITS: String = "prefUseImperialUnits"
-    const val PREF_GPS_ONLY: String = "prefGpsOnly"
+    const val PREF_LOCATION_NETWORK: String = "prefLocationNetwork"
+    const val PREF_LOCATION_GPS: String = "prefLocationGPS"
     const val PREF_OMIT_RESTS: String = "prefOmitRests"
-    const val PREF_COMMIT_INTERVAL: String = "prefCommitInterval"
     const val PREF_DEVICE_ID: String = "prefDeviceID"
     const val PREF_DATABASE_DIRECTORY: String = "prefDatabaseDirectory"
 

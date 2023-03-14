@@ -30,16 +30,13 @@ import org.y20k.trackbook.Keys
 import org.y20k.trackbook.R
 import org.y20k.trackbook.Database
 import org.y20k.trackbook.Track
-import org.y20k.trackbook.helpers.*
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
 class TracklistAdapter(val fragment: Fragment, val database: Database) : RecyclerView.Adapter<RecyclerView.ViewHolder>()
 {
-    private val context: Context = fragment.activity as Context
     private lateinit var tracklistListener: TracklistAdapterListener
-    private var useImperial: Boolean = PreferencesHelper.loadUseImperialUnits()
     val tracks: ArrayList<Track> = ArrayList<Track>()
 
     /* Listener Interface */

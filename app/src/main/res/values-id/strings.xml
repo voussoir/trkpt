@@ -129,9 +129,6 @@
     <string name="pref_imperial_measurement_units_title">Gunakan Pengukuran Imperial</string>
     <string name="pref_imperial_measurement_units_summary_imperial">Saat ini menggunakan satuan imperial (Miles, Feet).</string>
     <string name="pref_imperial_measurement_units_summary_metric">Saat ini menggunakan satuan metrik (Kilometer, Meter).</string>
-    <string name="pref_gps_only_summary_gps_only">Saat ini hanya menggunakan GPS untuk lokalisasi.</string>
-    <string name="pref_gps_only_summary_gps_and_network">Saat ini menggunakan GPS dan Jaringan untuk lokalisasi.</string>
-    <string name="pref_gps_only_title">Batasi ke GPS</string>
     <string name="pref_maintenance_title">Pemeliharaan</string>
     <string name="pref_general_title">Umum</string>
     <string name="pref_delete_non_starred_title">Hapus Rekaman Tidak Berbintang</string>

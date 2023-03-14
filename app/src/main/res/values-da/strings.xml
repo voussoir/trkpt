@@ -86,9 +86,6 @@
     <string name="track_list_p_element_statistics">Samlet registreret distance</string>
     <string name="pref_report_issue_summary">Rapporter fejl og foreslå forbedringer på GitHub.</string>
     <string name="pref_imperial_measurement_units_summary_metric">I øjeblikket anvendes metriske enheder (kilometer, meter).</string>
-    <string name="pref_gps_only_summary_gps_only">I øjeblikket bruger vi kun GPS til lokalisering.</string>
-    <string name="pref_gps_only_summary_gps_and_network">I øjeblikket bruges GPS og netværk til lokalisering.</string>
-    <string name="pref_gps_only_title">Begræns til GPS</string>
     <string name="pref_maintenance_title">Vedligeholdelse</string>
     <string name="pref_imperial_measurement_units_summary_imperial">I øjeblikket anvendes britiske enheder (miles, fødder).</string>
     <string name="pref_theme_selection_mode_device_default">Samme som enhed</string>

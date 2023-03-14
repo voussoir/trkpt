@@ -79,9 +79,6 @@
     <string name="pref_delete_non_starred_title">Cancella tutte le registrazioni non marcate</string>
     <string name="pref_general_title">Generale</string>
     <string name="pref_maintenance_title">Manutenzione</string>
-    <string name="pref_gps_only_title">Limita a GPS</string>
-    <string name="pref_gps_only_summary_gps_and_network">Sto usando GPS e rete per la localizzazione.</string>
-    <string name="pref_gps_only_summary_gps_only">Sto usando solo GPS per la localizzazione.</string>
     <string name="pref_imperial_measurement_units_summary_metric">Sto usando il sistema metrico (kilometri, metri).</string>
     <string name="pref_imperial_measurement_units_summary_imperial">Sto usando il sistema imperiale (miglia, piedi).</string>
     <string name="pref_imperial_measurement_units_title">Usa il sistema imperiale</string>

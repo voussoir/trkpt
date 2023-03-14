@@ -88,16 +88,16 @@ object PreferencesHelper {
         return sharedPreferences.getBoolean(Keys.PREF_USE_IMPERIAL_UNITS, LengthUnitHelper.useImperialUnits())
     }
 
-    fun loadGpsOnly(): Boolean {
-        return sharedPreferences.getBoolean(Keys.PREF_GPS_ONLY, false)
+    fun load_location_gps(): Boolean {
+        return sharedPreferences.getBoolean(Keys.PREF_LOCATION_GPS, false)
+    }
+
+    fun load_location_network(): Boolean {
+        return sharedPreferences.getBoolean(Keys.PREF_LOCATION_NETWORK, false)
     }
 
     fun loadOmitRests(): Boolean {
         return sharedPreferences.getBoolean(Keys.PREF_OMIT_RESTS, true)
-    }
-
-    fun loadCommitInterval(): Int {
-        return sharedPreferences.getInt(Keys.PREF_COMMIT_INTERVAL, Keys.COMMIT_INTERVAL)
     }
 
     /* Loads the state of a map */

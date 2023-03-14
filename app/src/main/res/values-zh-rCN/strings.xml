@@ -85,9 +85,6 @@
     <string name="pref_delete_non_starred_title">删除未加星的记录</string>
     <string name="pref_general_title">常规</string>
     <string name="pref_maintenance_title">维护</string>
-    <string name="pref_gps_only_title">仅限 GPS</string>
-    <string name="pref_gps_only_summary_gps_and_network">当前正使用 GPS 和网络进行定位。</string>
-    <string name="pref_gps_only_summary_gps_only">当前正仅使用 GPS 进行定位。</string>
     <string name="pref_imperial_measurement_units_summary_metric">当前正使用公制单位（千米，米）。</string>
     <string name="pref_imperial_measurement_units_summary_imperial">当前正使用英制单位（英里，英尺）。</string>
     <string name="pref_imperial_measurement_units_title">使用英制测量</string>

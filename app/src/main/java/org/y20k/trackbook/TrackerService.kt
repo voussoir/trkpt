@@ -23,10 +23,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.SharedPreferences
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -35,13 +31,12 @@ import android.os.*
 import android.util.Log
 import androidx.core.content.ContextCompat
 import java.util.*
-import kotlinx.coroutines.Runnable
 import org.y20k.trackbook.helpers.*
 
 /*
  * TrackerService class
  */
-class TrackerService: Service(), SensorEventListener
+class TrackerService: Service()
 {
     /* Define log tag */
     private val TAG: String = LogHelper.makeLogTag(TrackerService::class.java)
@@ -51,25 +46,22 @@ class TrackerService: Service(), SensorEventListener
     var gpsProviderActive: Boolean = false
     var networkProviderActive: Boolean = false
     var useImperial: Boolean = false
-    var gpsOnly: Boolean = false
+    var use_gps_location: Boolean = false
+    var use_network_location: Boolean = false
     var omitRests: Boolean = true
     var device_id: String = random_device_id()
-    var recording_started: Date = GregorianCalendar.getInstance().time
-    var commitInterval: Int = Keys.COMMIT_INTERVAL
     var currentBestLocation: Location = getDefaultLocation()
     var lastCommit: Long = 0
     var location_min_time_ms: Long = 0
     private val RECENT_TRKPT_COUNT = 7200
-    var stepCountOffset: Float = 0f
     lateinit var recent_trkpts: Deque<Trkpt>
+    lateinit var recent_displacement_trkpts: Deque<Trkpt>
     var gpsLocationListenerRegistered: Boolean = false
     var networkLocationListenerRegistered: Boolean = false
     var bound: Boolean = false
     private val binder = LocalBinder()
-    private val handler: Handler = Handler(Looper.getMainLooper())
     lateinit var trackbook: Trackbook
     private lateinit var locationManager: LocationManager
-    private lateinit var sensorManager: SensorManager
     private lateinit var notificationManager: NotificationManager
     private lateinit var notificationHelper: NotificationHelper
     private lateinit var gpsLocationListener: LocationListener
@@ -77,6 +69,12 @@ class TrackerService: Service(), SensorEventListener
 
     private fun addGpsLocationListener()
     {
+        if (! use_gps_location)
+        {
+            LogHelper.v(TAG, "Skipping GPS listener.")
+            return
+        }
+
         if (gpsLocationListenerRegistered)
         {
             LogHelper.v(TAG, "GPS location listener has already been added.")
@@ -109,9 +107,9 @@ class TrackerService: Service(), SensorEventListener
 
     private fun addNetworkLocationListener()
     {
-        if (gpsOnly)
+        if (! use_network_location)
         {
-            LogHelper.v(TAG, "Skipping Network listener. User prefers GPS-only.")
+            LogHelper.v(TAG, "Skipping Network listener.")
             return
         }
 
@@ -167,13 +165,18 @@ class TrackerService: Service(), SensorEventListener
                     val trkpt = Trkpt(location=location)
                     trackbook.database.insert_trkpt(device_id, trkpt)
                     recent_trkpts.add(trkpt)
-
                     while (recent_trkpts.size > RECENT_TRKPT_COUNT)
                     {
                         recent_trkpts.removeFirst()
                     }
 
-                    if (now - lastCommit > Keys.SAVE_TEMP_TRACK_INTERVAL)
+                    recent_displacement_trkpts.add(trkpt)
+                    while (recent_displacement_trkpts.size > 5)
+                    {
+                        recent_displacement_trkpts.removeFirst()
+                    }
+
+                    if (now - lastCommit > Keys.COMMIT_INTERVAL)
                     {
                         trackbook.database.commit()
                         lastCommit  = now
@@ -211,12 +214,6 @@ class TrackerService: Service(), SensorEventListener
         return notification
     }
 
-    /* Overrides onAccuracyChanged from SensorEventListener */
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int)
-    {
-        LogHelper.v(TAG, "Accuracy changed: $accuracy")
-    }
-
     /* Overrides onBind from Service */
     override fun onBind(p0: Intent?): IBinder
     {
@@ -235,13 +232,13 @@ class TrackerService: Service(), SensorEventListener
         trackbook = (applicationContext as Trackbook)
         trackbook.load_homepoints()
         recent_trkpts = ArrayDeque<Trkpt>(RECENT_TRKPT_COUNT)
-        gpsOnly = PreferencesHelper.loadGpsOnly()
+        recent_displacement_trkpts = ArrayDeque<Trkpt>(5)
+        use_gps_location = PreferencesHelper.load_location_gps()
+        use_network_location = PreferencesHelper.load_location_network()
         device_id = PreferencesHelper.load_device_id()
         useImperial = PreferencesHelper.loadUseImperialUnits()
         omitRests = PreferencesHelper.loadOmitRests()
-        commitInterval = PreferencesHelper.loadCommitInterval()
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        sensorManager = this.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationHelper = NotificationHelper(this)
         gpsProviderActive = isGpsEnabled(locationManager)
@@ -260,7 +257,7 @@ class TrackerService: Service(), SensorEventListener
         super.onDestroy()
         if (trackingState == Keys.STATE_TRACKING_ACTIVE)
         {
-            pauseTracking()
+            stopTracking()
         }
         stopForeground(STOP_FOREGROUND_REMOVE)
         notificationManager.cancel(Keys.TRACKER_SERVICE_NOTIFICATION_ID) // this call was not necessary prior to Android 12
@@ -277,21 +274,6 @@ class TrackerService: Service(), SensorEventListener
         addNetworkLocationListener()
     }
 
-    /* Overrides onSensorChanged from SensorEventListener */
-    override fun onSensorChanged(sensorEvent: SensorEvent?) {
-        var steps = 0f
-        if (sensorEvent != null)
-        {
-            if (stepCountOffset == 0f)
-            {
-                // store steps previously recorded by the system
-                stepCountOffset = (sensorEvent.values[0] - 1) - 0 // subtract any steps recorded during this session in case the app was killed
-            }
-            // calculate step count - subtract steps previously recorded
-            steps = sensorEvent.values[0] - stepCountOffset
-        }
-    }
-
     /* Overrides onStartCommand from Service */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
     {
@@ -306,7 +288,7 @@ class TrackerService: Service(), SensorEventListener
         }
         else if (intent.action == Keys.ACTION_STOP)
         {
-            pauseTracking()
+            stopTracking()
         }
         else if (intent.action == Keys.ACTION_START)
         {
@@ -360,38 +342,23 @@ class TrackerService: Service(), SensorEventListener
         }
     }
 
-    private fun startStepCounter()
-    {
-        val stepCounterAvailable = sensorManager.registerListener(this, sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER), SensorManager.SENSOR_DELAY_UI)
-        if (!stepCounterAvailable)
-        {
-            LogHelper.w(TAG, "Pedometer sensor not available.")
-        }
-    }
-
-    fun startTracking(newTrack: Boolean = true)
+    fun startTracking()
     {
         addGpsLocationListener()
         addNetworkLocationListener()
         trackingState = Keys.STATE_TRACKING_ACTIVE
-        if (newTrack)
-        {
-            this.recording_started = GregorianCalendar.getInstance().time
-        }
         PreferencesHelper.saveTrackingState(trackingState)
-        startStepCounter()
+        recent_displacement_trkpts.clear()
         startForeground(Keys.TRACKER_SERVICE_NOTIFICATION_ID, displayNotification())
     }
 
-    fun pauseTracking()
+    fun stopTracking()
     {
         trackbook.database.commit()
 
         trackingState = Keys.STATE_TRACKING_STOPPED
         PreferencesHelper.saveTrackingState(trackingState)
-
-        sensorManager.unregisterListener(this)
-
+        recent_displacement_trkpts.clear()
         displayNotification()
         stopForeground(STOP_FOREGROUND_DETACH)
     }
@@ -399,13 +366,28 @@ class TrackerService: Service(), SensorEventListener
     private val sharedPreferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
         when (key)
         {
-            Keys.PREF_GPS_ONLY ->
+            Keys.PREF_LOCATION_GPS ->
             {
-                gpsOnly = PreferencesHelper.loadGpsOnly()
-                when (gpsOnly)
+                use_gps_location = PreferencesHelper.load_location_gps()
+                if (use_gps_location)
                 {
-                    true -> removeNetworkLocationListener()
-                    false -> addNetworkLocationListener()
+                    addGpsLocationListener()
+                }
+                else
+                {
+                    removeGpsLocationListener()
+                }
+            }
+            Keys.PREF_LOCATION_NETWORK ->
+            {
+                use_network_location = PreferencesHelper.load_location_network()
+                if (use_network_location)
+                {
+                    addNetworkLocationListener()
+                }
+                else
+                {
+                    removeNetworkLocationListener()
                 }
             }
             Keys.PREF_USE_IMPERIAL_UNITS ->
@@ -466,11 +448,11 @@ class TrackerService: Service(), SensorEventListener
                 return false
             }
         }
-        if (recent_trkpts.isEmpty())
+        if (recent_displacement_trkpts.isEmpty())
         {
             return true
         }
-        if (! isDifferentEnough(recent_trkpts.last().toLocation(), location, omitRests))
+        if (! isDifferentEnough(recent_displacement_trkpts.first().toLocation(), location, omitRests))
         {
             Log.i("VOUSSOIR", "Omitting due to too close to previous.")
             return false

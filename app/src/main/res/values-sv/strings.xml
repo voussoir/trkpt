@@ -82,8 +82,6 @@
     <!--<string name="descr_delete_button"></string>-->
     <!--<string name="descr_share_button_gpx"></string>-->
     <string name="tab_settings">Inställningar</string>
-    <string name="pref_gps_only_summary_gps_and_network">För närvarande används GPS och nätverk för lokalisering.</string>
-    <string name="pref_gps_only_title">Begränsa till GPS</string>
     <string name="pref_maintenance_title">Underhåll</string>
     <string name="pref_general_title">Allmänt</string>
     <string name="pref_delete_non_starred_title">Ta bort inspelningar som inte är starred</string>
@@ -154,7 +152,6 @@
     <string name="descr_mark_starred_button">Markera som stjärnmärkt</string>
     <string name="descr_button_resume">Återuppta inspelning</string>
     <string name="statistics_sheet_p_duration">Total varaktighet:</string>
-    <string name="pref_gps_only_summary_gps_only">För närvarande används endast GPS för lokalisering.</string>
     <string name="pref_delete_non_starred_summary">Ta bort alla inspelningar i \"Tracks\" som inte har stjärnor.</string>
     <string name="descr_button_start">Starta inspelning</string>
     <string name="pref_theme_selection_summary">Aktuellt tema:</string>

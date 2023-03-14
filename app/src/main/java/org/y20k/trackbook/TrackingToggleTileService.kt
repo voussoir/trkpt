@@ -22,7 +22,6 @@ import android.graphics.drawable.Icon
 import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
-import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.PreferencesHelper
 
 /*

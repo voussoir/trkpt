@@ -79,9 +79,6 @@
     <string name="pref_delete_non_starred_title">Apagar gravações sem estrelas</string>
     <string name="pref_general_title">Geral</string>
     <string name="pref_maintenance_title">Manutenção</string>
-    <string name="pref_gps_only_title">Restrito a GPS</string>
-    <string name="pref_gps_only_summary_gps_and_network">Atualmente usando GPS e rede para localização.</string>
-    <string name="pref_gps_only_summary_gps_only">Atualmente usando apenas GPS para localização.</string>
     <string name="pref_imperial_measurement_units_summary_metric">Atualmente usando sistema internacional de unidade  (Kilometer, Meter).</string>
     <string name="pref_imperial_measurement_units_summary_imperial">Atualmente usando sistema imperial de unidade (Miles, Feet).</string>
     <string name="pref_imperial_measurement_units_title">Usar Sistema Imperial</string>
