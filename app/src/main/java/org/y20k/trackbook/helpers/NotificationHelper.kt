@@ -100,7 +100,7 @@ class NotificationHelper(private val trackerService: TrackerService) {
     private val resumeActionPendingIntent = PendingIntent.getService(
         trackerService,
         16,
-        Intent(trackerService, TrackerService::class.java).setAction(Keys.ACTION_RESUME),
+        Intent(trackerService, TrackerService::class.java).setAction(Keys.ACTION_START),
         PendingIntent.FLAG_IMMUTABLE
     )
     private val showActionPendingIntent: PendingIntent? = TaskStackBuilder.create(trackerService).run {
@@ -112,14 +112,16 @@ class NotificationHelper(private val trackerService: TrackerService) {
     private val stopAction = NotificationCompat.Action(
         R.drawable.ic_notification_action_stop_24dp,
         trackerService.getString(R.string.notification_pause),
-        stopActionPendingIntent)
+        stopActionPendingIntent
+    )
     private val resumeAction = NotificationCompat.Action(
         R.drawable.ic_notification_action_resume_36dp,
         trackerService.getString(R.string.notification_resume),
-        resumeActionPendingIntent)
+        resumeActionPendingIntent
+    )
     private val showAction = NotificationCompat.Action(
         R.drawable.ic_notification_action_show_36dp,
         trackerService.getString(R.string.notification_show),
-        showActionPendingIntent)
-
+        showActionPendingIntent
+    )
 }

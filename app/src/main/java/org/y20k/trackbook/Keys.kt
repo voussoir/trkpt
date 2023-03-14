@@ -33,7 +33,6 @@ object Keys {
     // intent actions
     const val ACTION_START: String = "org.y20k.trackbook.action.START"
     const val ACTION_STOP: String = "org.y20k.trackbook.action.STOP"
-    const val ACTION_RESUME: String = "org.y20k.trackbook.action.RESUME"
 
     // args
     const val ARG_TRACK_TITLE: String = "ArgTrackTitle"
@@ -68,10 +67,8 @@ object Keys {
     const val STATE_THEME_DARK_MODE: String = "stateDarkMode"
 
     // dialog types
-    const val DIALOG_RESUME_EMPTY_RECORDING: Int = 0
     const val DIALOG_DELETE_TRACK: Int = 1
     const val DIALOG_DELETE_NON_STARRED: Int = 2
-    const val DIALOG_DELETE_CURRENT_RECORDING: Int = 3
 
     // dialog results
     const val DIALOG_EMPTY_PAYLOAD_STRING: String = ""
