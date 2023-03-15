@@ -18,21 +18,18 @@ import android.content.Context
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.y20k.trackbook.Keys
 import org.y20k.trackbook.R
-import org.y20k.trackbook.helpers.LogHelper
 
 /*
  * YesNoDialog class
  */
-class YesNoDialog (private var yesNoDialogListener: YesNoDialogListener) {
-
+class YesNoDialog (private var yesNoDialogListener: YesNoDialogListener)
+{
     /* Interface used to communicate back to activity */
-    interface YesNoDialogListener {
+    interface YesNoDialogListener
+    {
         fun onYesNoDialog(type: Int, dialogResult: Boolean, payload: Int, payloadString: String) {
         }
     }
-
-    /* Define log tag */
-    private val TAG = LogHelper.makeLogTag(YesNoDialog::class.java.simpleName)
 
     /* Construct and show dialog - variant: message from string  */
     fun show(context: Context,
@@ -42,7 +39,8 @@ class YesNoDialog (private var yesNoDialogListener: YesNoDialogListener) {
              yesButton: Int = R.string.dialog_yes_no_positive_button_default,
              noButton: Int = R.string.dialog_generic_button_cancel,
              payload: Int = Keys.DIALOG_EMPTY_PAYLOAD_INT,
-             payloadString: String = Keys.DIALOG_EMPTY_PAYLOAD_STRING) {
+             payloadString: String = Keys.DIALOG_EMPTY_PAYLOAD_STRING)
+    {
         // extract string from message resource and feed into main show method
         show(context, type, title, context.getString(message), yesButton, noButton, payload, payloadString)
     }

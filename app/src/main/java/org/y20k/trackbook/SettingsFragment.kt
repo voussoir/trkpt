@@ -43,20 +43,11 @@ import androidx.preference.contains
 import get_path_from_uri
 import org.y20k.trackbook.helpers.AppThemeHelper
 import org.y20k.trackbook.helpers.LengthUnitHelper
-import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.PreferencesHelper
 import org.y20k.trackbook.helpers.random_device_id
 
-const val INTENT_DATABASE_DIRECTORY_PICKER = 12121
-
-/*
- * SettingsFragment class
- */
-class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogListener {
-
-    /* Define log tag */
-    private val TAG: String = LogHelper.makeLogTag(SettingsFragment::class.java)
-
+class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogListener
+{
     /* Overrides onViewCreated from PreferenceFragmentCompat */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)

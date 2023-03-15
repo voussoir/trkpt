@@ -32,7 +32,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.Main
-import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.UiHelper
 import org.y20k.trackbook.helpers.iso8601_format
 import org.y20k.trackbook.tracklist.TracklistAdapter
@@ -40,25 +39,24 @@ import org.y20k.trackbook.tracklist.TracklistAdapter
 /*
  * TracklistFragment class
  */
-class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener, YesNoDialog.YesNoDialogListener {
-
-    /* Define log tag */
-    private val TAG: String = LogHelper.makeLogTag(TracklistFragment::class.java)
-
+class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener, YesNoDialog.YesNoDialogListener
+{
     /* Main class variables */
     private lateinit var tracklistAdapter: TracklistAdapter
     private lateinit var trackElementList: RecyclerView
     private lateinit var tracklistOnboarding: ConstraintLayout
 
     /* Overrides onCreateView from Fragment */
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?)
+    {
         super.onCreate(savedInstanceState)
         // create tracklist adapter
         tracklistAdapter = TracklistAdapter(this, (requireActivity().applicationContext as Trackbook).database)
     }
 
     /* Overrides onCreateView from Fragment */
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View?
+    {
         // find views
         val rootView = inflater.inflate(R.layout.fragment_tracklist, container, false)
         trackElementList = rootView.findViewById(R.id.track_element_list)

@@ -38,9 +38,6 @@ import org.y20k.trackbook.helpers.*
  */
 class TrackerService: Service()
 {
-    /* Define log tag */
-    private val TAG: String = LogHelper.makeLogTag(TrackerService::class.java)
-
     /* Main class variables */
     var trackingState: Int = Keys.STATE_TRACKING_STOPPED
     var gpsProviderActive: Boolean = false
@@ -71,27 +68,27 @@ class TrackerService: Service()
     {
         if (! use_gps_location)
         {
-            LogHelper.v(TAG, "Skipping GPS listener.")
+            Log.v("VOUSSOIR", "Skipping GPS listener.")
             return
         }
 
         if (gpsLocationListenerRegistered)
         {
-            LogHelper.v(TAG, "GPS location listener has already been added.")
+            Log.v("VOUSSOIR", "GPS location listener has already been added.")
             return
         }
 
         gpsProviderActive = isGpsEnabled(locationManager)
         if (! gpsProviderActive)
         {
-            LogHelper.w(TAG, "Device GPS is not enabled.")
+            Log.w("VOUSSOIR", "Device GPS is not enabled.")
             return
         }
 
         val has_permission: Boolean = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         if (! has_permission)
         {
-            LogHelper.w(TAG, "Location permission is not granted.")
+            Log.w("VOUSSOIR", "Location permission is not granted.")
             return
         }
 
@@ -102,34 +99,34 @@ class TrackerService: Service()
             gpsLocationListener,
         )
         gpsLocationListenerRegistered = true
-        LogHelper.v(TAG, "Added GPS location listener.")
+        Log.v("VOUSSOIR", "Added GPS location listener.")
     }
 
     private fun addNetworkLocationListener()
     {
         if (! use_network_location)
         {
-            LogHelper.v(TAG, "Skipping Network listener.")
+            Log.v("VOUSSOIR", "Skipping Network listener.")
             return
         }
 
         if (networkLocationListenerRegistered)
         {
-            LogHelper.v(TAG, "Network location listener has already been added.")
+            Log.v("VOUSSOIR", "Network location listener has already been added.")
             return
         }
 
         networkProviderActive = isNetworkEnabled(locationManager)
         if (!networkProviderActive)
         {
-            LogHelper.w(TAG, "Unable to add Network location listener.")
+            Log.w("VOUSSOIR", "Unable to add Network location listener.")
             return
         }
 
         val has_permission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         if (! has_permission)
         {
-            LogHelper.w(TAG, "Unable to add Network location listener. Location permission is not granted.")
+            Log.w("VOUSSOIR", "Unable to add Network location listener. Location permission is not granted.")
             return
         }
 
@@ -140,7 +137,7 @@ class TrackerService: Service()
             networkLocationListener,
         )
         networkLocationListenerRegistered = true
-        LogHelper.v(TAG, "Added Network location listener.")
+        Log.v("VOUSSOIR", "Added Network location listener.")
     }
 
     private fun createLocationListener(): LocationListener
@@ -186,7 +183,7 @@ class TrackerService: Service()
             }
             override fun onProviderEnabled(provider: String)
             {
-                LogHelper.v(TAG, "onProviderEnabled $provider")
+                Log.v("VOUSSOIR", "onProviderEnabled $provider")
                 when (provider) {
                     LocationManager.GPS_PROVIDER -> gpsProviderActive = isGpsEnabled(locationManager)
                     LocationManager.NETWORK_PROVIDER -> networkProviderActive = isNetworkEnabled(locationManager)
@@ -194,7 +191,7 @@ class TrackerService: Service()
             }
             override fun onProviderDisabled(provider: String)
             {
-                LogHelper.v(TAG, "onProviderDisabled $provider")
+                Log.v("VOUSSOIR", "onProviderDisabled $provider")
                 when (provider) {
                     LocationManager.GPS_PROVIDER -> gpsProviderActive = isGpsEnabled(locationManager)
                     LocationManager.NETWORK_PROVIDER -> networkProviderActive = isNetworkEnabled(locationManager)
@@ -253,7 +250,7 @@ class TrackerService: Service()
     /* Overrides onDestroy from Service */
     override fun onDestroy()
     {
-        LogHelper.i("VOUSSOIR", "TrackerService.onDestroy.")
+        Log.i("VOUSSOIR", "TrackerService.onDestroy.")
         super.onDestroy()
         if (trackingState == Keys.STATE_TRACKING_ACTIVE)
         {
@@ -282,7 +279,7 @@ class TrackerService: Service()
         {
             if (trackingState == Keys.STATE_TRACKING_ACTIVE)
             {
-                LogHelper.w(TAG, "Trackbook has been killed by the operating system. Trying to resume recording.")
+                Log.w("VOUSSOIR", "Trackbook has been killed by the operating system. Trying to resume recording.")
                 startTracking()
             }
         }
@@ -320,11 +317,11 @@ class TrackerService: Service()
         {
             locationManager.removeUpdates(gpsLocationListener)
             gpsLocationListenerRegistered = false
-            LogHelper.v(TAG, "Removed GPS location listener.")
+            Log.v("VOUSSOIR", "Removed GPS location listener.")
         }
         else
         {
-            LogHelper.w(TAG, "Unable to remove GPS location listener. Location permission is needed.")
+            Log.w("VOUSSOIR", "Unable to remove GPS location listener. Location permission is needed.")
         }
     }
 
@@ -334,11 +331,11 @@ class TrackerService: Service()
         {
             locationManager.removeUpdates(networkLocationListener)
             networkLocationListenerRegistered = false
-            LogHelper.v(TAG, "Removed Network location listener.")
+            Log.v("VOUSSOIR", "Removed Network location listener.")
         }
         else
         {
-            LogHelper.w(TAG, "Unable to remove Network location listener. Location permission is needed.")
+            Log.w("VOUSSOIR", "Unable to remove Network location listener. Location permission is needed.")
         }
     }
 

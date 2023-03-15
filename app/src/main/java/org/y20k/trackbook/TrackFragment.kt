@@ -22,6 +22,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,7 +30,6 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.fragment.app.Fragment
-import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.iso8601_format
 import org.y20k.trackbook.ui.TrackFragmentLayoutHolder
 import java.text.SimpleDateFormat
@@ -37,9 +37,6 @@ import java.util.*
 
 class TrackFragment : Fragment(), YesNoDialog.YesNoDialogListener
 {
-    /* Define log tag */
-    private val TAG: String = LogHelper.makeLogTag(TrackFragment::class.java)
-
     /* Main class variables */
     private lateinit var layout: TrackFragmentLayoutHolder
 
@@ -143,7 +140,7 @@ class TrackFragment : Fragment(), YesNoDialog.YesNoDialogListener
         }
         catch (e: Exception)
         {
-            LogHelper.e(TAG, "Unable to save GPX.")
+            Log.e("VOUSSOIR", "Unable to save GPX.")
             Toast.makeText(activity as Context, R.string.toast_message_install_file_helper, Toast.LENGTH_LONG).show()
         }
     }

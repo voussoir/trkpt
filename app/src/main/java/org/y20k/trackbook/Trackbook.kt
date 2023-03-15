@@ -17,16 +17,12 @@
 package org.y20k.trackbook
 
 import android.Manifest
-import android.app.Activity
 import android.app.Application
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.util.Log
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import com.google.android.material.color.DynamicColors
 import org.y20k.trackbook.helpers.AppThemeHelper
-import org.y20k.trackbook.helpers.LogHelper
 import org.y20k.trackbook.helpers.PreferencesHelper
 import org.y20k.trackbook.helpers.PreferencesHelper.initPreferences
 import java.io.File
@@ -37,7 +33,8 @@ interface DatabaseChangedListener
     fun database_changed()
 }
 
-class Trackbook : Application() {
+class Trackbook : Application()
+{
     val database: Database = Database(this)
     val homepoints: ArrayList<Homepoint> = ArrayList()
     val database_changed_listeners = ArrayList<DatabaseChangedListener>()
@@ -53,7 +50,7 @@ class Trackbook : Application() {
     override fun onCreate()
     {
         super.onCreate()
-        LogHelper.v("VOUSSOIR", "Trackbook application started.")
+        Log.i("VOUSSOIR", "Trackbook.onCreate")
         DynamicColors.applyToActivitiesIfAvailable(this)
         // initialize single sharedPreferences object when app is launched
         initPreferences()
@@ -136,7 +133,7 @@ class Trackbook : Application() {
     override fun onTerminate()
     {
         super.onTerminate()
-        LogHelper.v("VOUSSOIR", "Trackbook application terminated.")
+        Log.i("VOUSSOIR", "Trackbook.onTerminate")
         database.close()
     }
 }

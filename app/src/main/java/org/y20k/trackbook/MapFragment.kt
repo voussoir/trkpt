@@ -61,9 +61,6 @@ import org.y20k.trackbook.helpers.*
  */
 class MapFragment : Fragment()
 {
-    /* Define log tag */
-    private val TAG: String = LogHelper.makeLogTag(MapFragment::class.java)
-
     /* Main class variables */
     private var bound: Boolean = false
     private val handler: Handler = Handler(Looper.getMainLooper())
@@ -314,7 +311,7 @@ class MapFragment : Fragment()
             // permission was granted - re-bind service
             activity?.unbindService(connection)
             activity?.bindService(Intent(activity, TrackerService::class.java),  connection,  Context.BIND_AUTO_CREATE)
-            LogHelper.i(TAG, "Request result: Location permission has been granted.")
+            Log.i("VOUSSOIR", "Request result: Location permission has been granted.")
         }
         else
         {
