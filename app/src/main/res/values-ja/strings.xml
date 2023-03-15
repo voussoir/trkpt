@@ -20,8 +20,6 @@
     <string name="button_save">保存してクリア</string>
     <!-- dialogs -->
     <string name="dialog_share_gpx">GPX ファイルを共有...</string>
-    <string name="dialog_error_empty_recording_message">トラックブックはこれまでウェイポイントを記録していません。</string>
-    <string name="dialog_error_empty_recording_button_resume">記録を再開</string>
     <!-- toast messages -->
     <string name="toast_message_elevation_info">ヒント: 標高データの精度は、お使いのデバイスによって異なります。ルート全体の上り坂と下り坂の標高を測定します。</string>
     <string name="toast_message_install_file_helper">先にファイルマネージャか GPX トレースビューアーをインストールしてください。</string>

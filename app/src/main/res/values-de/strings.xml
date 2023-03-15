@@ -20,8 +20,6 @@
     <string name="button_save">Speichern</string>
     <!-- dialogs -->
     <string name="dialog_share_gpx">GPX-Datei teilen mit</string>
-    <string name="dialog_error_empty_recording_message">Trackbook hat noch keine Wegpunkte aufgenommen.</string>
-    <string name="dialog_error_empty_recording_button_resume">Aufnahme fortsetzen</string>
     <!-- toast messages -->
     <string name="toast_message_copied_to_clipboard">In die Zwischenablage kopiert.</string>
     <string name="toast_message_elevation_info">Hinweis: Die Genauigkeit der Höhenmeter-Werte ist geräteabhängig. Gemessen werden Steigungen und Gefälle der Gesamtstrecke.</string>

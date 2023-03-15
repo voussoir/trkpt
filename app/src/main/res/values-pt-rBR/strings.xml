@@ -25,8 +25,6 @@
     <string name="dialog_generic_button_cancel">Cancelar</string>
     <string name="dialog_generic_button_okay">OK</string>
     <string name="dialog_generic_details_button">Mostrar detalhes</string>
-    <string name="dialog_error_empty_recording_message">Trackbook não registrou nenhum ponto de passagem até agora.</string>
-    <string name="dialog_error_empty_recording_button_resume">Retomar gravação</string>
     <string name="dialog_rename_track_button">Renomear</string>
     <string name="dialog_rename_track_input_hint">Insira um novo nome</string>
     <string name="dialog_share_gpx">Compartilhar arquivo GPX com</string>

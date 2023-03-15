@@ -43,7 +43,6 @@
     <string name="marker_description_time">Czas</string>
     <string name="snackbar_message_location_permission_denied">Nie udzielono zezwolenia na lokalizację. Trackbook nie będzie działać.</string>
     <string name="dialog_rename_track_input_hint">Wpisz nową nazwę</string>
-    <string name="dialog_error_empty_recording_button_resume">Zapis życiorysu</string>
     <string name="toast_message_elevation_info">Wskazówka: Dokładność danych dotyczących wysokości zależy od urządzenia użytkownika. Mierzone jest wzniesienie i zejście całej trasy.</string>
     <string name="toast_message_install_file_helper">Nie można zapisać. Proszę najpierw zainstalować menedżera plików.</string>
     <string name="statistics_sheet_p_steps">Podjęte kroki:</string>
@@ -91,6 +90,5 @@
     <string name="toast_message_copied_to_clipboard">Skopiowane do schowka.</string>
     <string name="dialog_share_gpx">Udostępnianie pliku GPX</string>
     <string name="dialog_yes_no_positive_button_default">Tak</string>
-    <string name="dialog_error_empty_recording_message">Trackbook nie zarejestrował dotychczas żadnych waypointów.</string>
     <string name="app_name">Trackbook</string>
 </resources>

@@ -28,8 +28,6 @@
     <string name="dialog_share_gpx">Поделиться файлом GPX через</string>
     <string name="dialog_rename_track_input_hint">Введите новое имя</string>
     <string name="dialog_rename_track_button">Переименовать</string>
-    <string name="dialog_error_empty_recording_button_resume">Возобновить запись</string>
-    <string name="dialog_error_empty_recording_message">В Trackbook пока что не записаны путевые точки.</string>
     <string name="dialog_generic_details_button">Показать подробности</string>
     <string name="dialog_generic_button_okay">ОЕ</string>
     <string name="dialog_generic_button_cancel">Отмена</string>

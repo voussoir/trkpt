@@ -20,8 +20,6 @@
     <string name="button_save">Opslaan</string>
     <!-- dialogs -->
     <string name="dialog_share_gpx">GPX-bestand delen met</string>
-    <string name="dialog_error_empty_recording_message">Trackbook heeft nog geen routepunten vastgelegd.</string>
-    <string name="dialog_error_empty_recording_button_resume">Opnemen hervatten</string>
     <!-- toast messages -->
     <string name="toast_message_elevation_info">Tip: De nauwkeurigheid van de hoogtemeter hangt af van uw toestel. De stijging en daling van de hele afstand wordt gemeten.</string>
     <string name="toast_message_install_file_helper">Kan niet opslaan. Installeer eerst een bestandsbeheerder.</string>

@@ -43,7 +43,6 @@
     <string name="layout_onboarding_description_app_icon">Trackbook Uygulama Simgesi</string>
     <string name="quick_settings_tile_title_pause">Kaydı Durdur</string>
     <string name="quick_settings_tile_title_start">Kaydı Başlat</string>
-    <string name="dialog_error_empty_recording_button_resume">Kaydı Devam Ettir</string>
     <string name="quick_settings_tile_title_default">Kayıt</string>
     <string name="statistics_sheet_p_velocity">Ortalama hız:</string>
     <string name="statistics_sheet_p_negative_elevation">Yükseklik (yokuş aşağı):</string>
@@ -74,7 +73,6 @@
     <string name="dialog_share_gpx">GPX dosyasını paylaş</string>
     <string name="dialog_rename_track_input_hint">Yeni bir ad girin</string>
     <string name="dialog_rename_track_button">Yeniden adlandır</string>
-    <string name="dialog_error_empty_recording_message">Trackbook şu ana kadar herhangi bir ara nokta kaydetmedi.</string>
     <string name="dialog_generic_details_button">Ayrıntıları göster</string>
     <string name="dialog_generic_button_okay">Tamam</string>
     <string name="dialog_generic_button_cancel">İptal</string>

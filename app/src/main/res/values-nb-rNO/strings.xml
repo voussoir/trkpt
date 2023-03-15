@@ -20,8 +20,6 @@
     <string name="button_save">Lagre og tøm</string>
     <!-- dialogs -->
     <string name="dialog_share_gpx">Del GPX-fil med</string>
-    <string name="dialog_error_empty_recording_message">Trackbook har ikke registrert noen veipunkter så langt.</string>
-    <string name="dialog_error_empty_recording_button_resume">Gjenoppta opptak</string>
     <!-- toast messages -->
     <string name="toast_message_elevation_info">Hint: Høydedataens nøyaktighet avhenger av enheten din. Opp og ned-stigningen for hele ruten måles.</string>
     <string name="toast_message_install_file_helper">Klarte ikke å lagre. Installer en filbehandler først.</string>

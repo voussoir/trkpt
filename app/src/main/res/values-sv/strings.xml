@@ -21,8 +21,6 @@
     <string name="button_save">Spara</string>
     <!-- dialogs -->
     <string name="dialog_share_gpx">Dela GPX-fil med</string>
-    <string name="dialog_error_empty_recording_message">Trackbook spelade inte in några vägpunkter så här långt.</string>
-    <string name="dialog_error_empty_recording_button_resume">Återuppta inspelning</string>
     <!-- toast messages -->
     <!--<string name="toast_message_permissions_granted"></string>-->
     <!--<string name="toast_message_no_external_storage"></string>-->

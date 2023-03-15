@@ -30,8 +30,6 @@
     <string name="dialog_generic_button_cancel">Cancel</string>
     <string name="dialog_generic_button_okay">OK</string>
     <string name="dialog_generic_details_button">Show details</string>
-    <string name="dialog_error_empty_recording_message">Unable to save. Trackbook did not record any waypoints so far.</string>
-    <string name="dialog_error_empty_recording_button_resume">Resume Recording</string>
     <string name="dialog_rename_track_button">Rename</string>
     <string name="dialog_rename_track_input_hint">Enter a new name</string>
     <string name="dialog_share_gpx">Share GPX file with</string>
@@ -55,13 +53,13 @@
     <string name="statistics_sheet_p_distance">Total distance:</string>
     <string name="statistics_sheet_p_steps">Steps taken:</string>
     <string name="statistics_sheet_p_steps_no_pedometer">pedometer not available</string>
-    <string name="statistics_sheet_p_waypoints">Recorded waypoints:</string>
+    <string name="statistics_sheet_p_waypoints">Recorded trackpoints:</string>
     <string name="statistics_sheet_p_duration">Total duration:</string>
     <string name="statistics_sheet_p_recording_paused">Recording paused:</string>
     <string name="statistics_sheet_p_recording_start">Recording started:</string>
     <string name="statistics_sheet_p_recording_stop">Recording stopped:</string>
-    <string name="statistics_sheet_p_max_altitude">Highest waypoint:</string>
-    <string name="statistics_sheet_p_min_altitude">Lowest waypoint:</string>
+    <string name="statistics_sheet_p_max_altitude">Highest trackpoint:</string>
+    <string name="statistics_sheet_p_min_altitude">Lowest trackpoint:</string>
     <string name="statistics_sheet_p_positive_elevation">Elevation (uphill):</string>
     <string name="statistics_sheet_p_negative_elevation">Elevation (downhill):</string>
     <string name="statistics_sheet_p_velocity">Average velocity:</string>
@@ -82,7 +80,7 @@
     <string name="pref_app_version_title">App Version</string>
     <string name="pref_accuracy_threshold_summary">Discard location fixes with an accuracy larger than (meters):</string>
     <string name="pref_accuracy_threshold_title">Accuracy Threshold</string>
-    <string name="pref_altitude_smoothing_value_summary" translatable="false">Number of waypoints used to smooth the elevation curve.</string>
+    <string name="pref_altitude_smoothing_value_summary" translatable="false">Number of trackpoints used to smooth the elevation curve.</string>
     <string name="pref_altitude_smoothing_value_title" translatable="false">Altitude Smoothing</string>
     <string name="pref_auto_export_interval_summary">Automatically export GPX file after this many hours.</string>
     <string name="pref_device_id_summary">A unique ID to distinguish tracks recorded across multiple devices:</string>
@@ -104,8 +102,8 @@
     <string name="pref_imperial_measurement_units_summary_metric">Currently using metric units (Kilometer, Meter).</string>
     <string name="pref_imperial_measurement_units_summary_imperial">Currently using imperial units (Miles, Feet).</string>
     <string name="pref_imperial_measurement_units_title">Use Imperial Measurements</string>
-    <string name="pref_omit_rests_on">Waypoints will not be recorded if they are too close to the previous waypoint.</string>
-    <string name="pref_omit_rests_off">All waypoints will be recorded, even while standing still.</string>
+    <string name="pref_omit_rests_on">Trackpoints will not be recorded if they are too close to your recent trackpoints.</string>
+    <string name="pref_omit_rests_off">All trackpoints will be recorded, even while standing still.</string>
     <string name="pref_omit_rests_title">Omit repeated points</string>
     <string name="pref_report_issue_summary">Report bugs and suggest improvements on GitHub.</string>
     <string name="pref_report_issue_title">Report Issue</string>

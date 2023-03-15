@@ -142,44 +142,80 @@ class TrackerService: Service()
 
     private fun createLocationListener(): LocationListener
     {
-        return object : LocationListener {
+        return object : LocationListener
+        {
             override fun onLocationChanged(location: Location)
             {
+                Log.i("VOUSSOIR", "Processing point ${location.latitude}, ${location.longitude} ${location.time}.")
+
                 if (! isBetterLocation(location, currentBestLocation))
                 {
+                    Log.i("VOUSSOIR", "Not better than previous.")
                     return
                 }
+
                 currentBestLocation = location
+
                 if (trackingState != Keys.STATE_TRACKING_ACTIVE)
                 {
                     return
                 }
-                Log.i("VOUSSOIR", "Processing point ${location.latitude}, ${location.longitude} ${location.time}.")
-                if (should_keep_point((location)))
+
+                displayNotification()
+
+                if(! trackbook.database.ready)
                 {
-                    val now: Long = location.time
-                    // val now: Date = GregorianCalendar.getInstance().time
-                    val trkpt = Trkpt(location=location)
-                    trackbook.database.insert_trkpt(device_id, trkpt)
-                    recent_trkpts.add(trkpt)
-                    while (recent_trkpts.size > RECENT_TRKPT_COUNT)
+                    Log.i("VOUSSOIR", "Omitting due to database not ready.")
+                    return
+                }
+                if (location.latitude == 0.0 || location.longitude == 0.0)
+                {
+                    Log.i("VOUSSOIR", "Omitting due to 0,0 location.")
+                    return
+                }
+                if (! isRecentEnough(location))
+                {
+                    Log.i("VOUSSOIR", "Omitting due to not recent enough.")
+                    return
+                }
+                if (! isAccurateEnough(location, Keys.DEFAULT_THRESHOLD_LOCATION_ACCURACY))
+                {
+                    Log.i("VOUSSOIR", "Omitting due to not accurate enough.")
+                    return
+                }
+                for (homepoint in trackbook.homepoints)
+                {
+                    if (homepoint.location.distanceTo(location) < homepoint.radius)
                     {
-                        recent_trkpts.removeFirst()
-                    }
-
-                    recent_displacement_trkpts.add(trkpt)
-                    while (recent_displacement_trkpts.size > 5)
-                    {
-                        recent_displacement_trkpts.removeFirst()
-                    }
-
-                    if (now - lastCommit > Keys.COMMIT_INTERVAL)
-                    {
-                        trackbook.database.commit()
-                        lastCommit  = now
+                        Log.i("VOUSSOIR", "Omitting due to homepoint ${homepoint.name}.")
+                        return
                     }
                 }
-                displayNotification()
+                if (! (recent_displacement_trkpts.isEmpty() || isDifferentEnough(recent_displacement_trkpts.first().toLocation(), location, omitRests)))
+                {
+                    Log.i("VOUSSOIR", "Omitting due to too close to previous.")
+                    return
+                }
+
+                val trkpt = Trkpt(location=location)
+                trackbook.database.insert_trkpt(device_id, trkpt)
+                recent_trkpts.add(trkpt)
+                while (recent_trkpts.size > RECENT_TRKPT_COUNT)
+                {
+                    recent_trkpts.removeFirst()
+                }
+
+                recent_displacement_trkpts.add(trkpt)
+                while (recent_displacement_trkpts.size > 5)
+                {
+                    recent_displacement_trkpts.removeFirst()
+                }
+
+                if (location.time - lastCommit > Keys.COMMIT_INTERVAL)
+                {
+                    trackbook.database.commit()
+                    lastCommit  = location.time
+                }
             }
             override fun onProviderEnabled(provider: String)
             {
@@ -414,46 +450,4 @@ class TrackerService: Service()
     /*
      * End of inner class
      */
-
-    fun should_keep_point(location: Location): Boolean
-    {
-        if(! trackbook.database.ready)
-        {
-            Log.i("VOUSSOIR", "Omitting due to database not ready.")
-            return false
-        }
-        if (location.latitude == 0.0 || location.longitude == 0.0)
-        {
-            Log.i("VOUSSOIR", "Omitting due to 0,0 location.")
-            return false
-        }
-        if (! isRecentEnough(location))
-        {
-            Log.i("VOUSSOIR", "Omitting due to not recent enough.")
-            return false
-        }
-        if (! isAccurateEnough(location, Keys.DEFAULT_THRESHOLD_LOCATION_ACCURACY))
-        {
-            Log.i("VOUSSOIR", "Omitting due to not accurate enough.")
-            return false
-        }
-        for (homepoint in trackbook.homepoints)
-        {
-            if (homepoint.location.distanceTo(location) < homepoint.radius)
-            {
-                Log.i("VOUSSOIR", "Omitting due to homepoint ${homepoint.name}.")
-                return false
-            }
-        }
-        if (recent_displacement_trkpts.isEmpty())
-        {
-            return true
-        }
-        if (! isDifferentEnough(recent_displacement_trkpts.first().toLocation(), location, omitRests))
-        {
-            Log.i("VOUSSOIR", "Omitting due to too close to previous.")
-            return false
-        }
-        return true
-    }
 }

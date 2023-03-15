@@ -20,8 +20,6 @@
     <string name="button_save">Gem</string>
     <!-- dialogs -->
     <string name="dialog_share_gpx">Del GPX fil med</string>
-    <string name="dialog_error_empty_recording_message">Trackbook har ingen rutepunkter endnu.</string>
-    <string name="dialog_error_empty_recording_button_resume">Fortsæt optagelse</string>
     <!-- toast messages -->
     <string name="toast_message_elevation_info">Tip: nøjagtigheden af højde målingerne afhænger af din enhed. Op ad og nedadgående højder på hele ruten måles.</string>
     <string name="toast_message_install_file_helper">Kan ikke gemme. Installer venligst en filhåndteringsprogram først.</string>

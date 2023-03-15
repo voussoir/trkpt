@@ -50,7 +50,6 @@
     <string name="toast_message_elevation_info">Savjet: Točnost podataka o visinskoj razlici ovisi o tvom uređaju. Mjeri se visinska razlika cijele rute.</string>
     <string name="app_name">Trackbook</string>
     <string name="statistics_sheet_p_distance">Ukupna udaljenost:</string>
-    <string name="dialog_error_empty_recording_message">Trackbook do sada još nije snimio niti jednu točku rute.</string>
     <string name="quick_settings_tile_title_start">Počni snimati</string>
     <string name="abbreviation_seconds">s</string>
     <string name="dialog_rename_track_button">Preimenuj</string>
@@ -76,7 +75,6 @@
     <string name="statistics_sheet_p_duration">Ukupno trajanje:</string>
     <string name="statistics_sheet_p_waypoints">Snimljene točke rute:</string>
     <string name="layout_onboarding_description_app_icon">Ikona programa Trackbook</string>
-    <string name="dialog_error_empty_recording_button_resume">Nastavi snimati</string>
     <string name="pref_maintenance_title">Održavanje</string>
     <string name="dialog_yes_no_positive_button_delete_non_starred">Izbriši</string>
     <string name="track_list_onboarding_h1_part_2">… će se ovdje prikazati.</string>

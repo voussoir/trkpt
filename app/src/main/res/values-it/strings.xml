@@ -25,8 +25,6 @@
     <string name="dialog_generic_button_cancel">Annulla</string>
     <string name="dialog_generic_button_okay">OK</string>
     <string name="dialog_generic_details_button">Dettagli</string>
-    <string name="dialog_error_empty_recording_message">Trackbook non ha registrato nessuna tappa intermedia finora.</string>
-    <string name="dialog_error_empty_recording_button_resume">Riprendi la registrazione</string>
     <string name="dialog_rename_track_button">Rinomina</string>
     <string name="dialog_rename_track_input_hint">Inserisci un nuovo nome</string>
     <string name="dialog_share_gpx">Condividi il file GPX con</string>

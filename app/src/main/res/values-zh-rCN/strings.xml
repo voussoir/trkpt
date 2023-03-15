@@ -29,8 +29,6 @@
     <string name="dialog_generic_button_cancel">取消</string>
     <string name="dialog_generic_button_okay">确定</string>
     <string name="dialog_generic_details_button">显示详情</string>
-    <string name="dialog_error_empty_recording_message">Trackbook 目前未记录任何航点。</string>
-    <string name="dialog_error_empty_recording_button_resume">恢复记录</string>
     <string name="dialog_rename_track_button">重命名</string>
     <string name="dialog_rename_track_input_hint">请输入一个新名称</string>
     <string name="dialog_share_gpx">分享 GPX 文件到</string>

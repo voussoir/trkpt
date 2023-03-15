@@ -19,8 +19,6 @@
     <string name="button_delete">Supprimer</string>
     <string name="button_save">Sauvegarder</string>
     <!-- dialogs -->
-    <string name="dialog_error_empty_recording_button_resume">Reprendre l\'enregistrement</string>
-    <string name="dialog_error_empty_recording_message">Trackbook n\'a enregistré aucun point de parcours jusqu\'à présent.</string>
     <string name="dialog_share_gpx">Partager le fichier GPX avec</string>
     <!-- toast messages -->
     <string name="toast_message_elevation_info">Astuce : La précision des données d\'altitude dépend de votre appareil. La dénivellation globale du parcours est mesurée.</string>

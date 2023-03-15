@@ -29,7 +29,6 @@
     <string name="button_save">Guardar</string>
     <string name="dialog_generic_button_okay">OK</string>
     <string name="dialog_generic_details_button">Mostrar detalles</string>
-    <string name="dialog_error_empty_recording_message">Trackbook no registró ningún punto de referencia hasta el momento.</string>
     <string name="dialog_rename_track_input_hint">Introduce un nombre nuevo</string>
     <string name="dialog_share_gpx">Compartir el archivo GPX con</string>
     <string name="dialog_yes_no_positive_button_default">Si</string>
@@ -38,7 +37,6 @@
     <string name="dialog_yes_no_message_delete_recording">¿Eliminar esta grabación\?</string>
     <string name="toast_message_copied_to_clipboard">Copiado al portapapeles.</string>
     <string name="toast_message_install_file_helper">No se puede guardar. Primero instala un administrador de archivos.</string>
-    <string name="dialog_error_empty_recording_button_resume">Continuar grabación</string>
     <string name="toast_message_poi_added">Se agregó un marcador de punto de interés.</string>
     <string name="toast_message_poi_removed">Se elimino un marcador de punto de interés.</string>
     <string name="toast_message_save_gpx">Guardando grabacion como GPX.</string>

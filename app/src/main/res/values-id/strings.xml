@@ -174,8 +174,6 @@
     <string name="dialog_share_gpx">Bagikan file GPX dengan</string>
     <string name="dialog_rename_track_input_hint">Masukkan nama baru</string>
     <string name="dialog_rename_track_button">Ubah nama</string>
-    <string name="dialog_error_empty_recording_button_resume">Lanjutkan Perekaman</string>
-    <string name="dialog_error_empty_recording_message">Trackbook tidak merekam titik arah sejauh ini.</string>
     <string name="dialog_generic_details_button">Tampilkan detil</string>
     <string name="dialog_generic_button_okay">Oke</string>
     <string name="dialog_generic_button_cancel">Batalkan</string>
