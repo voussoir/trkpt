@@ -7,18 +7,81 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <!-- OSM MAP -->
-    <org.osmdroid.views.MapView
-        android:id="@+id/map"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:contentDescription="@string/descr_map_last_track"
-        app:layout_anchor="@+id/map"
-        app:layout_anchorGravity="center">
+        >
 
-    </org.osmdroid.views.MapView>
+        <DatePicker
+            android:id="@+id/track_query_start_date"
+            android:layout_width="wrap_content"
+            android:layout_height="130dp"
+            android:translationX="-45dp"
+            android:translationY="-30dp"
+            android:calendarViewShown="false"
+            android:datePickerMode="spinner"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:scaleX="0.5"
+            android:scaleY="0.5"
+            />
+
+        <TimePicker
+            android:id="@+id/track_query_start_time"
+            android:layout_width="wrap_content"
+            android:layout_height="130dp"
+            android:translationX="-150dp"
+            android:translationY="-30dp"
+            android:timePickerMode="spinner"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/track_query_start_date"
+            android:scaleX="0.5"
+            android:scaleY="0.5"
+            />
+
+        <DatePicker
+            android:id="@+id/track_query_end_date"
+            android:layout_width="wrap_content"
+            android:layout_height="130dp"
+            android:translationX="-45dp"
+            android:translationY="-100dp"
+            android:datePickerMode="spinner"
+            android:calendarViewShown="false"
+            app:layout_constraintTop_toBottomOf="@+id/track_query_start_date"
+            app:layout_constraintStart_toStartOf="parent"
+            android:scaleX="0.5"
+            android:scaleY="0.5"
+            />
+
+        <TimePicker
+            android:id="@+id/track_query_end_time"
+            android:layout_width="wrap_content"
+            android:layout_height="130dp"
+            android:translationX="-150dp"
+            android:translationY="-100dp"
+            android:timePickerMode="spinner"
+            app:layout_constraintTop_toBottomOf="@+id/track_query_start_time"
+            app:layout_constraintStart_toEndOf="@+id/track_query_start_date"
+            android:scaleX="0.5"
+            android:scaleY="0.5"
+            />
+
+        <org.osmdroid.views.MapView
+            android:id="@+id/map"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@+id/track_query_end_time"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:contentDescription="@string/descr_map_last_track"
+            >
+
+        </org.osmdroid.views.MapView>
+
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- BOTTOM SHEET -->
     <androidx.core.widget.NestedScrollView

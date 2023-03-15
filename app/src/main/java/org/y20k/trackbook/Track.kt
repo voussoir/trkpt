@@ -30,8 +30,8 @@ import java.util.*
 data class Track (
     val database: Database,
     val device_id: String,
-    val start_time: Date,
-    val stop_time: Date,
+    var start_time: Date,
+    var end_time: Date,
     var name: String = "",
     val trkpts: ArrayDeque<Trkpt> = ArrayDeque<Trkpt>(),
     var view_latitude: Double = Keys.DEFAULT_LATITUDE,
@@ -135,7 +135,6 @@ data class Track (
                 continue
             }
             stats.distance += previous.toLocation().distanceTo(trkpt.toLocation())
-            Log.i("VOUSSOIR", previous.toLocation().distanceTo(trkpt.toLocation()).toString())
             val ascentdiff = trkpt.altitude - previous.altitude
             if (ascentdiff > 0)
             {
@@ -169,8 +168,9 @@ data class Track (
     {
         val cursor: Cursor = database.connection.rawQuery(
             "SELECT lat, lon, time, ele, accuracy, sat FROM trkpt WHERE device_id = ? AND time > ? AND time < ? ORDER BY time ASC",
-            arrayOf(device_id, start_time.time.toString(), stop_time.time.toString())
+            arrayOf(device_id, start_time.time.toString(), end_time.time.toString())
         )
+        Log.i("VOUSSOIR", "Querying points between ${start_time} -- ${end_time}")
         val COLUMN_LAT = cursor.getColumnIndex("lat")
         val COLUMN_LON = cursor.getColumnIndex("lon")
         val COLUMN_ELE = cursor.getColumnIndex("ele")

@@ -69,7 +69,7 @@ class TracklistAdapter(val fragment: Fragment, val database: Database) : Recycle
                 Log.i("VOUSSOIR", "TracklistAdapter prep track ${trackdate}")
                 if (start_time != null && stop_time != null)
                 {
-                    val track = Track(database=database, device_id=device_id, start_time=start_time, stop_time=stop_time)
+                    val track = Track(database=database, device_id=device_id, start_time=start_time, end_time=stop_time)
                     track.name = "$trackdate $device_id"
                     tracks.add(track)
                 }

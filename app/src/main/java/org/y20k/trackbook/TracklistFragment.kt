@@ -91,7 +91,7 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
             Keys.ARG_TRACK_TITLE to track.name,
             Keys.ARG_TRACK_DEVICE_ID to track.device_id,
             Keys.ARG_TRACK_START_TIME to iso8601_format.format(track.start_time),
-            Keys.ARG_TRACK_STOP_TIME to iso8601_format.format(track.stop_time),
+            Keys.ARG_TRACK_STOP_TIME to iso8601_format.format(track.end_time),
         )
         findNavController().navigate(R.id.fragment_track, bundle)
     }

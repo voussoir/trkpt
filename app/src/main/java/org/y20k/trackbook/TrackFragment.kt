@@ -49,9 +49,8 @@ class TrackFragment : Fragment(), YesNoDialog.YesNoDialogListener
             name=this.requireArguments().getString(Keys.ARG_TRACK_TITLE, ""),
             device_id= this.requireArguments().getString(Keys.ARG_TRACK_DEVICE_ID, ""),
             start_time= iso8601_format.parse(this.requireArguments().getString(Keys.ARG_TRACK_START_TIME)!!),
-            stop_time=iso8601_format.parse(this.requireArguments().getString(Keys.ARG_TRACK_STOP_TIME)!!),
+            end_time=iso8601_format.parse(this.requireArguments().getString(Keys.ARG_TRACK_STOP_TIME)!!),
         )
-        track.load_trkpts()
         layout = TrackFragmentLayoutHolder(activity as Context, inflater, container, track)
 
         // set up share button
