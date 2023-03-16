@@ -39,13 +39,13 @@ import java.util.*
 
 fun createTrackOverlay(context: Context, map_view: MapView, trkpts: Collection<Trkpt>, trackingState: Int): SimpleFastPointOverlay
 {
-    val points: MutableList<IGeoPoint> = mutableListOf()
+    val trackpoints: MutableList<IGeoPoint> = mutableListOf()
     for (trkpt in trkpts)
     {
         val label = "${context.getString(R.string.marker_description_time)}: ${SimpleDateFormat.getTimeInstance(SimpleDateFormat.MEDIUM, Locale.getDefault()).format(trkpt.time)} | ${context.getString(R.string.marker_description_accuracy)}: ${DecimalFormat("#0.00").format(trkpt.accuracy)} (${trkpt.provider})"
-        points.add(LabelledGeoPoint(trkpt.latitude, trkpt.longitude, trkpt.altitude, label))
+        trackpoints.add(LabelledGeoPoint(trkpt.latitude, trkpt.longitude, trkpt.altitude, label))
     }
-    val pointTheme = SimplePointTheme(points, false)
+    val pointTheme = SimplePointTheme(trackpoints, false)
     val style = Paint()
     style.style = Paint.Style.FILL
     style.color = if (trackingState == Keys.STATE_TRACKING_ACTIVE) context.getColor(R.color.default_red) else context.getColor(R.color.default_blue)
@@ -57,18 +57,26 @@ fun createTrackOverlay(context: Context, map_view: MapView, trkpts: Collection<T
         .setRadius(6F * UiHelper.getDensityScalingFactor(context)) // radius is set in px - scaling factor makes that display density independent (= dp)
         .setIsClickable(true)
         .setCellSize(12) // Sets the grid cell size used for indexing, in pixels. Larger cells result in faster rendering speed, but worse fidelity. Default is 10 pixels, for large datasets (>10k points), use 15.
-    val overlay = SimpleFastPointOverlay(pointTheme, overlayOptions)
+    var overlay = SimpleFastPointOverlay(pointTheme, overlayOptions)
 
-    overlay.setOnClickListener(object : SimpleFastPointOverlay.OnClickListener {
-        override fun onClick(points: SimpleFastPointOverlay.PointAdapter?, point: Int?)
-        {
-            if (points == null || point == null || point == 0)
-            {
-                return
-            }
-            Log.i("VOUSSOIR", "Clicked ${points[point]}")
-        }
-    })
+    // overlay.setOnClickListener(object : SimpleFastPointOverlay.OnClickListener {
+    //     override fun onClick(points: SimpleFastPointOverlay.PointAdapter?, point: Int?)
+    //     {
+    //         if (points == null || point == null || point == 0)
+    //         {
+    //             return
+    //         }
+    //         Log.i("VOUSSOIR", "Clicked ${points[point]}")
+    //         trackpoints.remove(points[point])
+    //         map_view.overlays.remove(overlay)
+    //         overlay = SimpleFastPointOverlay(pointTheme, overlayOptions)
+    //         overlay.setOnClickListener(this)
+    //         map_view.overlays.add(overlay)
+    //         map_view.postInvalidate()
+    //         return
+    //     }
+    // })
+
     map_view.overlays.add(overlay)
     return overlay
 }
