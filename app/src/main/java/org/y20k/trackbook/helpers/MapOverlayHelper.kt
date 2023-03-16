@@ -39,6 +39,7 @@ import java.util.*
 
 fun createTrackOverlay(context: Context, map_view: MapView, trkpts: Collection<Trkpt>, trackingState: Int): SimpleFastPointOverlay
 {
+    Log.i("VOUSSOIR", "MapOverlayHelper.createTrackOverlay")
     val trackpoints: MutableList<IGeoPoint> = mutableListOf()
     for (trkpt in trkpts)
     {
@@ -83,6 +84,7 @@ fun createTrackOverlay(context: Context, map_view: MapView, trkpts: Collection<T
 
 fun create_start_end_markers(context: Context, map_view: MapView, trkpts: Collection<Trkpt>): ItemizedIconOverlay<OverlayItem>?
 {
+    Log.i("VOUSSOIR", "MapOverlayHelper.create_start_end_markers")
     if (trkpts.size == 0)
     {
         return null

@@ -98,8 +98,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     val RERENDER_DELAY: Long = 1000
 
     /* Overrides onCreateView from Fragment */
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        // initialize layout
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View
+    {
         val database: Database = (requireActivity().applicationContext as Trackbook).database
         track = Track(
             database=database,
@@ -108,6 +108,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             start_time= iso8601_format.parse(this.requireArguments().getString(Keys.ARG_TRACK_START_TIME)!!),
             end_time=iso8601_format.parse(this.requireArguments().getString(Keys.ARG_TRACK_STOP_TIME)!!),
         )
+        track.load_trkpts()
         rootView = inflater.inflate(R.layout.fragment_track, container, false)
         mapView = rootView.findViewById(R.id.map)
         save_track_button = rootView.findViewById(R.id.save_button)
@@ -147,7 +148,6 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             mapView.overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
         }
 
-        track.load_trkpts()
         val actual_start_time: Date = if (track.trkpts.isEmpty()) track.start_time else Date(track.trkpts.first().time)
         val actual_end_time: Date = if (track.trkpts.isEmpty()) track.end_time else Date(track.trkpts.last().time)
 
@@ -226,7 +226,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         }
 
         deleteButton.setOnClickListener {
-            val dialogMessage = "${getString(R.string.dialog_yes_no_message_delete_recording)}\n\n${trackNameView.text}"
+            val dialogMessage = "${getString(R.string.dialog_yes_no_message_delete_recording)}\n\n${track.trkpts.size} trackpoints"
             YesNoDialog(this@TrackFragment as YesNoDialog.YesNoDialogListener).show(
                 context = activity as Context,
                 type = Keys.DIALOG_DELETE_TRACK,
@@ -251,6 +251,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
 
     fun render_track()
     {
+        Log.i("VOUSSOIR", "TrackFragment.render_track")
         if (special_points_overlay != null)
         {
             mapView.overlays.remove(special_points_overlay)
@@ -312,7 +313,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 Toast.makeText(context, R.string.toast_message_elevation_info, Toast.LENGTH_LONG).show()
             }
         }
-        // make track name on statistics sheet clickable
+
         trackNameView.setOnClickListener {
             toggleStatisticsSheetVisibility()
         }
@@ -341,11 +342,11 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     private val requery_and_render: Runnable = object : Runnable {
         override fun run()
         {
-            Log.i("VOUSSOIR", "requery_and_render")
+            Log.i("VOUSSOIR", "TrackFragment.requery_and_render")
             track.start_time = get_datetime(track_query_start_date, track_query_start_time, seconds=0)
             track.end_time = get_datetime(track_query_end_date, track_query_end_time, seconds=59)
             track.load_trkpts()
-            Log.i("VOUSSOIR", "Reloaded ${track.trkpts.size} trkpts.")
+            Log.i("VOUSSOIR", "TrackFragment.requery_and_render: Reloaded ${track.trkpts.size} trkpts.")
             render_track()
             mapView.invalidate()
         }
@@ -384,6 +385,9 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 {
                     // user tapped remove track
                     true -> {
+                        track.delete()
+                        handler.removeCallbacks(requery_and_render)
+                        handler.postDelayed(requery_and_render, RERENDER_DELAY)
                         // switch to TracklistFragment and remove track there
                         // val bundle: Bundle = bundleOf(Keys.ARG_TRACK_ID to layout.track.id)
                         // findNavController().navigate(R.id.tracklist_fragment, bundle)

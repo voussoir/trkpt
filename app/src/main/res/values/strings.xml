@@ -37,7 +37,7 @@
     <string name="dialog_yes_no_positive_button_delete_recording">Delete</string>
     <string name="dialog_yes_no_positive_button_delete_non_starred">Delete</string>
     <string name="dialog_yes_no_message_delete_non_starred">Delete all non-starred recordings? This action cannot be undone.</string>
-    <string name="dialog_yes_no_message_delete_recording">Delete this recording?</string>
+    <string name="dialog_yes_no_message_delete_recording">Delete these trackpoints?</string>
     <!-- Toast Messages -->
     <string name="toast_message_copied_to_clipboard">Copied to clipboard.</string>
     <string name="toast_message_elevation_info">Hint: The accuracy of elevation data depends on your device. The uphill and downhill elevation of the whole route is measured.</string>

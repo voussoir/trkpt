@@ -41,7 +41,7 @@ data class Track (
 {
     fun delete()
     {
-        Log.i("VOUSSOIR", "Track.delete.")
+        Log.i("VOUSSOIR", "Track.delete ${device_id} ${start_time} -- ${end_time}.")
     }
 
     fun export_gpx(context: Context, fileuri: Uri): Uri?
@@ -120,6 +120,7 @@ data class Track (
 
     fun statistics(): TrackStatistics
     {
+        Log.i("VOUSSOIR", "Track.statistics")
         var first: Trkpt? = null
         var last: Trkpt? = null
         var previous: Trkpt? = null
@@ -170,7 +171,7 @@ data class Track (
             "SELECT lat, lon, time, ele, accuracy, sat FROM trkpt WHERE device_id = ? AND time > ? AND time < ? ORDER BY time ASC",
             arrayOf(device_id, start_time.time.toString(), end_time.time.toString())
         )
-        Log.i("VOUSSOIR", "Querying points between ${start_time} -- ${end_time}")
+        Log.i("VOUSSOIR", "Track.trkpt_generator: Querying points between ${start_time} -- ${end_time}")
         val COLUMN_LAT = cursor.getColumnIndex("lat")
         val COLUMN_LON = cursor.getColumnIndex("lon")
         val COLUMN_ELE = cursor.getColumnIndex("ele")
