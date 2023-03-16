@@ -216,12 +216,15 @@ data class TrackFragmentLayoutHolder(
         if (special_points_overlay != null)
         {
             mapView.overlays.remove(special_points_overlay)
+        }
+        if (track_overlay != null)
+        {
             mapView.overlays.remove(track_overlay)
         }
         if (track.trkpts.isNotEmpty())
         {
-            special_points_overlay = createSpecialMakersTrackOverlay(context, mapView, track.trkpts, Keys.STATE_TRACKING_STOPPED, displayStartEndMarker = true)
             track_overlay = createTrackOverlay(context, mapView, track.trkpts, Keys.STATE_TRACKING_STOPPED)
+            special_points_overlay = create_start_end_markers(context, mapView, track.trkpts)
         }
         setupStatisticsViews()
     }

@@ -80,7 +80,6 @@ class MapFragment : Fragment()
     private lateinit var mapView: MapView
     private var current_position_overlays = ArrayList<Overlay>()
     private var currentTrackOverlay: SimpleFastPointOverlay? = null
-    private var currentTrackSpecialMarkerOverlay: ItemizedIconOverlay<OverlayItem>? = null
     private lateinit var locationErrorBar: Snackbar
     private lateinit var controller: IMapController
     private var zoomLevel: Double = Keys.DEFAULT_ZOOM_LEVEL
@@ -211,7 +210,6 @@ class MapFragment : Fragment()
 
         // initialize track overlays
         currentTrackOverlay = null
-        currentTrackSpecialMarkerOverlay = null
 
         // initialize main button state
         update_main_button()
@@ -535,15 +533,13 @@ class MapFragment : Fragment()
     /* Overlay current track on map */
     fun create_current_track_overlay(trkpts: Collection<Trkpt>, trackingState: Int)
     {
-        if (currentTrackOverlay != null) {
+        if (currentTrackOverlay != null)
+        {
             mapView.overlays.remove(currentTrackOverlay)
         }
-        if (currentTrackSpecialMarkerOverlay != null) {
-            mapView.overlays.remove(currentTrackSpecialMarkerOverlay)
-        }
-        if (trkpts.isNotEmpty()) {
+        if (trkpts.isNotEmpty())
+        {
             currentTrackOverlay = createTrackOverlay(requireContext(), mapView, trkpts, trackingState)
-            currentTrackSpecialMarkerOverlay = createSpecialMakersTrackOverlay(requireContext(), mapView, trkpts, trackingState)
         }
     }
 

@@ -160,7 +160,7 @@ data class Track (
             return stats
         }
         stats.duration = last.time - first.time
-        stats.velocity = stats.distance / stats.duration
+        stats.velocity = stats.distance / (stats.duration / 1000)
         return stats
     }
 

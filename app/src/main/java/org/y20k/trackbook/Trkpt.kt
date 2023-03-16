@@ -27,7 +27,6 @@ data class Trkpt(
     val accuracy: Float,
     val time: Long,
     val numberSatellites: Int = 0,
-    var starred: Boolean = false
 )
 {
     constructor(location: Location) : this (
