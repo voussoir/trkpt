@@ -81,7 +81,6 @@ class MapFragment : Fragment()
     private var current_position_overlays = ArrayList<Overlay>()
     private var currentTrackOverlay: SimpleFastPointOverlay? = null
     private lateinit var locationErrorBar: Snackbar
-    private lateinit var controller: IMapController
     private var zoomLevel: Double = Keys.DEFAULT_ZOOM_LEVEL
     private var homepoints_overlays = ArrayList<Overlay>()
     private lateinit var database_changed_listener: DatabaseChangedListener
@@ -132,14 +131,13 @@ class MapFragment : Fragment()
         mapView.isLongClickable = true
 
         // basic map setup
-        controller = mapView.controller
         mapView.isTilesScaledToDpi = true
         mapView.isVerticalMapRepetitionEnabled = false
         mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.setMultiTouchControls(true)
         mapView.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
         zoomLevel = PreferencesHelper.loadZoomLevel()
-        controller.setZoom(zoomLevel)
+        mapView.controller.setZoom(zoomLevel)
 
         if (AppThemeHelper.isDarkModeOn(requireActivity()))
         {
@@ -229,11 +227,11 @@ class MapFragment : Fragment()
         }
         zoom_in_button.setOnClickListener {
             zoomLevel += 0.5
-            controller.zoomTo(mapView.zoomLevelDouble + 0.5, 0)
+            mapView.controller.zoomTo(mapView.zoomLevelDouble + 0.5, 0)
         }
         zoom_out_button.setOnClickListener {
             zoomLevel -= 0.5
-            controller.zoomTo(mapView.zoomLevelDouble - 0.5, 0)
+            mapView.controller.zoomTo(mapView.zoomLevelDouble - 0.5, 0)
         }
 
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -368,9 +366,13 @@ class MapFragment : Fragment()
 
     fun centerMap(location: Location, animated: Boolean = false) {
         val position = GeoPoint(location.latitude, location.longitude)
-        when (animated) {
-            true -> controller.animateTo(position)
-            false -> controller.setCenter(position)
+        if (animated)
+        {
+            mapView.controller.animateTo(position)
+        }
+        else
+        {
+            mapView.controller.setCenter(position)
         }
         continuous_auto_center = true
     }
