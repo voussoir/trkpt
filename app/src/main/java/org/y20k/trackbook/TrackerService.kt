@@ -30,6 +30,9 @@ import android.Manifest
 import android.os.*
 import android.util.Log
 import androidx.core.content.ContextCompat
+import org.osmdroid.api.IGeoPoint
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.overlay.simplefastpoint.LabelledGeoPoint
 import java.util.*
 import org.y20k.trackbook.helpers.*
 
@@ -53,6 +56,7 @@ class TrackerService: Service()
     private val RECENT_TRKPT_COUNT = 7200
     lateinit var recent_trkpts: Deque<Trkpt>
     lateinit var recent_displacement_trkpts: Deque<Trkpt>
+    var recent_trackpoints_for_mapview: MutableList<IGeoPoint> = mutableListOf()
     var gpsLocationListenerRegistered: Boolean = false
     var networkLocationListenerRegistered: Boolean = false
     var bound: Boolean = false
@@ -197,12 +201,18 @@ class TrackerService: Service()
                     return
                 }
 
-                val trkpt = Trkpt(location=location)
-                trackbook.database.insert_trkpt(device_id, trkpt)
+                val trkpt = Trkpt(device_id=device_id, location=location)
+                trackbook.database.insert_trkpt(trkpt)
                 recent_trkpts.add(trkpt)
                 while (recent_trkpts.size > RECENT_TRKPT_COUNT)
                 {
                     recent_trkpts.removeFirst()
+                }
+
+                recent_trackpoints_for_mapview.add(trkpt)
+                while (recent_trackpoints_for_mapview.size > RECENT_TRKPT_COUNT)
+                {
+                    recent_trackpoints_for_mapview.removeFirst()
                 }
 
                 recent_displacement_trkpts.add(trkpt)
@@ -266,6 +276,7 @@ class TrackerService: Service()
         trackbook.load_homepoints()
         recent_trkpts = ArrayDeque<Trkpt>(RECENT_TRKPT_COUNT)
         recent_displacement_trkpts = ArrayDeque<Trkpt>(5)
+        recent_trackpoints_for_mapview = mutableListOf()
         use_gps_location = PreferencesHelper.load_location_gps()
         use_network_location = PreferencesHelper.load_location_network()
         device_id = PreferencesHelper.load_device_id()

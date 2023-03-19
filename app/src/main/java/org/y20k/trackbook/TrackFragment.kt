@@ -38,7 +38,9 @@ import androidx.constraintlayout.widget.Group
 import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textview.MaterialTextView
+import org.osmdroid.api.IGeoPoint
 import org.osmdroid.api.IMapController
 import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
@@ -65,6 +67,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     lateinit var rootView: View
     lateinit var save_track_button: ImageButton
     lateinit var deleteButton: ImageButton
+    lateinit var zoom_in_button: FloatingActionButton
+    lateinit var zoom_out_button: FloatingActionButton
     lateinit var trackNameView: MaterialTextView
     lateinit var track_query_start_date: DatePicker
     lateinit var track_query_start_time: TimePicker
@@ -113,6 +117,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         mapView = rootView.findViewById(R.id.map)
         save_track_button = rootView.findViewById(R.id.save_button)
         deleteButton = rootView.findViewById(R.id.delete_button)
+        zoom_in_button = rootView.findViewById(R.id.zoom_in_button)
+        zoom_out_button = rootView.findViewById(R.id.zoom_out_button)
         trackNameView = rootView.findViewById(R.id.statistics_track_name_headline)
 
         controller = mapView.controller
@@ -235,6 +241,13 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             )
         }
 
+        zoom_in_button.setOnClickListener {
+            mapView.controller.zoomTo(mapView.zoomLevelDouble + 0.5, 0)
+        }
+        zoom_out_button.setOnClickListener {
+            mapView.controller.zoomTo(mapView.zoomLevelDouble - 0.5, 0)
+        }
+
         statisticsSheetBehavior = BottomSheetBehavior.from<View>(statisticsSheet)
         statisticsSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
 
@@ -260,9 +273,14 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         {
             mapView.overlays.remove(track_overlay)
         }
+        val geopoints: MutableList<IGeoPoint> = mutableListOf()
+        for (trkpt in track.trkpts)
+        {
+            geopoints.add(trkpt)
+        }
         if (track.trkpts.isNotEmpty())
         {
-            track_overlay = createTrackOverlay(requireContext(), mapView, track.trkpts, Keys.STATE_TRACKING_STOPPED)
+            track_overlay = createTrackOverlay(requireContext(), mapView, geopoints, Keys.STATE_TRACKING_STOPPED)
             special_points_overlay = create_start_end_markers(requireContext(), mapView, track.trkpts)
         }
         setupStatisticsViews()

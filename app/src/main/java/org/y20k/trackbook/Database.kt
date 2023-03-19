@@ -53,11 +53,11 @@ class Database(val trackbook: Trackbook)
         this.connection.endTransaction()
     }
 
-    fun insert_trkpt(device_id: String, trkpt: Trkpt)
+    fun insert_trkpt(trkpt: Trkpt)
     {
         Log.i("VOUSSOIR", "Database.insert_trkpt")
         val values = ContentValues().apply {
-            put("device_id", device_id)
+            put("device_id", trkpt.device_id)
             put("lat", trkpt.latitude)
             put("lon", trkpt.longitude)
             put("time", GregorianCalendar.getInstance().time.time)

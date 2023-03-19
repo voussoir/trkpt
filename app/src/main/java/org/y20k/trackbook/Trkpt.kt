@@ -17,19 +17,23 @@
 package org.y20k.trackbook
 
 import android.location.Location
+import org.osmdroid.api.IGeoPoint
+import org.osmdroid.util.GeoPoint
 import org.y20k.trackbook.helpers.getNumberOfSatellites
 
-data class Trkpt(
+class Trkpt(
+    val device_id: String,
     val provider: String,
-    val latitude: Double,
-    val longitude: Double,
-    val altitude: Double,
+    latitude: Double,
+    longitude: Double,
+    altitude: Double,
     val accuracy: Float,
     val time: Long,
     val numberSatellites: Int = 0,
-)
+) : GeoPoint(latitude, longitude, altitude)
 {
-    constructor(location: Location) : this (
+    constructor(device_id: String, location: Location) : this(
+        device_id=device_id,
         provider=location.provider.toString(),
         latitude=location.latitude,
         longitude=location.longitude,

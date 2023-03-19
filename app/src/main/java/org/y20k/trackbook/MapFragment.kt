@@ -40,6 +40,7 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
+import org.osmdroid.api.IGeoPoint
 import org.osmdroid.api.IMapController
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -136,8 +137,7 @@ class MapFragment : Fragment()
         mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.setMultiTouchControls(true)
         mapView.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
-        zoomLevel = PreferencesHelper.loadZoomLevel()
-        mapView.controller.setZoom(zoomLevel)
+        mapView.controller.setZoom(Keys.DEFAULT_ZOOM_LEVEL)
 
         if (AppThemeHelper.isDarkModeOn(requireActivity()))
         {
@@ -214,7 +214,6 @@ class MapFragment : Fragment()
 
         mapView.setOnTouchListener { v, event ->
             continuous_auto_center = false
-            zoomLevel = mapView.zoomLevelDouble
             false
         }
 
@@ -226,12 +225,10 @@ class MapFragment : Fragment()
             centerMap(currentBestLocation, animated=true)
         }
         zoom_in_button.setOnClickListener {
-            zoomLevel += 0.5
-            mapView.controller.zoomTo(mapView.zoomLevelDouble + 0.5, 0)
+            mapView.controller.setZoom(mapView.zoomLevelDouble + 0.5)
         }
         zoom_out_button.setOnClickListener {
-            zoomLevel -= 0.5
-            mapView.controller.zoomTo(mapView.zoomLevelDouble - 0.5, 0)
+            mapView.controller.setZoom(mapView.zoomLevelDouble - 0.5)
         }
 
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -533,15 +530,15 @@ class MapFragment : Fragment()
     }
 
     /* Overlay current track on map */
-    fun create_current_track_overlay(trkpts: Collection<Trkpt>, trackingState: Int)
+    fun create_current_track_overlay(geopoints: MutableList<IGeoPoint>, trackingState: Int)
     {
         if (currentTrackOverlay != null)
         {
             mapView.overlays.remove(currentTrackOverlay)
         }
-        if (trkpts.isNotEmpty())
+        if (geopoints.isNotEmpty())
         {
-            currentTrackOverlay = createTrackOverlay(requireContext(), mapView, trkpts, trackingState)
+            currentTrackOverlay = createTrackOverlay(requireContext(), mapView, geopoints, trackingState)
         }
     }
 
@@ -620,7 +617,7 @@ class MapFragment : Fragment()
             trackingState = trackerService.trackingState
             // update location and track
             create_current_position_overlays(currentBestLocation, trackingState)
-            create_current_track_overlay(trackerService.recent_trkpts, trackingState)
+            create_current_track_overlay(trackerService.recent_trackpoints_for_mapview, trackingState)
             // center map, if it had not been dragged/zoomed before
             if (continuous_auto_center)
             {

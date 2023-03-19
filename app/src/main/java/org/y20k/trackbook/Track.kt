@@ -42,6 +42,9 @@ data class Track (
     fun delete()
     {
         Log.i("VOUSSOIR", "Track.delete ${device_id} ${start_time} -- ${end_time}.")
+        database.begin_transaction()
+        database.connection.delete("trkpt", "device_id = ? AND time > ? AND time < ?", arrayOf(device_id, start_time.time.toString(), end_time.time.toString()))
+        database.commit()
     }
 
     fun export_gpx(context: Context, fileuri: Uri): Uri?
@@ -183,6 +186,7 @@ data class Track (
             while (cursor.moveToNext())
             {
                 val trkpt = Trkpt(
+                    device_id=device_id,
                     provider="",
                     latitude=cursor.getDouble(COLUMN_LAT),
                     longitude=cursor.getDouble(COLUMN_LON),

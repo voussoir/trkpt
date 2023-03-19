@@ -98,7 +98,7 @@ object Keys {
     const val DEFAULT_ACCURACY: Float = 300f                                    // in meters
     const val DEFAULT_ALTITUDE: Double = 0.0
     const val DEFAULT_TIME: Long = 0L
-    const val COMMIT_INTERVAL: Int = 30
+    const val COMMIT_INTERVAL: Long = 30 * ONE_SECOND_IN_MILLISECONDS
     const val DEFAULT_THRESHOLD_LOCATION_ACCURACY: Int = 30                     // 30 meters
     const val DEFAULT_THRESHOLD_LOCATION_AGE: Long = 5_000_000_000L             // 5s in nanoseconds
     const val DEFAULT_THRESHOLD_DISTANCE: Float = 15f                           // 15 meters
