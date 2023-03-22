@@ -18,12 +18,13 @@ package org.y20k.trackbook
 
 import android.content.Context
 import android.database.Cursor
+import android.database.DatabaseUtils.dumpCursorToString
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
-import org.y20k.trackbook.helpers.iso8601_format
+import org.y20k.trackbook.helpers.iso8601
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -33,7 +34,7 @@ data class Track (
     var start_time: Date,
     var end_time: Date,
     var name: String = "",
-    val trkpts: ArrayDeque<Trkpt> = ArrayDeque<Trkpt>(),
+    val trkpts: ArrayList<Trkpt> = ArrayList<Trkpt>(),
     var view_latitude: Double = Keys.DEFAULT_LATITUDE,
     var view_longitude: Double = Keys.DEFAULT_LONGITUDE,
     var trackFormatVersion: Int = Keys.CURRENT_TRACK_FORMAT_VERSION,
@@ -73,7 +74,7 @@ data class Track (
         >
         """.trimIndent())
         write("\t<metadata>")
-        write("\t\t<name>Trackbook Recording: ${this.name}</name>")
+        write("\t\t<name>${this.name}</name>")
         write("\t\t<device>${this.device_id}</device>")
         write("\t</metadata>")
 
@@ -81,7 +82,6 @@ data class Track (
         val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
         dateFormat.timeZone = TimeZone.getTimeZone("UTC")
         write("\t<trk>")
-        write("\t\t<name>${this.name}</name>")
         write("\t\t<trkseg>")
 
         var previous: Trkpt? = null
@@ -94,7 +94,8 @@ data class Track (
             }
             write("\t\t\t<trkpt lat=\"${trkpt.latitude}\" lon=\"${trkpt.longitude}\">")
             write("\t\t\t\t<ele>${trkpt.altitude}</ele>")
-            write("\t\t\t\t<time>${iso8601_format.format(trkpt.time)}</time>")
+            write("\t\t\t\t<time>${iso8601(trkpt.time)}</time>")
+            write("\t\t\t\t<unix>${trkpt.time}</unix>")
             write("\t\t\t\t<sat>${trkpt.numberSatellites}</sat>")
             write("\t\t\t</trkpt>")
             previous = trkpt
@@ -170,11 +171,11 @@ data class Track (
 
     fun trkpt_generator() = iterator<Trkpt>
     {
-        val cursor: Cursor = database.connection.rawQuery(
+        var cursor: Cursor = database.connection.rawQuery(
             "SELECT lat, lon, time, ele, accuracy, sat FROM trkpt WHERE device_id = ? AND time > ? AND time < ? ORDER BY time ASC",
             arrayOf(device_id, start_time.time.toString(), end_time.time.toString())
         )
-        Log.i("VOUSSOIR", "Track.trkpt_generator: Querying points between ${start_time} -- ${end_time}")
+        Log.i("VOUSSOIR", "Track.trkpt_generator: Querying points between ${start_time} -- ${end_time}, ${cursor.count} results")
         val COLUMN_LAT = cursor.getColumnIndex("lat")
         val COLUMN_LON = cursor.getColumnIndex("lon")
         val COLUMN_ELE = cursor.getColumnIndex("ele")

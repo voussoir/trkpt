@@ -40,8 +40,6 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
-import org.osmdroid.api.IGeoPoint
-import org.osmdroid.api.IMapController
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -51,46 +49,46 @@ import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Overlay
 import org.osmdroid.views.overlay.OverlayItem
 import org.osmdroid.views.overlay.Polygon
+import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.TilesOverlay
 import org.osmdroid.views.overlay.compass.CompassOverlay
 import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider
-import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
 import org.y20k.trackbook.helpers.*
 
-/*
- * MapFragment class
- */
 class MapFragment : Fragment()
 {
-    /* Main class variables */
+    private lateinit var trackbook: Trackbook
+
     private var bound: Boolean = false
-    private val handler: Handler = Handler(Looper.getMainLooper())
+    val handler: Handler = Handler(Looper.getMainLooper())
     private var trackingState: Int = Keys.STATE_TRACKING_STOPPED
     private var gpsProviderActive: Boolean = false
     private var networkProviderActive: Boolean = false
     private lateinit var currentBestLocation: Location
-    private lateinit var trackerService: TrackerService
 
-    private lateinit var trackbook: Trackbook
-    lateinit var rootView: View
     var continuous_auto_center: Boolean = true
-    lateinit var currentLocationButton: FloatingActionButton
+    private lateinit var trackerService: TrackerService
+    private lateinit var database_changed_listener: DatabaseChangedListener
+
+    var thismapfragment: MapFragment? = null
+    lateinit var rootView: View
+    private lateinit var mapView: MapView
+    lateinit var mainButton: ExtendedFloatingActionButton
+
     lateinit var zoom_in_button: FloatingActionButton
     lateinit var zoom_out_button: FloatingActionButton
-    lateinit var mainButton: ExtendedFloatingActionButton
-    private lateinit var mapView: MapView
+    lateinit var currentLocationButton: FloatingActionButton
+    private var current_track_overlay: Polyline? = null
     private var current_position_overlays = ArrayList<Overlay>()
-    private var currentTrackOverlay: SimpleFastPointOverlay? = null
-    private lateinit var locationErrorBar: Snackbar
-    private var zoomLevel: Double = Keys.DEFAULT_ZOOM_LEVEL
     private var homepoints_overlays = ArrayList<Overlay>()
-    private lateinit var database_changed_listener: DatabaseChangedListener
+    private lateinit var locationErrorBar: Snackbar
 
     /* Overrides onCreate from Fragment */
     override fun onCreate(savedInstanceState: Bundle?)
     {
         Log.i("VOUSSOIR", "MapFragment.onCreate")
         super.onCreate(savedInstanceState)
+        thismapfragment = this
         this.trackbook = (requireContext().applicationContext as Trackbook)
         database_changed_listener = object: DatabaseChangedListener
         {
@@ -99,7 +97,7 @@ class MapFragment : Fragment()
                 Log.i("VOUSSOIR", "MapFragment database_ready_changed to ${trackbook.database.ready}")
                 if (trackbook.database.ready)
                 {
-                    create_homepoint_overlays(requireContext(), mapView, trackbook.homepoints)
+                    create_homepoint_overlays()
                 }
                 else
                 {
@@ -116,7 +114,7 @@ class MapFragment : Fragment()
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View
     {
         Log.i("VOUSSOIR", "MapFragment.onCreateView")
-        // find views
+
         rootView = inflater.inflate(R.layout.fragment_map, container, false)
         mapView = rootView.findViewById(R.id.map)
         currentLocationButton = rootView.findViewById(R.id.location_button)
@@ -130,8 +128,6 @@ class MapFragment : Fragment()
             true
         }
         mapView.isLongClickable = true
-
-        // basic map setup
         mapView.isTilesScaledToDpi = true
         mapView.isVerticalMapRepetitionEnabled = false
         mapView.setTileSource(TileSourceFactory.MAPNIK)
@@ -145,10 +141,8 @@ class MapFragment : Fragment()
         }
 
         val densityScalingFactor: Float = UiHelper.getDensityScalingFactor(requireContext())
-
         val compassOverlay = CompassOverlay(requireContext(), InternalCompassOrientationProvider(requireContext()), mapView)
         compassOverlay.enableCompass()
-        // compassOverlay.setCompassCenter(36f, 36f + (statusBarHeight / densityScalingFactor)) // TODO uncomment when transparent status bar is re-implemented
         val screen_width = Resources.getSystem().displayMetrics.widthPixels
         compassOverlay.setCompassCenter((screen_width / densityScalingFactor) - 36f, 36f)
         mapView.overlays.add(compassOverlay)
@@ -187,7 +181,7 @@ class MapFragment : Fragment()
                         radius=radius,
                     )
                     trackbook.load_homepoints()
-                    create_homepoint_overlays(requireContext(), mapView, trackbook.homepoints)
+                    create_homepoint_overlays()
                     dialog.dismiss()
                 }
 
@@ -198,28 +192,34 @@ class MapFragment : Fragment()
         mapView.overlays.add(MapEventsOverlay(receiver))
 
         trackbook.load_homepoints()
-        create_homepoint_overlays(requireContext(), mapView, trackbook.homepoints)
+        create_homepoint_overlays()
         if (database_changed_listener !in trackbook.database_changed_listeners)
         {
             trackbook.database_changed_listeners.add(database_changed_listener)
         }
 
+        create_current_position_overlays(currentBestLocation, trackingState)
+
         centerMap(currentBestLocation)
 
-        // initialize track overlays
-        currentTrackOverlay = null
-
-        // initialize main button state
-        update_main_button()
+        current_track_overlay = null
 
         mapView.setOnTouchListener { v, event ->
             continuous_auto_center = false
             false
         }
 
-        // set up buttons
+        update_main_button()
         mainButton.setOnClickListener {
-            handleTrackingManagementMenu()
+            if (trackingState == Keys.STATE_TRACKING_ACTIVE)
+            {
+                trackerService.stopTracking()
+            }
+            else
+            {
+                startTracking()
+            }
+            handler.post(location_update_redraw)
         }
         currentLocationButton.setOnClickListener {
             centerMap(currentBestLocation, animated=true)
@@ -238,6 +238,7 @@ class MapFragment : Fragment()
     /* Overrides onStart from Fragment */
     override fun onStart()
     {
+        Log.i("VOUSSOIR", "MapFragment.onStart")
         super.onStart()
         // request location permission if denied
         if (ContextCompat.checkSelfPermission(activity as Context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED)
@@ -265,6 +266,10 @@ class MapFragment : Fragment()
     {
         Log.i("VOUSSOIR", "MapFragment.onPause")
         super.onPause()
+        if (::trackerService.isInitialized)
+        {
+            trackerService.mapfragment = null
+        }
         saveBestLocationState(currentBestLocation)
         if (bound && trackingState != Keys.STATE_TRACKING_ACTIVE) {
             trackerService.removeGpsLocationListener()
@@ -278,6 +283,10 @@ class MapFragment : Fragment()
     override fun onStop()
     {
         super.onStop()
+        if (::trackerService.isInitialized)
+        {
+            trackerService.mapfragment = null
+        }
         // unbind from TrackerService
         if (bound)
         {
@@ -290,6 +299,7 @@ class MapFragment : Fragment()
     {
         Log.i("VOUSSOIR", "MapFragment.onDestroy")
         super.onDestroy()
+        trackerService.mapfragment = null
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         if (database_changed_listener in trackbook.database_changed_listeners)
@@ -314,14 +324,17 @@ class MapFragment : Fragment()
         toggleLocationErrorBar(gpsProviderActive, networkProviderActive)
     }
 
-    /* Start recording waypoints */
-    private fun startTracking() {
+    private fun startTracking()
+    {
         // start service via intent so that it keeps running after unbind
         val intent = Intent(activity, TrackerService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+        {
             // ... start service in foreground to prevent it being killed on Oreo
             activity?.startForegroundService(intent)
-        } else {
+        }
+        else
+        {
             activity?.startService(intent)
         }
         trackerService.startTracking()
@@ -334,16 +347,9 @@ class MapFragment : Fragment()
         bound = false
         // unregister listener for changes in shared preferences
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
-        // stop receiving location updates
-        handler.removeCallbacks(periodicLocationRequestRunnable)
-    }
-
-    /* Starts / pauses tracking and toggles the recording sub menu_bottom_navigation */
-    private fun handleTrackingManagementMenu()
-    {
-        when (trackingState) {
-            Keys.STATE_TRACKING_ACTIVE -> trackerService.stopTracking()
-            Keys.STATE_TRACKING_STOPPED -> startTracking()
+        if (::trackerService.isInitialized)
+        {
+            trackerService.mapfragment = null
         }
     }
 
@@ -374,7 +380,8 @@ class MapFragment : Fragment()
         continuous_auto_center = true
     }
 
-    fun saveBestLocationState(currentBestLocation: Location) {
+    fun saveBestLocationState(currentBestLocation: Location)
+    {
         PreferencesHelper.saveCurrentBestLocation(currentBestLocation)
         PreferencesHelper.saveZoomLevel(mapView.zoomLevelDouble)
         continuous_auto_center = true
@@ -395,38 +402,26 @@ class MapFragment : Fragment()
     /* Mark current position on map */
     fun create_current_position_overlays(location: Location, trackingState: Int = Keys.STATE_TRACKING_STOPPED)
     {
-        // Log.i("VOUSSOIR", "MapFragmentLayoutHolder.markCurrentPosition")
-
         clear_current_position_overlays()
 
         val locationIsOld: Boolean = !(isRecentEnough(location))
 
-        // create marker
         val newMarker: Drawable
         val fillcolor: Int
-        if (trackingState == Keys.STATE_TRACKING_ACTIVE)
+        if (locationIsOld)
+        {
+            fillcolor = Color.argb(64, 0, 0, 0)
+            newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_black_24dp)!!
+        }
+        else if (trackingState == Keys.STATE_TRACKING_ACTIVE)
         {
             fillcolor = Color.argb(64, 220, 61, 51)
-            if (locationIsOld)
-            {
-                newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_black_24dp)!!
-            }
-            else
-            {
-                newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_red_24dp)!!
-            }
+            newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_red_24dp)!!
         }
         else
         {
             fillcolor = Color.argb(64, 60, 152, 219)
-            if(locationIsOld)
-            {
-                newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_black_24dp)!!
-            }
-            else
-            {
-                newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_blue_24dp)!!
-            }
+            newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_blue_24dp)!!
         }
 
         val current_location_radius = Polygon()
@@ -447,6 +442,21 @@ class MapFragment : Fragment()
         }
     }
 
+    fun clear_track_overlay()
+    {
+        mapView.overlays.remove(current_track_overlay)
+    }
+
+    fun create_track_overlay()
+    {
+        clear_track_overlay()
+        val pl = Polyline(mapView)
+        pl.outlinePaint.strokeWidth = Keys.POLYLINE_THICKNESS
+        pl.outlinePaint.color = Keys.POLYLINE_COLOR
+        mapView.overlays.add(pl)
+        current_track_overlay = pl
+    }
+
     fun clear_homepoint_overlays()
     {
         for (ov in homepoints_overlays)
@@ -459,15 +469,16 @@ class MapFragment : Fragment()
         homepoints_overlays.clear()
     }
 
-    fun create_homepoint_overlays(context: Context, map_view: MapView, homepoints: List<Homepoint>)
+    fun create_homepoint_overlays()
     {
         Log.i("VOUSSOIR", "MapFragmentLayoutHolder.createHomepointOverlays")
 
+        val context = requireContext()
         val newMarker: Drawable = ContextCompat.getDrawable(context, R.drawable.ic_homepoint_24dp)!!
 
         clear_homepoint_overlays()
 
-        for (homepoint in homepoints)
+        for (homepoint in trackbook.homepoints)
         {
             val p = Polygon()
             p.points = Polygon.pointsAsCircle(GeoPoint(homepoint.location.latitude, homepoint.location.longitude), homepoint.location.accuracy.toDouble())
@@ -476,7 +487,14 @@ class MapFragment : Fragment()
             homepoints_overlays.add(p)
 
             val overlayItems: java.util.ArrayList<OverlayItem> = java.util.ArrayList<OverlayItem>()
-            val overlayItem: OverlayItem = createOverlayItem(context, homepoint.location.latitude, homepoint.location.longitude, homepoint.location.accuracy, homepoint.location.provider.toString(), homepoint.location.time)
+            val overlayItem: OverlayItem = createOverlayItem(
+                context,
+                homepoint.location.latitude,
+                homepoint.location.longitude,
+                homepoint.location.accuracy,
+                homepoint.location.provider.toString(),
+                homepoint.location.time
+            )
             overlayItem.setMarker(newMarker)
             overlayItems.add(overlayItem)
             val homepoint_overlay = ItemizedIconOverlay<OverlayItem>(context, overlayItems,
@@ -504,14 +522,14 @@ class MapFragment : Fragment()
                         delete_button.setOnClickListener {
                             trackbook.database.delete_homepoint(homepoint.id)
                             trackbook.load_homepoints()
-                            create_homepoint_overlays(requireContext(), mapView, trackbook.homepoints)
+                            create_homepoint_overlays()
                             dialog.dismiss()
                         }
                         save_button.setOnClickListener {
                             val radius = radius_input.text.toString().toDoubleOrNull() ?: 25.0
                             trackbook.database.update_homepoint(homepoint.id, name=name_input.text.toString(), radius=radius)
                             trackbook.load_homepoints()
-                            create_homepoint_overlays(requireContext(), mapView, trackbook.homepoints)
+                            create_homepoint_overlays()
                             dialog.dismiss()
                         }
 
@@ -526,19 +544,6 @@ class MapFragment : Fragment()
         for (ov in homepoints_overlays)
         {
             mapView.overlays.add(ov)
-        }
-    }
-
-    /* Overlay current track on map */
-    fun create_current_track_overlay(geopoints: MutableList<IGeoPoint>, trackingState: Int)
-    {
-        if (currentTrackOverlay != null)
-        {
-            mapView.overlays.remove(currentTrackOverlay)
-        }
-        if (geopoints.isNotEmpty())
-        {
-            currentTrackOverlay = createTrackOverlay(requireContext(), mapView, geopoints, trackingState)
         }
     }
 
@@ -592,14 +597,13 @@ class MapFragment : Fragment()
             // get reference to tracker service
             val binder = service as TrackerService.LocalBinder
             trackerService = binder.service
+            trackerService.mapfragment = thismapfragment
             // get state of tracking and update button if necessary
             trackingState = trackerService.trackingState
             update_main_button()
             // register listener for changes in shared preferences
             PreferencesHelper.registerPreferenceChangeListener(sharedPreferenceChangeListener)
             // start listening for location updates
-            handler.removeCallbacks(periodicLocationRequestRunnable)
-            handler.postDelayed(periodicLocationRequestRunnable, 0)
         }
         override fun onServiceDisconnected(arg0: ComponentName)
         {
@@ -608,22 +612,27 @@ class MapFragment : Fragment()
         }
     }
 
-    private val periodicLocationRequestRunnable: Runnable = object : Runnable {
+    val location_update_redraw: Runnable = object : Runnable
+    {
         override fun run()
         {
+            Log.i("VOUSSOIR", "MapFragment.location_update_redraw")
             currentBestLocation = trackerService.currentBestLocation
             gpsProviderActive = trackerService.gpsProviderActive
             networkProviderActive = trackerService.networkProviderActive
             trackingState = trackerService.trackingState
-            // update location and track
+
             create_current_position_overlays(currentBestLocation, trackingState)
-            create_current_track_overlay(trackerService.recent_trackpoints_for_mapview, trackingState)
-            // center map, if it had not been dragged/zoomed before
+            if (current_track_overlay == null)
+            {
+                create_track_overlay()
+            }
+            current_track_overlay!!.setPoints(trackerService.recent_trackpoints_for_mapview)
+
             if (continuous_auto_center)
             {
                 centerMap(currentBestLocation, animated=false)
             }
-            handler.postDelayed(this, Keys.REQUEST_CURRENT_LOCATION_INTERVAL)
         }
     }
 }

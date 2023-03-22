@@ -15,12 +15,25 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.random.Random.Default.nextBits
 
-val iso8601_format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.US)
 private val RNG = SecureRandom()
+
+fun iso8601(timestamp: Long): String
+{
+    val iso8601_format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+    iso8601_format.timeZone = TimeZone.getTimeZone("UTC")
+    return iso8601_format.format(timestamp)
+}
 
 fun iso8601(datetime: Date): String
 {
-    return iso8601_format.format(datetime)
+    return iso8601(datetime.time)
+}
+
+fun iso8601_parse(datetime: String): Date
+{
+    val iso8601_format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+    iso8601_format.timeZone = TimeZone.getTimeZone("UTC")
+    return iso8601_format.parse(datetime)
 }
 
 fun random_int(): Int

@@ -33,7 +33,7 @@ import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.Main
 import org.y20k.trackbook.helpers.UiHelper
-import org.y20k.trackbook.helpers.iso8601_format
+import org.y20k.trackbook.helpers.iso8601
 import org.y20k.trackbook.tracklist.TracklistAdapter
 
 /*
@@ -46,7 +46,7 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
     private lateinit var trackElementList: RecyclerView
     private lateinit var tracklistOnboarding: ConstraintLayout
 
-    /* Overrides onCreateView from Fragment */
+    /* Overrides onCreate from Fragment */
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
@@ -67,18 +67,6 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
         trackElementList.itemAnimator = DefaultItemAnimator()
         trackElementList.adapter = tracklistAdapter
 
-        // enable swipe to delete
-        val swipeHandler = object : UiHelper.SwipeToDeleteCallback(activity as Context) {
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                // ask user
-                val adapterPosition: Int = viewHolder.adapterPosition // first position in list is reserved for statistics
-                val dialogMessage: String = "${getString(R.string.dialog_yes_no_message_delete_recording)}\n\n- ${tracklistAdapter.getTrackName(adapterPosition)}"
-                YesNoDialog(this@TracklistFragment as YesNoDialog.YesNoDialogListener).show(context = activity as Context, type = Keys.DIALOG_DELETE_TRACK, messageString = dialogMessage, yesButton = R.string.dialog_yes_no_positive_button_delete_recording, payload = adapterPosition)
-            }
-        }
-        val itemTouchHelper = ItemTouchHelper(swipeHandler)
-        itemTouchHelper.attachToRecyclerView(trackElementList)
-
         // toggle onboarding layout
         toggleOnboardingLayout()
 
@@ -90,40 +78,15 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
         val bundle: Bundle = bundleOf(
             Keys.ARG_TRACK_TITLE to track.name,
             Keys.ARG_TRACK_DEVICE_ID to track.device_id,
-            Keys.ARG_TRACK_START_TIME to iso8601_format.format(track.start_time),
-            Keys.ARG_TRACK_STOP_TIME to iso8601_format.format(track.end_time),
+            Keys.ARG_TRACK_START_TIME to iso8601(track.start_time),
+            Keys.ARG_TRACK_STOP_TIME to iso8601(track.end_time),
         )
         findNavController().navigate(R.id.fragment_track, bundle)
     }
 
-    /* Overrides onYesNoDialog from YesNoDialogListener */
-    override fun onYesNoDialog(type: Int, dialogResult: Boolean, payload: Int, payloadString: String)
-    {
-        when (type)
-        {
-            Keys.DIALOG_DELETE_TRACK ->
-            {
-                when (dialogResult) {
-                    // user tapped remove track
-                    true ->
-                    {
-                        tracklistAdapter.delete_track_at_position(activity as Context, payload)
-                        toggleOnboardingLayout()
-                    }
-                    // user tapped cancel
-                    false ->
-                    {
-                        // The user slid the track over to the side and turned it red, we have to
-                        // bring it back.
-                        tracklistAdapter.notifyItemChanged(payload)
-                    }
-                }
-            }
-        }
-    }
-
     // toggle onboarding layout
-    private fun toggleOnboardingLayout() {
+    private fun toggleOnboardingLayout()
+    {
         when (tracklistAdapter.isEmpty()) {
             true -> {
                 // show onboarding layout
@@ -143,11 +106,13 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
      */
     inner class CustomLinearLayoutManager(context: Context): LinearLayoutManager(context, VERTICAL, false)
     {
-        override fun supportsPredictiveItemAnimations(): Boolean {
+        override fun supportsPredictiveItemAnimations(): Boolean
+        {
             return true
         }
 
-        override fun onLayoutCompleted(state: RecyclerView.State?) {
+        override fun onLayoutCompleted(state: RecyclerView.State?)
+        {
             super.onLayoutCompleted(state)
             // handle delete request from TrackFragment - after layout calculations are complete
             val deleteTrackId: Long = arguments?.getLong(Keys.ARG_TRACK_ID, -1L) ?: -1L

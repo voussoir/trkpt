@@ -20,6 +20,7 @@ import YesNoDialog
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.Paint
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -48,32 +49,38 @@ import org.osmdroid.events.ZoomEvent
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.ItemizedIconOverlay
-import org.osmdroid.views.overlay.OverlayItem
+import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.TilesOverlay
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
+import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlayOptions
+import org.osmdroid.views.overlay.simplefastpoint.SimplePointTheme
 import org.y20k.trackbook.helpers.AppThemeHelper
 import org.y20k.trackbook.helpers.DateTimeHelper
 import org.y20k.trackbook.helpers.LengthUnitHelper
 import org.y20k.trackbook.helpers.PreferencesHelper
-import org.y20k.trackbook.helpers.createTrackOverlay
+import org.y20k.trackbook.helpers.UiHelper
 import org.y20k.trackbook.helpers.create_start_end_markers
-import org.y20k.trackbook.helpers.iso8601_format
+import org.y20k.trackbook.helpers.iso8601
+import org.y20k.trackbook.helpers.iso8601_parse
 import java.text.SimpleDateFormat
 import java.util.*
 
 class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
 {
+    private lateinit var trackbook: Trackbook
+
     lateinit var rootView: View
     lateinit var save_track_button: ImageButton
     lateinit var deleteButton: ImageButton
     lateinit var zoom_in_button: FloatingActionButton
     lateinit var zoom_out_button: FloatingActionButton
     lateinit var trackNameView: MaterialTextView
+    lateinit var selected_trkpt_info: MaterialTextView
     lateinit var track_query_start_date: DatePicker
     lateinit var track_query_start_time: TimePicker
     lateinit var track_query_end_date: DatePicker
     lateinit var track_query_end_time: TimePicker
+    lateinit var delete_selected_trkpt_button: ImageButton
     var track_query_start_time_previous: Int = 0
     var track_query_end_time_previous: Int = 0
     private lateinit var mapView: MapView
@@ -95,22 +102,25 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     private lateinit var negativeElevationView: MaterialTextView
     private lateinit var elevationDataViews: Group
     private lateinit var track: Track
+    private lateinit var track_segment_overlays: ArrayDeque<Polyline>
+    private var track_geopoints: MutableList<IGeoPoint> = mutableListOf()
+    private var track_points_overlay: SimpleFastPointOverlay? = null
+    // private lateinit var trkpt_infowindow: InfoWindow
     private var useImperialUnits: Boolean = false
     private val handler: Handler = Handler(Looper.getMainLooper())
-    private var special_points_overlay: ItemizedIconOverlay<OverlayItem>? = null
-    private var track_overlay: SimpleFastPointOverlay? = null
     val RERENDER_DELAY: Long = 1000
 
     /* Overrides onCreateView from Fragment */
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View
     {
+        this.trackbook = (requireContext().applicationContext as Trackbook)
         val database: Database = (requireActivity().applicationContext as Trackbook).database
         track = Track(
             database=database,
             name=this.requireArguments().getString(Keys.ARG_TRACK_TITLE, ""),
             device_id= this.requireArguments().getString(Keys.ARG_TRACK_DEVICE_ID, ""),
-            start_time= iso8601_format.parse(this.requireArguments().getString(Keys.ARG_TRACK_START_TIME)!!),
-            end_time=iso8601_format.parse(this.requireArguments().getString(Keys.ARG_TRACK_STOP_TIME)!!),
+            start_time=iso8601_parse(this.requireArguments().getString(Keys.ARG_TRACK_START_TIME)!!),
+            end_time=iso8601_parse(this.requireArguments().getString(Keys.ARG_TRACK_STOP_TIME)!!),
         )
         track.load_trkpts()
         rootView = inflater.inflate(R.layout.fragment_track, container, false)
@@ -130,6 +140,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         mapView.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
         controller.setCenter(GeoPoint(track.view_latitude, track.view_longitude))
         controller.setZoom(Keys.DEFAULT_ZOOM_LEVEL)
+
+        // trkpt_infowindow = MarkerInfoWindow(R.layout.trkpt_infowindow, mapView)
 
         statisticsSheet = rootView.findViewById(R.id.statistics_sheet)
         statisticsView = rootView.findViewById(R.id.statistics_view)
@@ -227,6 +239,27 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             }
         })
 
+        selected_trkpt_info = rootView.findViewById(R.id.selected_trkpt_info)
+        delete_selected_trkpt_button = rootView.findViewById(R.id.delete_selected_trkpt_button)
+        delete_selected_trkpt_button.setOnClickListener {
+            Log.i("VOUSSOIR", "delete selected trkpt button.")
+            if (track_points_overlay != null)
+            {
+                val selected = (track_geopoints[track_points_overlay!!.selectedPoint] as Trkpt)
+                track_geopoints.remove(selected)
+                track_points_overlay!!.selectedPoint = null
+                Log.i("VOUSSOIR", selected.rendered_by_polyline?.actualPoints?.size.toString())
+                selected.rendered_by_polyline?.actualPoints?.remove(selected)
+                Log.i("VOUSSOIR", selected.rendered_by_polyline?.actualPoints?.size.toString())
+                selected.rendered_by_polyline?.setPoints(ArrayList(selected.rendered_by_polyline?.actualPoints))
+                Log.i("VOUSSOIR", selected.rendered_by_polyline?.actualPoints?.size.toString())
+                trackbook.database.delete_trkpt(selected.device_id, selected.time)
+                delete_selected_trkpt_button.visibility = View.GONE
+                selected_trkpt_info.text = ""
+                mapView.invalidate()
+            }
+        }
+
         save_track_button.setOnClickListener {
             openSaveGpxDialog()
         }
@@ -251,6 +284,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         statisticsSheetBehavior = BottomSheetBehavior.from<View>(statisticsSheet)
         statisticsSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
 
+        track_segment_overlays = ArrayDeque<Polyline>(10)
         render_track()
 
         return rootView
@@ -265,25 +299,81 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     fun render_track()
     {
         Log.i("VOUSSOIR", "TrackFragment.render_track")
-        if (special_points_overlay != null)
+        mapView.overlays.clear()
+        track_segment_overlays.clear()
+        delete_selected_trkpt_button.visibility = View.GONE
+
+        setupStatisticsViews()
+
+        if (track.trkpts.isEmpty())
         {
-            mapView.overlays.remove(special_points_overlay)
+            return
         }
-        if (track_overlay != null)
-        {
-            mapView.overlays.remove(track_overlay)
-        }
-        val geopoints: MutableList<IGeoPoint> = mutableListOf()
+        Log.i("VOUSSOIR", "MapOverlayHelper.createTrackOverlay")
+        track_geopoints = mutableListOf()
         for (trkpt in track.trkpts)
         {
-            geopoints.add(trkpt)
+            track_geopoints.add(trkpt)
         }
-        if (track.trkpts.isNotEmpty())
+
+        var pl = new_track_segment_overlay()
+        var previous_time: Long = 0
+        for (trkpt in track.trkpts)
         {
-            track_overlay = createTrackOverlay(requireContext(), mapView, geopoints, Keys.STATE_TRACKING_STOPPED)
-            special_points_overlay = create_start_end_markers(requireContext(), mapView, track.trkpts)
+            if (previous_time > 0 && (trkpt.time - previous_time) > Keys.STOP_OVER_THRESHOLD)
+            {
+                pl = new_track_segment_overlay()
+            }
+            pl.addPoint(trkpt)
+            trkpt.rendered_by_polyline = pl
+            previous_time = trkpt.time
         }
-        setupStatisticsViews()
+
+        for (pl in track_segment_overlays)
+        {
+            create_start_end_markers(requireContext(), mapView, pl.actualPoints.first() as Trkpt, pl.actualPoints.last() as Trkpt)
+        }
+
+        val pointTheme = SimplePointTheme(track_geopoints, false)
+        val style = Paint()
+        style.style = Paint.Style.FILL
+        style.color = Keys.POLYLINE_COLOR
+        style.flags = Paint.ANTI_ALIAS_FLAG
+        val overlayOptions: SimpleFastPointOverlayOptions = SimpleFastPointOverlayOptions.getDefaultStyle()
+            .setAlgorithm(SimpleFastPointOverlayOptions.RenderingAlgorithm.MEDIUM_OPTIMIZATION)
+            .setSymbol(SimpleFastPointOverlayOptions.Shape.CIRCLE)
+            .setPointStyle(style)
+            .setRadius(((Keys.POLYLINE_THICKNESS + 1 ) / 2) * UiHelper.getDensityScalingFactor(requireContext()))
+            .setIsClickable(true)
+            .setCellSize(12)
+        track_points_overlay = SimpleFastPointOverlay(pointTheme, overlayOptions)
+        mapView.overlays.add(track_points_overlay)
+
+        track_points_overlay!!.setOnClickListener(object : SimpleFastPointOverlay.OnClickListener {
+            override fun onClick(points: SimpleFastPointOverlay.PointAdapter?, point: Int?)
+            {
+                if (points == null || point == null || point == 0)
+                {
+                    return
+                }
+                val trkpt = (points[point]) as Trkpt
+                Log.i("VOUSSOIR", "Clicked ${trkpt.device_id} ${trkpt.time}")
+                selected_trkpt_info.text = "${trkpt.time}\n${iso8601(trkpt.time)}\n${trkpt.latitude}\n${trkpt.longitude}"
+                delete_selected_trkpt_button.visibility = View.VISIBLE
+                return
+            }
+        })
+    }
+
+    fun new_track_segment_overlay(): Polyline
+    {
+        var pl = Polyline(mapView)
+        pl.outlinePaint.strokeWidth = Keys.POLYLINE_THICKNESS
+        pl.outlinePaint.color = Keys.POLYLINE_COLOR
+        pl.infoWindow = null
+        track_segment_overlays.add(pl)
+        mapView.overlays.add(pl)
+        return pl
     }
 
     fun get_datetime(datepicker: DatePicker, timepicker: TimePicker, seconds: Int): Date
@@ -348,7 +438,16 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     /* Overrides onZoom from MapListener */
     override fun onZoom(event: ZoomEvent?): Boolean
     {
-        return (event != null)
+        if (event == null)
+        {
+            return false
+        }
+        if (track_points_overlay == null)
+        {
+            return false
+        }
+        track_points_overlay!!.isEnabled = event.zoomLevel >= 16
+        return true
     }
 
     /* Overrides onScroll from MapListener */

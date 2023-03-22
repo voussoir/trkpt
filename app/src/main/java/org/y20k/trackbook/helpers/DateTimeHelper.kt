@@ -83,15 +83,4 @@ object DateTimeHelper {
     fun convertToReadableDateAndTime(date: Date, dateStyle: Int = DateFormat.SHORT, timeStyle: Int = DateFormat.SHORT): String {
         return "${DateFormat.getDateInstance(dateStyle, Locale.getDefault()).format(date)} ${DateFormat.getTimeInstance(timeStyle, Locale.getDefault()).format(date)}"
     }
-
-    /* Calculates time difference between two locations */
-    fun calculateTimeDistance(previousLocation: Location?, location: Location): Long  {
-        var timeDifference: Long = 0L
-        // two data points needed to calculate time difference
-        if (previousLocation != null) {
-            // get time difference
-            timeDifference = location.time - previousLocation.time
-        }
-        return timeDifference
-    }
 }

@@ -30,9 +30,7 @@ import android.Manifest
 import android.os.*
 import android.util.Log
 import androidx.core.content.ContextCompat
-import org.osmdroid.api.IGeoPoint
 import org.osmdroid.util.GeoPoint
-import org.osmdroid.views.overlay.simplefastpoint.LabelledGeoPoint
 import java.util.*
 import org.y20k.trackbook.helpers.*
 
@@ -55,8 +53,8 @@ class TrackerService: Service()
     var location_min_time_ms: Long = 0
     private val RECENT_TRKPT_COUNT = 7200
     lateinit var recent_trkpts: Deque<Trkpt>
-    lateinit var recent_displacement_trkpts: Deque<Trkpt>
-    var recent_trackpoints_for_mapview: MutableList<IGeoPoint> = mutableListOf()
+    lateinit var recent_displacement_locations: Deque<Location>
+    var recent_trackpoints_for_mapview: MutableList<GeoPoint> = mutableListOf()
     var gpsLocationListenerRegistered: Boolean = false
     var networkLocationListenerRegistered: Boolean = false
     var bound: Boolean = false
@@ -67,6 +65,7 @@ class TrackerService: Service()
     private lateinit var notificationHelper: NotificationHelper
     private lateinit var gpsLocationListener: LocationListener
     private lateinit var networkLocationListener: LocationListener
+    var mapfragment: MapFragment? = null
 
     private fun addGpsLocationListener()
     {
@@ -160,6 +159,11 @@ class TrackerService: Service()
 
                 currentBestLocation = location
 
+                if (mapfragment != null)
+                {
+                    mapfragment!!.handler.postDelayed(mapfragment!!.location_update_redraw, 0)
+                }
+
                 if (trackingState != Keys.STATE_TRACKING_ACTIVE)
                 {
                     return
@@ -195,7 +199,7 @@ class TrackerService: Service()
                         return
                     }
                 }
-                if (! (recent_displacement_trkpts.isEmpty() || isDifferentEnough(recent_displacement_trkpts.first().toLocation(), location, omitRests)))
+                if (! (recent_displacement_locations.isEmpty() || isDifferentEnough(recent_displacement_locations.first(), location, omitRests)))
                 {
                     Log.i("VOUSSOIR", "Omitting due to too close to previous.")
                     return
@@ -215,10 +219,10 @@ class TrackerService: Service()
                     recent_trackpoints_for_mapview.removeFirst()
                 }
 
-                recent_displacement_trkpts.add(trkpt)
-                while (recent_displacement_trkpts.size > 5)
+                recent_displacement_locations.add(location)
+                while (recent_displacement_locations.size > 5)
                 {
-                    recent_displacement_trkpts.removeFirst()
+                    recent_displacement_locations.removeFirst()
                 }
 
                 if (location.time - lastCommit > Keys.COMMIT_INTERVAL)
@@ -275,7 +279,7 @@ class TrackerService: Service()
         trackbook = (applicationContext as Trackbook)
         trackbook.load_homepoints()
         recent_trkpts = ArrayDeque<Trkpt>(RECENT_TRKPT_COUNT)
-        recent_displacement_trkpts = ArrayDeque<Trkpt>(5)
+        recent_displacement_locations = ArrayDeque<Location>(5)
         recent_trackpoints_for_mapview = mutableListOf()
         use_gps_location = PreferencesHelper.load_location_gps()
         use_network_location = PreferencesHelper.load_location_network()
@@ -392,7 +396,7 @@ class TrackerService: Service()
         addNetworkLocationListener()
         trackingState = Keys.STATE_TRACKING_ACTIVE
         PreferencesHelper.saveTrackingState(trackingState)
-        recent_displacement_trkpts.clear()
+        recent_displacement_locations.clear()
         startForeground(Keys.TRACKER_SERVICE_NOTIFICATION_ID, displayNotification())
     }
 
@@ -402,7 +406,7 @@ class TrackerService: Service()
 
         trackingState = Keys.STATE_TRACKING_STOPPED
         PreferencesHelper.saveTrackingState(trackingState)
-        recent_displacement_trkpts.clear()
+        recent_displacement_locations.clear()
         displayNotification()
         stopForeground(STOP_FOREGROUND_DETACH)
     }

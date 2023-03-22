@@ -53,6 +53,14 @@ class Database(val trackbook: Trackbook)
         this.connection.endTransaction()
     }
 
+    fun delete_trkpt(device_id: String, time: Long)
+    {
+        Log.i("VOUSSOIR", "Database.delete_trkpt")
+        begin_transaction()
+        connection.delete("trkpt", "device_id = ? AND time = ?", arrayOf(device_id, time.toString()))
+        commit()
+    }
+
     fun insert_trkpt(trkpt: Trkpt)
     {
         Log.i("VOUSSOIR", "Database.insert_trkpt")
@@ -60,7 +68,7 @@ class Database(val trackbook: Trackbook)
             put("device_id", trkpt.device_id)
             put("lat", trkpt.latitude)
             put("lon", trkpt.longitude)
-            put("time", GregorianCalendar.getInstance().time.time)
+            put("time", trkpt.time)
             put("accuracy", trkpt.accuracy)
             put("sat", trkpt.numberSatellites)
             put("ele", trkpt.altitude)
@@ -108,8 +116,9 @@ class Database(val trackbook: Trackbook)
     {
         begin_transaction()
         this.connection.execSQL("CREATE TABLE IF NOT EXISTS meta(name TEXT PRIMARY KEY, value TEXT)")
-        this.connection.execSQL("CREATE TABLE IF NOT EXISTS trkpt(lat REAL NOT NULL, lon REAL NOT NULL, time INTEGER NOT NULL, accuracy REAL, device_id INTEGER NOT NULL, ele INTEGER, sat INTEGER, PRIMARY KEY(lat, lon, time, device_id))")
+        this.connection.execSQL("CREATE TABLE IF NOT EXISTS trkpt(lat REAL NOT NULL, lon REAL NOT NULL, time INTEGER NOT NULL, accuracy REAL, device_id INTEGER NOT NULL, ele INTEGER, sat INTEGER, PRIMARY KEY(device_id, time))")
         this.connection.execSQL("CREATE TABLE IF NOT EXISTS homepoints(id INTEGER PRIMARY KEY, lat REAL NOT NULL, lon REAL NOT NULL, radius REAL NOT NULL, name TEXT)")
+        this.connection.execSQL("CREATE INDEX IF NOT EXISTS index_trkpt_device_id_time on trkpt(device_id, time)")
         // The pragmas don't seem to execute unless you call moveToNext.
         var cursor: Cursor
         cursor = this.connection.rawQuery("PRAGMA journal_mode = DELETE", null)

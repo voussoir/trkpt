@@ -19,6 +19,7 @@ package org.y20k.trackbook
 import android.location.Location
 import org.osmdroid.api.IGeoPoint
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.overlay.Polyline
 import org.y20k.trackbook.helpers.getNumberOfSatellites
 
 class Trkpt(
@@ -30,6 +31,7 @@ class Trkpt(
     val accuracy: Float,
     val time: Long,
     val numberSatellites: Int = 0,
+    var rendered_by_polyline: Polyline? = null
 ) : GeoPoint(latitude, longitude, altitude)
 {
     constructor(device_id: String, location: Location) : this(

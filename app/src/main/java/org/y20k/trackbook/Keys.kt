@@ -16,6 +16,7 @@
 
 package org.y20k.trackbook
 
+import android.graphics.Color
 import java.util.*
 
 /*
@@ -109,4 +110,7 @@ object Keys {
     // notification
     const val TRACKER_SERVICE_NOTIFICATION_ID: Int = 1
     const val NOTIFICATION_CHANNEL_RECORDING: String = "notificationChannelIdRecordingChannel"
+
+    const val POLYLINE_THICKNESS = 4F
+    val POLYLINE_COLOR = Color.argb(255, 255, 0, 255)
 }
