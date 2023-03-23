@@ -8,97 +8,105 @@
     tools:context=".MainActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/trackfragment_constraint_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         >
 
-        <TextView
-            android:id="@+id/selected_trkpt_info"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:gravity="right"
-            android:text="time\nlat\nlong"
-            app:fontFamily="monospace"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/trackfragment_tools_constraint_layout"
+            android:layout_width="match_parent"
+            android:layout_height="128dp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <ImageButton
-            android:id="@+id/delete_selected_trkpt_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:contentDescription="Delete selected trackpoint"
-            android:src="@drawable/ic_delete_24dp"
-            android:visibility="gone"
-            app:backgroundTint="@color/default_transparent"
-            app:layout_constraintBottom_toTopOf="@+id/map"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:srcCompat="@drawable/ic_delete_24dp" />
-
-
-        <DatePicker
-            android:id="@+id/track_query_start_date"
-            android:layout_width="wrap_content"
-            android:layout_height="130dp"
-            android:calendarViewShown="false"
-            android:datePickerMode="spinner"
-            android:scaleX="0.6"
-            android:scaleY="0.6"
-            android:translationX="-45dp"
-            android:translationY="-30dp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent">
 
-        <TimePicker
-            android:id="@+id/track_query_start_time"
-            android:layout_width="wrap_content"
-            android:layout_height="130dp"
-            android:translationX="-150dp"
-            android:translationY="-30dp"
-            android:timePickerMode="spinner"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/track_query_start_date"
-            android:scaleX="0.6"
-            android:scaleY="0.6"
-            />
+            <TextView
+                android:id="@+id/selected_trkpt_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:gravity="right"
+                android:text="time\nlat\nlong"
+                app:fontFamily="monospace"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-        <DatePicker
-            android:id="@+id/track_query_end_date"
-            android:layout_width="wrap_content"
-            android:layout_height="130dp"
-            android:translationX="-45dp"
-            android:translationY="-100dp"
-            android:datePickerMode="spinner"
-            android:calendarViewShown="false"
-            app:layout_constraintTop_toBottomOf="@+id/track_query_start_date"
-            app:layout_constraintStart_toStartOf="parent"
-            android:scaleX="0.6"
-            android:scaleY="0.6"
-            />
+            <ImageButton
+                android:id="@+id/delete_selected_trkpt_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="Delete selected trackpoint"
+                android:src="@drawable/ic_delete_24dp"
+                android:visibility="gone"
+                app:backgroundTint="@color/default_transparent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:srcCompat="@drawable/ic_delete_24dp" />
 
-        <TimePicker
-            android:id="@+id/track_query_end_time"
-            android:layout_width="wrap_content"
-            android:layout_height="130dp"
-            android:translationX="-150dp"
-            android:translationY="-100dp"
-            android:timePickerMode="spinner"
-            app:layout_constraintTop_toBottomOf="@+id/track_query_start_time"
-            app:layout_constraintStart_toEndOf="@+id/track_query_start_date"
-            android:scaleX="0.6"
-            android:scaleY="0.6"
-            />
+
+            <DatePicker
+                android:id="@+id/track_query_start_date"
+                android:layout_width="wrap_content"
+                android:layout_height="130dp"
+                android:calendarViewShown="false"
+                android:datePickerMode="spinner"
+                android:scaleX="0.6"
+                android:scaleY="0.6"
+                android:translationX="-45dp"
+                android:translationY="-30dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TimePicker
+                android:id="@+id/track_query_start_time"
+                android:layout_width="wrap_content"
+                android:layout_height="130dp"
+                android:scaleX="0.6"
+                android:scaleY="0.6"
+                android:timePickerMode="spinner"
+                android:translationX="-150dp"
+                android:translationY="-30dp"
+                app:layout_constraintStart_toEndOf="@+id/track_query_start_date"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <DatePicker
+                android:id="@+id/track_query_end_date"
+                android:layout_width="wrap_content"
+                android:layout_height="130dp"
+                android:calendarViewShown="false"
+                android:datePickerMode="spinner"
+                android:scaleX="0.6"
+                android:scaleY="0.6"
+                android:translationX="-45dp"
+                android:translationY="-100dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/track_query_start_date" />
+
+            <TimePicker
+                android:id="@+id/track_query_end_time"
+                android:layout_width="wrap_content"
+                android:layout_height="130dp"
+                android:scaleX="0.6"
+                android:scaleY="0.6"
+                android:timePickerMode="spinner"
+                android:translationX="-150dp"
+                android:translationY="-100dp"
+                app:layout_constraintStart_toEndOf="@+id/track_query_start_date"
+                app:layout_constraintTop_toBottomOf="@+id/track_query_start_time" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
         <org.osmdroid.views.MapView
             android:id="@+id/map"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@+id/track_query_end_time"
+            android:layout_height="0dp"
+            android:layout_marginBottom="54dp"
+            android:contentDescription="@string/descr_map_last_track"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:contentDescription="@string/descr_map_last_track"
-            >
+            app:layout_constraintTop_toBottomOf="@+id/trackfragment_tools_constraint_layout">
 
         </org.osmdroid.views.MapView>
 

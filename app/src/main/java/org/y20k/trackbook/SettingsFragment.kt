@@ -30,7 +30,6 @@ import android.provider.DocumentsContract
 import android.provider.Settings
 import android.util.Log
 import android.view.View
-import android.widget.Button
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.preference.EditTextPreference
@@ -190,7 +189,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
             {
                 val battery_optimization_button = Preference(context)
                 battery_optimization_button.title = "Disable battery optimization"
-                battery_optimization_button.summary = "If your device kills the app, you can give this a try"
+                battery_optimization_button.summary = "If your device kills the app, you can give this a try."
                 battery_optimization_button.setOnPreferenceClickListener {
                     val i: Intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).setData(Uri.parse("package:${context.packageName}"))
                     context.startActivity(i)
