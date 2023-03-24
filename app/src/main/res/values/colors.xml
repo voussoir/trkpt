@@ -49,5 +49,6 @@
     <color name="default_blue">#FF3C98DB</color>
     <color name="homepoint">#FFFFC107</color>
     <color name="default_green">#FF4CAF50</color>
+    <color name="fuchsia">#FFFF00FF</color>
 
 </resources>

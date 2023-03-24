@@ -8,8 +8,8 @@
     <string name="tab_tracks">History</string>
     <string name="tab_settings">Settings</string>
     <!-- Notification -->
-    <string name="notification_title_trackbook_running">Trackbook running</string>
-    <string name="notification_title_trackbook_not_running">Trackbook stopped</string>
+    <string name="notification_title_trackbook_running">Recording</string>
+    <string name="notification_title_trackbook_not_running">Stopped</string>
     <string name="notification_pause">Stop</string>
     <string name="notification_resume">Record</string>
     <string name="notification_show">Show</string>
