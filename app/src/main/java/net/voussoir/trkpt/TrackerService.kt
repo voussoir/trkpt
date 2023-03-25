@@ -31,16 +31,20 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.Manifest
+import android.app.NotificationChannel
+import android.app.PendingIntent
+import android.app.TaskStackBuilder
 import android.os.*
 import android.util.Log
+import androidx.annotation.RequiresApi
+import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import org.osmdroid.util.GeoPoint
 import java.util.*
 import net.voussoir.trkpt.helpers.*
 
-/*
- * TrackerService class
- */
 class TrackerService: Service()
 {
     lateinit var trackbook: Trackbook
@@ -50,18 +54,16 @@ class TrackerService: Service()
     var omitRests: Boolean = true
     var device_id: String = random_device_id()
     var currentBestLocation: Location = getDefaultLocation()
-    var last_location_time: Long = 0
     var lastCommit: Long = 0
     var location_min_time_ms: Long = 0
     private val RECENT_TRKPT_COUNT = 7200
-    lateinit var recent_trkpts: Deque<Trkpt>
     lateinit var recent_displacement_locations: Deque<Location>
     lateinit var recent_trackpoints_for_mapview: MutableList<GeoPoint>
     var bound: Boolean = false
     private val binder = LocalBinder()
 
     private lateinit var notificationManager: NotificationManager
-    private lateinit var notificationHelper: NotificationHelper
+    private lateinit var notification_builder: NotificationCompat.Builder
 
     private lateinit var locationManager: LocationManager
     private lateinit var gpsLocationListener: LocationListener
@@ -151,6 +153,34 @@ class TrackerService: Service()
         Log.i("VOUSSOIR", "Added Network location listener.")
     }
 
+    fun removeGpsLocationListener()
+    {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+        {
+            locationManager.removeUpdates(gpsLocationListener)
+            gpsLocationListenerRegistered = false
+            Log.i("VOUSSOIR", "Removed GPS location listener.")
+        }
+        else
+        {
+            Log.w("VOUSSOIR", "Unable to remove GPS location listener. Location permission is needed.")
+        }
+    }
+
+    fun removeNetworkLocationListener()
+    {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+        {
+            locationManager.removeUpdates(networkLocationListener)
+            networkLocationListenerRegistered = false
+            Log.i("VOUSSOIR", "Removed Network location listener.")
+        }
+        else
+        {
+            Log.w("VOUSSOIR", "Unable to remove Network location listener. Location permission is needed.")
+        }
+    }
+
     private fun createLocationListener(): LocationListener
     {
         return object : LocationListener
@@ -223,12 +253,6 @@ class TrackerService: Service()
                 val trkpt = Trkpt(device_id=device_id, location=location)
                 trackbook.database.insert_trkpt(trkpt)
 
-                recent_trkpts.add(trkpt)
-                while (recent_trkpts.size > RECENT_TRKPT_COUNT)
-                {
-                    recent_trkpts.removeFirst()
-                }
-
                 recent_trackpoints_for_mapview.add(trkpt)
                 while (recent_trackpoints_for_mapview.size > RECENT_TRKPT_COUNT)
                 {
@@ -266,70 +290,90 @@ class TrackerService: Service()
         }
     }
 
-    /* Displays or updates notification */
     private fun displayNotification(): Notification
     {
-        val notification: Notification = notificationHelper.createNotification(
-            trackingState,
-            iso8601(GregorianCalendar.getInstance().time)
-        )
+        val timestamp = iso8601(currentBestLocation.time)
+        if (shouldCreateNotificationChannel())
+        {
+            createNotificationChannel()
+        }
+
+        notification_builder.setContentText(timestamp)
+        notification_builder.setWhen(currentBestLocation.time)
+
+        if (trackingState == Keys.STATE_TRACKING_ACTIVE)
+        {
+            notification_builder.setContentTitle(this.getString(R.string.notification_title_trackbook_running))
+            notification_builder.setLargeIcon(AppCompatResources.getDrawable(this, R.drawable.ic_notification_icon_large_tracking_active_48dp)!!.toBitmap())
+        }
+        else
+        {
+            notification_builder.setContentTitle(this.getString(R.string.notification_title_trackbook_not_running))
+            notification_builder.setLargeIcon(AppCompatResources.getDrawable(this, R.drawable.ic_notification_icon_large_tracking_stopped_48dp)!!.toBitmap())
+        }
+
+        val notification = notification_builder.build()
         notificationManager.notify(Keys.TRACKER_SERVICE_NOTIFICATION_ID, notification)
         return notification
     }
+
+    /* Checks if notification channel should be created */
+    private fun shouldCreateNotificationChannel() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !nowPlayingChannelExists()
+
+    /* Checks if notification channel exists */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun nowPlayingChannelExists() = notificationManager.getNotificationChannel(Keys.NOTIFICATION_CHANNEL_RECORDING) != null
+
+    /* Create a notification channel */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun createNotificationChannel()
+    {
+        val notificationChannel = NotificationChannel(
+            Keys.NOTIFICATION_CHANNEL_RECORDING,
+            this.getString(R.string.notification_channel_recording_name),
+            NotificationManager.IMPORTANCE_LOW
+        ).apply { description = this@TrackerService.getString(R.string.notification_channel_recording_description) }
+        notificationManager.createNotificationChannel(notificationChannel)
+    }
+
+    /* Notification pending intents */
+    // private val stopActionPendingIntent = PendingIntent.getService(
+    //     this,
+    //     14,
+    //     Intent(this, TrackerService::class.java).setAction(Keys.ACTION_STOP),
+    //     PendingIntent.FLAG_IMMUTABLE
+    // )
+    // private val resumeActionPendingIntent = PendingIntent.getService(
+    //     this,
+    //     16,
+    //     Intent(this, TrackerService::class.java).setAction(Keys.ACTION_START),
+    //     PendingIntent.FLAG_IMMUTABLE
+    // )
+    /* Notification actions */
+    // private val stopAction = NotificationCompat.Action(
+    //     R.drawable.ic_notification_action_stop_24dp,
+    //     this.getString(R.string.notification_pause),
+    //     stopActionPendingIntent
+    // )
+    // private val resumeAction = NotificationCompat.Action(
+    //     R.drawable.ic_notification_action_resume_36dp,
+    //     this.getString(R.string.notification_resume),
+    //     resumeActionPendingIntent
+    // )
+    // private val showAction = NotificationCompat.Action(
+    //     R.drawable.ic_notification_action_show_36dp,
+    //     this.getString(R.string.notification_show),
+    //     showActionPendingIntent
+    // )
 
     /* Overrides onBind from Service */
     override fun onBind(p0: Intent?): IBinder
     {
         Log.i("VOUSSOIR", "TrackerService.onBind")
         bound = true
-        // start receiving location updates
         addGpsLocationListener()
         addNetworkLocationListener()
-        // return reference to this service
         return binder
-    }
-
-    /* Overrides onCreate from Service */
-    override fun onCreate()
-    {
-        super.onCreate()
-        Log.i("VOUSSOIR", "TrackerService.onCreate")
-        trackbook = (applicationContext as Trackbook)
-        trackbook.load_homepoints()
-        recent_trkpts = ArrayDeque<Trkpt>(RECENT_TRKPT_COUNT)
-        recent_displacement_locations = ArrayDeque<Location>(5)
-        recent_trackpoints_for_mapview = mutableListOf()
-        use_gps_location = PreferencesHelper.load_location_gps()
-        use_network_location = PreferencesHelper.load_location_network()
-        device_id = PreferencesHelper.load_device_id()
-        useImperial = PreferencesHelper.loadUseImperialUnits()
-        omitRests = PreferencesHelper.loadOmitRests()
-        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationHelper = NotificationHelper(this)
-        gpsProviderActive = isGpsEnabled(locationManager)
-        networkProviderActive = isNetworkEnabled(locationManager)
-        gpsLocationListener = createLocationListener()
-        networkLocationListener = createLocationListener()
-        trackingState = PreferencesHelper.loadTrackingState()
-        currentBestLocation = getLastKnownLocation(this)
-        PreferencesHelper.registerPreferenceChangeListener(sharedPreferenceChangeListener)
-    }
-
-    /* Overrides onDestroy from Service */
-    override fun onDestroy()
-    {
-        Log.i("VOUSSOIR", "TrackerService.onDestroy.")
-        super.onDestroy()
-        if (trackingState == Keys.STATE_TRACKING_ACTIVE)
-        {
-            stopTracking()
-        }
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        notificationManager.cancel(Keys.TRACKER_SERVICE_NOTIFICATION_ID) // this call was not necessary prior to Android 12
-        PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
-        removeGpsLocationListener()
-        removeNetworkLocationListener()
     }
 
     /* Overrides onRebind from Service */
@@ -339,6 +383,54 @@ class TrackerService: Service()
         bound = true
         addGpsLocationListener()
         addNetworkLocationListener()
+    }
+
+    /* Overrides onUnbind from Service */
+    override fun onUnbind(intent: Intent?): Boolean
+    {
+        super.onUnbind(intent)
+        Log.i("VOUSSOIR", "TrackerService.onUnbind")
+        bound = false
+        // stop receiving location updates - if not tracking
+        if (trackingState != Keys.STATE_TRACKING_ACTIVE)
+        {
+            removeGpsLocationListener()
+            removeNetworkLocationListener()
+        }
+        // ensures onRebind is called
+        return true
+    }
+
+    /* Overrides onCreate from Service */
+    override fun onCreate()
+    {
+        super.onCreate()
+        Log.i("VOUSSOIR", "TrackerService.onCreate")
+        trackbook = (applicationContext as Trackbook)
+        trackbook.load_homepoints()
+        recent_displacement_locations = ArrayDeque<Location>(5)
+        recent_trackpoints_for_mapview = mutableListOf()
+        use_gps_location = PreferencesHelper.load_location_gps()
+        use_network_location = PreferencesHelper.load_location_network()
+        device_id = PreferencesHelper.load_device_id()
+        useImperial = PreferencesHelper.loadUseImperialUnits()
+        omitRests = PreferencesHelper.loadOmitRests()
+        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notification_builder = NotificationCompat.Builder(this, Keys.NOTIFICATION_CHANNEL_RECORDING)
+        val showActionPendingIntent: PendingIntent? = TaskStackBuilder.create(this).run {
+            addNextIntentWithParentStack(Intent(this@TrackerService, MainActivity::class.java))
+            getPendingIntent(10, PendingIntent.FLAG_IMMUTABLE)
+        }
+        notification_builder.setContentIntent(showActionPendingIntent)
+        notification_builder.setSmallIcon(R.drawable.ic_notification_icon_small_24dp)
+        gpsProviderActive = isGpsEnabled(locationManager)
+        networkProviderActive = isNetworkEnabled(locationManager)
+        gpsLocationListener = createLocationListener()
+        networkLocationListener = createLocationListener()
+        trackingState = PreferencesHelper.loadTrackingState()
+        currentBestLocation = getLastKnownLocation(this)
+        PreferencesHelper.registerPreferenceChangeListener(sharedPreferenceChangeListener)
     }
 
     /* Overrides onStartCommand from Service */
@@ -367,49 +459,20 @@ class TrackerService: Service()
         return START_STICKY
     }
 
-    /* Overrides onUnbind from Service */
-    override fun onUnbind(intent: Intent?): Boolean
+    /* Overrides onDestroy from Service */
+    override fun onDestroy()
     {
-        super.onUnbind(intent)
-        Log.i("VOUSSOIR", "TrackerService.onUnbind")
-        bound = false
-        // stop receiving location updates - if not tracking
-        if (trackingState != Keys.STATE_TRACKING_ACTIVE)
+        Log.i("VOUSSOIR", "TrackerService.onDestroy.")
+        super.onDestroy()
+        if (trackingState == Keys.STATE_TRACKING_ACTIVE)
         {
-            removeGpsLocationListener()
-            removeNetworkLocationListener()
+            stopTracking()
         }
-        // ensures onRebind is called
-        return true
-    }
-
-    /* Adds location listeners to location manager */
-    fun removeGpsLocationListener()
-    {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
-        {
-            locationManager.removeUpdates(gpsLocationListener)
-            gpsLocationListenerRegistered = false
-            Log.i("VOUSSOIR", "Removed GPS location listener.")
-        }
-        else
-        {
-            Log.w("VOUSSOIR", "Unable to remove GPS location listener. Location permission is needed.")
-        }
-    }
-
-    fun removeNetworkLocationListener()
-    {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
-        {
-            locationManager.removeUpdates(networkLocationListener)
-            networkLocationListenerRegistered = false
-            Log.i("VOUSSOIR", "Removed Network location listener.")
-        }
-        else
-        {
-            Log.w("VOUSSOIR", "Unable to remove Network location listener. Location permission is needed.")
-        }
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        notificationManager.cancel(Keys.TRACKER_SERVICE_NOTIFICATION_ID) // this call was not necessary prior to Android 12
+        PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
+        removeGpsLocationListener()
+        removeNetworkLocationListener()
     }
 
     fun startTracking()
@@ -476,17 +539,8 @@ class TrackerService: Service()
             }
         }
     }
-    /*
-     * End of declaration
-     */
 
-    /*
-     * Inner class: Local Binder that returns this service
-     */
     inner class LocalBinder : Binder() {
         val service: TrackerService = this@TrackerService
     }
-    /*
-     * End of inner class
-     */
 }
