@@ -35,7 +35,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.Main
-import net.voussoir.trkpt.helpers.iso8601
 import net.voussoir.trkpt.tracklist.TracklistAdapter
 
 /*
@@ -80,8 +79,8 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
         val bundle: Bundle = bundleOf(
             Keys.ARG_TRACK_TITLE to track.name,
             Keys.ARG_TRACK_DEVICE_ID to track.device_id,
-            Keys.ARG_TRACK_START_TIME to iso8601(track.start_time),
-            Keys.ARG_TRACK_STOP_TIME to iso8601(track.end_time),
+            Keys.ARG_TRACK_START_TIME to track._start_time.toString(),
+            Keys.ARG_TRACK_STOP_TIME to track._end_time.toString(),
         )
         findNavController().navigate(R.id.fragment_track, bundle)
     }

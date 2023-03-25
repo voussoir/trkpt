@@ -14,6 +14,12 @@ fun iso8601(timestamp: Long): String
     return iso8601_format.format(timestamp)
 }
 
+fun iso8601_local(timestamp: Long): String
+{
+    val iso8601_format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
+    return iso8601_format.format(timestamp)
+}
+
 fun iso8601(datetime: Date): String
 {
     return iso8601(datetime.time)

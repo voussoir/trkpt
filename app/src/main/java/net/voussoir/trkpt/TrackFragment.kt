@@ -64,8 +64,7 @@ import net.voussoir.trkpt.helpers.LengthUnitHelper
 import net.voussoir.trkpt.helpers.PreferencesHelper
 import net.voussoir.trkpt.helpers.UiHelper
 import net.voussoir.trkpt.helpers.create_start_end_markers
-import net.voussoir.trkpt.helpers.iso8601
-import net.voussoir.trkpt.helpers.iso8601_parse
+import net.voussoir.trkpt.helpers.iso8601_local
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -85,6 +84,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     lateinit var track_query_end_date: DatePicker
     lateinit var track_query_end_time: TimePicker
     lateinit var delete_selected_trkpt_button: ImageButton
+    lateinit var when_was_i_here_button: ImageButton
     var track_query_start_time_previous: Int = 0
     var track_query_end_time_previous: Int = 0
     private lateinit var mapView: MapView
@@ -118,15 +118,18 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View
     {
         this.trackbook = (requireContext().applicationContext as Trackbook)
-        val database: net.voussoir.trkpt.Database = (requireActivity().applicationContext as Trackbook).database
+        val requested_start_time = this.requireArguments().getString(Keys.ARG_TRACK_START_TIME)!!.toLong()
+        val requested_end_time = this.requireArguments().getString(Keys.ARG_TRACK_STOP_TIME)!!.toLong()
         track = Track(
-            database=database,
-            name=this.requireArguments().getString(Keys.ARG_TRACK_TITLE, ""),
+            database=this.trackbook.database,
             device_id= this.requireArguments().getString(Keys.ARG_TRACK_DEVICE_ID, ""),
-            start_time=iso8601_parse(this.requireArguments().getString(Keys.ARG_TRACK_START_TIME)!!),
-            end_time=iso8601_parse(this.requireArguments().getString(Keys.ARG_TRACK_STOP_TIME)!!),
+            name=this.requireArguments().getString(Keys.ARG_TRACK_TITLE, ""),
         )
-        track.load_trkpts()
+        track.load_trkpts(this.trackbook.database.select_trkpt_start_end(
+            device_id= this.requireArguments().getString(Keys.ARG_TRACK_DEVICE_ID, ""),
+            start_time=requested_start_time,
+            end_time=requested_end_time,
+        ))
         rootView = inflater.inflate(R.layout.fragment_track, container, false)
         mapView = rootView.findViewById(R.id.map)
         save_track_button = rootView.findViewById(R.id.save_button)
@@ -142,7 +145,11 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         mapView.isVerticalMapRepetitionEnabled = false
         mapView.setMultiTouchControls(true)
         mapView.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
-        controller.setCenter(GeoPoint(track.view_latitude, track.view_longitude))
+        if (track.trkpts.size > 0)
+        {
+            val first = track.trkpts.first()
+            controller.setCenter(GeoPoint(first.latitude, first.longitude))
+        }
         controller.setZoom(Keys.DEFAULT_ZOOM_LEVEL)
 
         // trkpt_infowindow = MarkerInfoWindow(R.layout.trkpt_infowindow, mapView)
@@ -170,8 +177,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             mapView.overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
         }
 
-        val actual_start_time: Date = if (track.trkpts.isEmpty()) track.start_time else Date(track.trkpts.first().time)
-        val actual_end_time: Date = if (track.trkpts.isEmpty()) track.end_time else Date(track.trkpts.last().time)
+        val actual_start_time: Date = if (track.trkpts.isEmpty()) Date(requested_start_time) else Date(track.trkpts.first().time)
+        val actual_end_time: Date = if (track.trkpts.isEmpty()) Date(requested_end_time) else Date(track.trkpts.last().time)
 
         track_query_start_date = rootView.findViewById(R.id.track_query_start_date)
         val start_cal = GregorianCalendar()
@@ -263,6 +270,18 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 mapView.invalidate()
             }
         }
+        when_was_i_here_button = rootView.findViewById(R.id.when_was_i_here_button)
+        when_was_i_here_button.setOnClickListener {
+            Log.i("VOUSSOIR", "when_was_i_here_button.")
+            track.load_trkpts(trackbook.database.select_trkpt_bounding_box(
+                device_id=track.device_id,
+                north=mapView.boundingBox.actualNorth,
+                south=mapView.boundingBox.actualSouth,
+                east=mapView.boundingBox.lonEast,
+                west=mapView.boundingBox.lonWest,
+            ))
+            render_track()
+        }
 
         save_track_button.setOnClickListener {
             openSaveGpxDialog()
@@ -303,6 +322,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     fun render_track()
     {
         Log.i("VOUSSOIR", "TrackFragment.render_track")
+        mapView.invalidate()
         mapView.overlays.clear()
         track_segment_overlays.clear()
         delete_selected_trkpt_button.visibility = View.GONE
@@ -362,7 +382,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 }
                 val trkpt = (points[point]) as Trkpt
                 Log.i("VOUSSOIR", "Clicked ${trkpt.device_id} ${trkpt.time}")
-                selected_trkpt_info.text = "${trkpt.time}\n${iso8601(trkpt.time)}\n${trkpt.latitude}\n${trkpt.longitude}"
+                selected_trkpt_info.text = "${trkpt.time}\n${iso8601_local(trkpt.time)}\n${trkpt.latitude}\n${trkpt.longitude}"
                 delete_selected_trkpt_button.visibility = View.VISIBLE
                 return
             }
@@ -406,14 +426,17 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
 
     private fun setupStatisticsViews()
     {
-        val stats: TrackStatistics = track.statistics()
+        val stats: TrackStatistics = TrackStatistics(track.trkpts)
         trackNameView.text = track.name
         distanceView.text = LengthUnitHelper.convertDistanceToString(stats.distance, useImperialUnits)
         waypointsView.text = track.trkpts.size.toString()
         durationView.text = DateTimeHelper.convertToReadableTime(requireContext(), stats.duration)
         velocityView.text = LengthUnitHelper.convertToVelocityString(stats.velocity, useImperialUnits)
-        recordingStartView.text = DateTimeHelper.convertToReadableDateAndTime(track.start_time)
-        recordingStopView.text = DateTimeHelper.convertToReadableDateAndTime(track.end_time)
+        if (track.trkpts.isNotEmpty())
+        {
+            recordingStartView.text = DateTimeHelper.convertToReadableDateAndTime(Date(track.trkpts.first().time))
+            recordingStopView.text = DateTimeHelper.convertToReadableDateAndTime(Date(track.trkpts.last().time))
+        }
         maxAltitudeView.text = LengthUnitHelper.convertDistanceToString(stats.max_altitude, useImperialUnits)
         minAltitudeView.text = LengthUnitHelper.convertDistanceToString(stats.min_altitude, useImperialUnits)
         positiveElevationView.text = LengthUnitHelper.convertDistanceToString(stats.total_ascent, useImperialUnits)
@@ -464,12 +487,13 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         override fun run()
         {
             Log.i("VOUSSOIR", "TrackFragment.requery_and_render")
-            track.start_time = get_datetime(track_query_start_date, track_query_start_time, seconds=0)
-            track.end_time = get_datetime(track_query_end_date, track_query_end_time, seconds=59)
-            track.load_trkpts()
+            track.load_trkpts(trackbook.database.select_trkpt_start_end(
+                track.device_id,
+                start_time=get_datetime(track_query_start_date, track_query_start_time, seconds=0).time,
+                end_time=get_datetime(track_query_end_date, track_query_end_time, seconds=59).time,
+            ))
             Log.i("VOUSSOIR", "TrackFragment.requery_and_render: Reloaded ${track.trkpts.size} trkpts.")
             render_track()
-            mapView.invalidate()
         }
     }
 
@@ -499,33 +523,22 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     /* Overrides onYesNoDialog from YesNoDialogListener */
     override fun onYesNoDialog(type: Int, dialogResult: Boolean, payload: Int, payloadString: String)
     {
-        when (type)
+        if (type == Keys.DIALOG_DELETE_TRACK && dialogResult && track.trkpts.isNotEmpty())
         {
-            Keys.DIALOG_DELETE_TRACK -> {
-                when (dialogResult)
-                {
-                    // user tapped remove track
-                    true -> {
-                        track.delete()
-                        handler.removeCallbacks(requery_and_render)
-                        handler.postDelayed(requery_and_render, RERENDER_DELAY)
-                        // switch to TracklistFragment and remove track there
-                        // val bundle: Bundle = bundleOf(Keys.ARG_TRACK_ID to layout.track.id)
-                        // findNavController().navigate(R.id.tracklist_fragment, bundle)
-                    }
-                    else ->
-                    {
-                        ;
-                    }
-                }
-            }
+            trackbook.database.delete_trkpt_start_end(track.device_id, track.trkpts.first().time, track.trkpts.last().time)
+            handler.removeCallbacks(requery_and_render)
+            handler.postDelayed(requery_and_render, RERENDER_DELAY)
         }
     }
 
     /* Opens up a file picker to select the save location */
     private fun openSaveGpxDialog()
     {
-        val export_name: String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(track.start_time) + " " + track.device_id + Keys.GPX_FILE_EXTENSION
+        if (track.trkpts.isEmpty())
+        {
+            return
+        }
+        val export_name: String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(track.trkpts.first().time) + " " + track.device_id + Keys.GPX_FILE_EXTENSION
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = Keys.MIME_TYPE_GPX

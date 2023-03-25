@@ -23,9 +23,6 @@ import java.text.DateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-/*
- * DateTimeHelper object
- */
 object DateTimeHelper {
 
     /* Converts milliseconds to mm:ss or hh:mm:ss */

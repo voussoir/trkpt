@@ -7,7 +7,7 @@ The goal of this fork is to make 24/7 recording easier. I want to be able to run
 
 1. trkpt stores points in an SQLite database instead of json files.
 
-    &bull; Instead of storing the database in the app's private area (`/Android/data/...`), you can put the database in a folder that you sync to your PC with [Syncthing](https://f-droid.org/en/packages/com.nutomic.syncthingandroid/).
+    &bull; You can put the database in a folder that you sync to your PC with [Syncthing](https://f-droid.org/en/packages/com.nutomic.syncthingandroid/).
 
 2. trkpt does not store "tracks" as objects. Instead, tracks are rendered and exported on the fly by querying the database of trackpoints.
 
@@ -16,3 +16,11 @@ The goal of this fork is to make 24/7 recording easier. I want to be able to run
     &bull; Although Trackbook has a feature to omit points that are close together, natural GPS inaccuracy and drift is large enough to create points that are far apart, leading to clouds over time.
 
 4. trkpt removes the feature of "starring" waypoints. I recommend using [OsmAnd](https://f-droid.org/en/packages/net.osmand.plus/) to store your favorite places.
+
+## Mirrors
+
+https://github.com/voussoir/trkpt
+
+https://gitlab.com/voussoir/trkpt
+
+https://codeberg.org/voussoir/trkpt

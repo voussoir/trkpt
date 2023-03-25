@@ -64,12 +64,12 @@ class TracklistAdapter(val fragment: Fragment, val database: net.voussoir.trkpt.
             {
                 val trackdate = cursor.getString(0)
                 val device_id = cursor.getString(1)
-                val start_time: Date? = df.parse(trackdate + "T00:00:00.000")
-                val stop_time: Date? = df.parse(trackdate + "T23:59:59.999")
+                val start_time: Long? = df.parse(trackdate + "T00:00:00.000").time
+                val stop_time: Long? = df.parse(trackdate + "T23:59:59.999").time
                 Log.i("VOUSSOIR", "TracklistAdapter prep track ${trackdate}")
                 if (start_time != null && stop_time != null)
                 {
-                    val track = Track(database=database, device_id=device_id, start_time=start_time, end_time=stop_time)
+                    val track = Track(database=database, device_id=device_id, _start_time=start_time, _end_time=stop_time)
                     track.name = "$trackdate $device_id"
                     tracks.add(track)
                 }
@@ -115,7 +115,7 @@ class TracklistAdapter(val fragment: Fragment, val database: net.voussoir.trkpt.
     /* Get track name for given position */
     fun getTrackName(positionInRecyclerView: Int): String
     {
-        return SimpleDateFormat("yyyy-MM-dd", Locale.US).format(tracks[positionInRecyclerView].start_time)
+        return SimpleDateFormat("yyyy-MM-dd", Locale.US).format(tracks[positionInRecyclerView]._start_time)
     }
 
     fun delete_track_at_position(context: Context, index: Int)

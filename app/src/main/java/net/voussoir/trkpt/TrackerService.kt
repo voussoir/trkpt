@@ -20,30 +20,44 @@
 
 package net.voussoir.trkpt
 
+import android.Manifest
 import android.app.Notification
+import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
+import android.app.TaskStackBuilder
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
-import android.Manifest
-import android.app.NotificationChannel
-import android.app.PendingIntent
-import android.app.TaskStackBuilder
-import android.os.*
+import android.media.AudioManager
+import android.media.ToneGenerator
+import android.os.Binder
+import android.os.Build
+import android.os.IBinder
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import net.voussoir.trkpt.helpers.PreferencesHelper
+import net.voussoir.trkpt.helpers.getDefaultLocation
+import net.voussoir.trkpt.helpers.getLastKnownLocation
+import net.voussoir.trkpt.helpers.isAccurateEnough
+import net.voussoir.trkpt.helpers.isBetterLocation
+import net.voussoir.trkpt.helpers.isDifferentEnough
+import net.voussoir.trkpt.helpers.isGpsEnabled
+import net.voussoir.trkpt.helpers.isNetworkEnabled
+import net.voussoir.trkpt.helpers.isRecentEnough
+import net.voussoir.trkpt.helpers.iso8601
+import net.voussoir.trkpt.helpers.random_device_id
 import org.osmdroid.util.GeoPoint
 import java.util.*
-import net.voussoir.trkpt.helpers.*
 
 class TrackerService: Service()
 {
@@ -64,6 +78,7 @@ class TrackerService: Service()
 
     private lateinit var notificationManager: NotificationManager
     private lateinit var notification_builder: NotificationCompat.Builder
+    val beeper = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
 
     private lateinit var locationManager: LocationManager
     private lateinit var gpsLocationListener: LocationListener
@@ -189,16 +204,18 @@ class TrackerService: Service()
             {
                 Log.i("VOUSSOIR", "Processing point ${location.time} ${location.latitude}, ${location.longitude}.")
 
+                // beeper.startTone(ToneGenerator.TONE_PROP_ACK, 150)
+
                 if (location.time == currentBestLocation.time)
                 {
                     return
                 }
 
-                // if (! isBetterLocation(location, currentBestLocation))
-                // {
-                //     Log.i("VOUSSOIR", "Not better than previous.")
-                //     return
-                // }
+                if (! isBetterLocation(location, currentBestLocation))
+                {
+                    Log.i("VOUSSOIR", "Not better than previous.")
+                    return
+                }
 
                 currentBestLocation = location
 

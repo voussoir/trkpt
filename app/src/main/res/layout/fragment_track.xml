@@ -21,28 +21,30 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
-            <TextView
-                android:id="@+id/selected_trkpt_info"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:gravity="right"
-                android:text="time\nlat\nlong"
-                app:fontFamily="monospace"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
             <ImageButton
                 android:id="@+id/delete_selected_trkpt_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:contentDescription="Delete selected trackpoint"
+                android:tooltipText="Delete selected trackpoint"
                 android:src="@drawable/ic_delete_24dp"
                 android:visibility="gone"
                 app:backgroundTint="@color/default_transparent"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:srcCompat="@drawable/ic_delete_24dp" />
+
+            <ImageButton
+                android:id="@+id/when_was_i_here_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="When was I here?"
+                android:tooltipText="When was I here?"
+                android:src="@drawable/ic_gps_24dp"
+                app:backgroundTint="@color/default_transparent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:srcCompat="@drawable/ic_gps_24dp" />
 
 
             <DatePicker
@@ -106,9 +108,18 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/trackfragment_tools_constraint_layout">
+            app:layout_constraintTop_toBottomOf="@+id/trackfragment_tools_constraint_layout"/>
 
-        </org.osmdroid.views.MapView>
+        <TextView
+            android:id="@+id/selected_trkpt_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:gravity="right"
+            android:text="time\nlat\nlong"
+            app:fontFamily="monospace"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/trackfragment_tools_constraint_layout"/>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/zoom_out_button"
