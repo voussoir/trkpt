@@ -108,6 +108,26 @@ data class Track (
     {
         this.trkpts.clear()
         points.forEach { trkpt -> this.trkpts.add(trkpt) }
+        this.name = suggested_name()
+    }
+
+    fun suggested_name(): String
+    {
+        if (trkpts.size == 0)
+        {
+            return ""
+        }
+        val df = SimpleDateFormat("yyyy-MM-dd")
+        val start_date = df.format(trkpts.first().time)
+        val end_date = df.format(trkpts.last().time)
+        if (start_date == end_date)
+        {
+            return "$start_date $device_id"
+        }
+        else
+        {
+            return "$start_date--$end_date $device_id"
+        }
     }
 }
 

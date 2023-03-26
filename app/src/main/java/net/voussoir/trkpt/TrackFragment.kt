@@ -594,7 +594,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         {
             return
         }
-        val export_name: String = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(track.trkpts.first().time) + " " + track.device_id + Keys.GPX_FILE_EXTENSION
+        val export_name: String = track.name + Keys.GPX_FILE_EXTENSION
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = Keys.MIME_TYPE_GPX
