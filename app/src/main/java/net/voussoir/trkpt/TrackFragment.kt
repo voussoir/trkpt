@@ -371,6 +371,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             .setCellSize(12)
         track_points_overlay = SimpleFastPointOverlay(pointTheme, overlayOptions)
         mapView.overlays.add(track_points_overlay)
+        track_points_overlay!!.isEnabled = mapView.zoomLevel >= 16
 
         track_points_overlay!!.setOnClickListener(object : SimpleFastPointOverlay.OnClickListener {
             override fun onClick(points: SimpleFastPointOverlay.PointAdapter?, point: Int?)
