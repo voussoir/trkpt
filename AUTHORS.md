@@ -31,6 +31,3 @@ Turkish version: [Oğuz Ersen](https://hosted.weblate.org/user/ersen/) | [weblat
 
 ### Testing
 Thanks for finding all those bugs: [collectorgeneral](https://github.com/collectorgeneral), [RJH](https://github.com/Hob111)
-
-### Want to help?
-Please check out the notes in [CONTRIBUTE.md](https://github.com/y20k/trackbook/blob/master/CONTRIBUTE.md) first.
