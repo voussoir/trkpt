@@ -261,7 +261,12 @@ class TrackerService: Service()
                 {
                     // pass
                 }
-                else if (! isDifferentEnough(recent_displacement_locations.first(), location, omitRests))
+                else if (omitRests && recent_displacement_locations.last().latitude == location.latitude && recent_displacement_locations.last().longitude == location.longitude)
+                {
+                    Log.i("VOUSSOIR", "Omitting due to identical to previous.")
+                    return
+                }
+                else if (omitRests && !isDifferentEnough(recent_displacement_locations.first(), location))
                 {
                     Log.i("VOUSSOIR", "Omitting due to too close to previous.")
                     return
