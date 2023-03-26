@@ -85,6 +85,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     lateinit var track_query_end_time: TimePicker
     private lateinit var datepicker_changed_listener: DatePicker.OnDateChangedListener
     private lateinit var timepicker_changed_listener: TimePicker.OnTimeChangedListener
+    private var datetime_change_listener_enabled: Boolean = true
     lateinit var delete_selected_trkpt_button: ImageButton
     lateinit var isolate_trkseg_button: ImageButton
     lateinit var when_was_i_here_button: ImageButton
@@ -123,6 +124,10 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         datepicker_changed_listener = object: DatePicker.OnDateChangedListener {
             override fun onDateChanged(p0: DatePicker?, p1: Int, p2: Int, p3: Int)
             {
+                if (! datetime_change_listener_enabled)
+                {
+                    return
+                }
                 handler.removeCallbacks(requery_and_render)
                 handler.postDelayed(requery_and_render, RERENDER_DELAY)
             }
@@ -130,6 +135,10 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         timepicker_changed_listener = object : TimePicker.OnTimeChangedListener{
             override fun onTimeChanged(p0: TimePicker?, p1: Int, p2: Int)
             {
+                if (! datetime_change_listener_enabled)
+                {
+                    return
+                }
                 handler.removeCallbacks(requery_and_render)
                 val newminute = (p1 * 60) + p2
                 Log.i("VOUSSOIR", "End time changed $newminute")
@@ -258,6 +267,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                         (polyline.actualPoints.first() as Trkpt).time,
                         (polyline.actualPoints.last() as Trkpt).time,
                     ))
+                    set_datetimes_from_track()
                     render_track()
                 }
             }
@@ -273,6 +283,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 east=mapView.boundingBox.lonEast,
                 west=mapView.boundingBox.lonWest,
             ))
+            set_datetimes_from_track()
             render_track()
         }
 
@@ -431,6 +442,18 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         {
             track_query_start_time_previous = (setdate.hours * 60) + setdate.minutes
         }
+    }
+
+    fun set_datetimes_from_track()
+    {
+        if (track.trkpts.size == 0)
+        {
+            return
+        }
+        datetime_change_listener_enabled = false
+        set_datetime(track_query_start_date, track_query_start_time, Date(track.trkpts.first().time), _ending=false)
+        set_datetime(track_query_end_date, track_query_end_time, Date(track.trkpts.last().time), _ending=true)
+        datetime_change_listener_enabled = true
     }
 
     fun get_datetime(datepicker: DatePicker, timepicker: TimePicker, seconds: Int): Date
