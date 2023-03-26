@@ -64,7 +64,7 @@ class Database(val trackbook: net.voussoir.trkpt.Trackbook)
     {
         Log.i("VOUSSOIR", "Track.delete ${device_id} ${start_time} -- ${end_time}.")
         this.begin_transaction()
-        this.connection.delete("trkpt", "device_id = ? AND time > ? AND time < ?", arrayOf(device_id, start_time.toString(), end_time.toString()))
+        this.connection.delete("trkpt", "device_id = ? AND time >= ? AND time <= ?", arrayOf(device_id, start_time.toString(), end_time.toString()))
         this.commit()
     }
 
@@ -88,7 +88,7 @@ class Database(val trackbook: net.voussoir.trkpt.Trackbook)
     {
         Log.i("VOUSSOIR", "Track.trkpt_generator: Querying points between ${start_time} -- ${end_time}.")
         return _trkpt_generator(this.connection.rawQuery(
-            "SELECT device_id, lat, lon, time, ele, accuracy, sat FROM trkpt WHERE device_id = ? AND time > ? AND time < ? ORDER BY time ASC",
+            "SELECT device_id, lat, lon, time, ele, accuracy, sat FROM trkpt WHERE device_id = ? AND time >= ? AND time <= ? ORDER BY time ASC",
             arrayOf(device_id, start_time.toString(), end_time.toString())
         ))
     }
