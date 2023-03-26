@@ -327,11 +327,6 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             previous_time = trkpt.time
         }
 
-        for (pl in track_segment_overlays)
-        {
-            create_start_end_markers(requireContext(), mapView, pl.actualPoints.first() as Trkpt, pl.actualPoints.last() as Trkpt)
-        }
-
         val pointTheme = SimplePointTheme(track_geopoints, false)
         val style = Paint()
         style.style = Paint.Style.FILL
@@ -361,6 +356,11 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 return
             }
         })
+
+        for (pl in track_segment_overlays)
+        {
+            create_start_end_markers(requireContext(), mapView, pl.actualPoints.first() as Trkpt, pl.actualPoints.last() as Trkpt)
+        }
     }
 
     fun new_track_segment_overlay(): Polyline

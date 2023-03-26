@@ -35,12 +35,12 @@ fun create_start_end_markers(context: Context, map_view: MapView, startpoint: Tr
     Log.i("VOUSSOIR", "MapOverlayHelper.create_start_end_markers")
     val overlayItems: ArrayList<OverlayItem> = ArrayList<OverlayItem>()
     val startmarker: OverlayItem = createOverlayItem(context, startpoint.latitude, startpoint.longitude, startpoint.accuracy, startpoint.provider, startpoint.time)
-    startmarker.setMarker(ContextCompat.getDrawable(context, R.drawable.ic_marker_track_start_blue_48dp)!!)
+    startmarker.setMarker(ContextCompat.getDrawable(context, R.drawable.ic_marker_track_start_48dp)!!)
     overlayItems.add(startmarker)
     if (startpoint != endpoint)
     {
         val endmarker: OverlayItem = createOverlayItem(context, endpoint.latitude, endpoint.longitude, endpoint.accuracy, endpoint.provider, endpoint.time)
-        endmarker.setMarker(ContextCompat.getDrawable(context, R.drawable.ic_marker_track_end_blue_48dp)!!)
+        endmarker.setMarker(ContextCompat.getDrawable(context, R.drawable.ic_marker_track_end_48dp)!!)
         overlayItems.add(endmarker)
     }
     val overlay: ItemizedIconOverlay<OverlayItem> = createOverlay(context, overlayItems)
