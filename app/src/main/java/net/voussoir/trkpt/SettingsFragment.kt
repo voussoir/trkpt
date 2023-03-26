@@ -208,7 +208,32 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         preferenceCategoryAbout.title = getString(R.string.pref_about_title)
         screen.addPreference(preferenceCategoryAbout)
 
-        // set up "App Version" preference
+        val source_code = Preference(context)
+        source_code.title = "Source code"
+        source_code.setIcon(R.drawable.ic_bug_report_24dp)
+        source_code.summary = "Available on github, gitlab, and codeberg."
+        source_code.setOnPreferenceClickListener {
+            val intent = Intent(Intent.ACTION_VIEW)
+            intent.setData(Uri.parse("https://github.com/voussoir/trkpt"))
+            startActivity(intent)
+            return@setOnPreferenceClickListener true
+        }
+        preferenceCategoryAbout.contains(source_code)
+        screen.addPreference(source_code)
+
+        val fork_notice = Preference(context)
+        fork_notice.title = "trkpt is a fork of Trackbook"
+        fork_notice.setIcon(R.drawable.ic_notebook_24dp)
+        fork_notice.summary = "Thank you y20k"
+        fork_notice.setOnPreferenceClickListener {
+            val intent = Intent(Intent.ACTION_VIEW)
+            intent.setData(Uri.parse("https://codeberg.org/y20k/trackbook"))
+            startActivity(intent)
+            return@setOnPreferenceClickListener true
+        }
+        preferenceCategoryAbout.contains(fork_notice)
+        screen.addPreference(fork_notice)
+
         val preferenceAppVersion = Preference(context)
         preferenceAppVersion.title = getString(R.string.pref_app_version_title)
         preferenceAppVersion.setIcon(R.drawable.ic_info_24dp)
@@ -224,7 +249,6 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         preferenceCategoryAbout.contains(preferenceAppVersion)
         screen.addPreference(preferenceAppVersion)
 
-        // setup preference screen
         preferenceScreen = screen
     }
 
