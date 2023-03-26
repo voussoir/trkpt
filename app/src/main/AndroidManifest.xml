@@ -2,8 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="net.voussoir.trkpt">
 
-
-
     <!-- USE GPS AND NETWORK - EXCLUDE NON-GPS DEVICES -->
     <uses-feature android:name="android.hardware.location.gps" android:required="true" />
     <uses-feature android:name="android.hardware.location.network" />
