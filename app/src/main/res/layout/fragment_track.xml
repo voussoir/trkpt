@@ -35,6 +35,19 @@
                 app:srcCompat="@drawable/ic_delete_24dp" />
 
             <ImageButton
+                android:id="@+id/isolate_trkseg_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="Isolate track segment"
+                android:src="@drawable/ic_timeline_24dp"
+                android:tooltipText="Isolate track segment"
+                android:visibility="gone"
+                app:backgroundTint="@color/default_transparent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/delete_selected_trkpt_button"
+                app:srcCompat="@drawable/ic_timeline_24dp" />
+
+            <ImageButton
                 android:id="@+id/when_was_i_here_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

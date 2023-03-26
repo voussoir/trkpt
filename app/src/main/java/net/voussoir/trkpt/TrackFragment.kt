@@ -86,6 +86,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     private lateinit var datepicker_changed_listener: DatePicker.OnDateChangedListener
     private lateinit var timepicker_changed_listener: TimePicker.OnTimeChangedListener
     lateinit var delete_selected_trkpt_button: ImageButton
+    lateinit var isolate_trkseg_button: ImageButton
     lateinit var when_was_i_here_button: ImageButton
     var track_query_start_time_previous: Int = 0
     var track_query_end_time_previous: Int = 0
@@ -228,22 +229,40 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         delete_selected_trkpt_button = rootView.findViewById(R.id.delete_selected_trkpt_button)
         delete_selected_trkpt_button.setOnClickListener {
             Log.i("VOUSSOIR", "delete selected trkpt button.")
-            if (track_points_overlay != null)
+            if (track_points_overlay != null && track_points_overlay!!.selectedPoint != null)
             {
                 val selected = (track_geopoints[track_points_overlay!!.selectedPoint] as Trkpt)
                 track_geopoints.remove(selected)
-                track_points_overlay!!.selectedPoint = null
                 Log.i("VOUSSOIR", selected.rendered_by_polyline?.actualPoints?.size.toString())
                 selected.rendered_by_polyline?.actualPoints?.remove(selected)
                 Log.i("VOUSSOIR", selected.rendered_by_polyline?.actualPoints?.size.toString())
                 selected.rendered_by_polyline?.setPoints(ArrayList(selected.rendered_by_polyline?.actualPoints))
                 Log.i("VOUSSOIR", selected.rendered_by_polyline?.actualPoints?.size.toString())
                 trackbook.database.delete_trkpt(selected.device_id, selected.time)
-                delete_selected_trkpt_button.visibility = View.GONE
-                selected_trkpt_info.text = ""
+                deselect_trkpt()
                 mapView.invalidate()
             }
         }
+
+        isolate_trkseg_button = rootView.findViewById(R.id.isolate_trkseg_button)
+        isolate_trkseg_button.setOnClickListener {
+            Log.i("VOUSSOIR", "isolate selected trkseg button.")
+            if (track_points_overlay != null && track_points_overlay!!.selectedPoint != null)
+            {
+                val selected = (track_geopoints[track_points_overlay!!.selectedPoint] as Trkpt)
+                val polyline = selected.rendered_by_polyline
+                if (polyline != null)
+                {
+                    track.load_trkpts(trackbook.database.select_trkpt_start_end(
+                        track.device_id,
+                        (polyline.actualPoints.first() as Trkpt).time,
+                        (polyline.actualPoints.last() as Trkpt).time,
+                    ))
+                    render_track()
+                }
+            }
+        }
+
         when_was_i_here_button = rootView.findViewById(R.id.when_was_i_here_button)
         when_was_i_here_button.setOnClickListener {
             Log.i("VOUSSOIR", "when_was_i_here_button.")
@@ -293,13 +312,24 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         super.onResume()
     }
 
+    fun deselect_trkpt()
+    {
+        if (track_points_overlay != null)
+        {
+            track_points_overlay!!.selectedPoint = null
+        }
+        delete_selected_trkpt_button.visibility = View.GONE
+        isolate_trkseg_button.visibility = View.GONE
+        selected_trkpt_info.text = ""
+    }
+
     fun render_track()
     {
         Log.i("VOUSSOIR", "TrackFragment.render_track")
         mapView.invalidate()
         mapView.overlays.clear()
         track_segment_overlays.clear()
-        delete_selected_trkpt_button.visibility = View.GONE
+        deselect_trkpt()
 
         setupStatisticsViews()
 
@@ -349,10 +379,19 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 {
                     return
                 }
+                if (mapView.zoomLevelDouble < 16)
+                {
+                    deselect_trkpt()
+                    return
+                }
                 val trkpt = (points[point]) as Trkpt
                 Log.i("VOUSSOIR", "Clicked ${trkpt.device_id} ${trkpt.time}")
                 selected_trkpt_info.text = "${trkpt.time}\n${iso8601_local(trkpt.time)}\n${trkpt.latitude}\n${trkpt.longitude}"
                 delete_selected_trkpt_button.visibility = View.VISIBLE
+                if (track_segment_overlays.size > 1)
+                {
+                    isolate_trkseg_button.visibility = View.VISIBLE
+                }
                 return
             }
         })
