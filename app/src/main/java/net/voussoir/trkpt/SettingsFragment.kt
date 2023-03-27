@@ -224,7 +224,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         val fork_notice = Preference(context)
         fork_notice.title = "trkpt is a fork of Trackbook"
         fork_notice.setIcon(R.drawable.ic_notebook_24dp)
-        fork_notice.summary = "Thank you y20k"
+        fork_notice.summary = "Thank you y20k."
         fork_notice.setOnPreferenceClickListener {
             val intent = Intent(Intent.ACTION_VIEW)
             intent.setData(Uri.parse("https://codeberg.org/y20k/trackbook"))
@@ -238,14 +238,6 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         preferenceAppVersion.title = getString(R.string.pref_app_version_title)
         preferenceAppVersion.setIcon(R.drawable.ic_info_24dp)
         preferenceAppVersion.summary = getString(R.string.pref_app_version_summary) + " " + BuildConfig.VERSION_NAME
-        preferenceAppVersion.setOnPreferenceClickListener {
-            // copy to clipboard
-            val clip: ClipData = ClipData.newPlainText("simple text", preferenceAppVersion.summary)
-            val cm: ClipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(clip)
-            Toast.makeText(activity as Context, R.string.toast_message_copied_to_clipboard, Toast.LENGTH_LONG).show()
-            return@setOnPreferenceClickListener true
-        }
         preferenceCategoryAbout.contains(preferenceAppVersion)
         screen.addPreference(preferenceAppVersion)
 
