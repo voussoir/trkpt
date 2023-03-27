@@ -135,6 +135,7 @@ data class TrackStatistics(
     val trkpts: ArrayList<Trkpt>,
     var distance: Double = 0.0,
     var duration: Long = 0,
+    var pause_duration: Long = 0,
     var velocity: Double = 0.0,
     var total_ascent: Double = 0.0,
     var total_descent: Double = 0.0,
@@ -156,6 +157,13 @@ data class TrackStatistics(
                 previous = trkpt
                 max_altitude = trkpt.altitude
                 min_altitude = trkpt.altitude
+                continue
+            }
+            if (trkpt.time - previous.time > Keys.STOP_OVER_THRESHOLD)
+            {
+                pause_duration += (trkpt.time - previous.time)
+                previous = trkpt
+                last = trkpt
                 continue
             }
             distance += previous.toLocation().distanceTo(trkpt.toLocation())

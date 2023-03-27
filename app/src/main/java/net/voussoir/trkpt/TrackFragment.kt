@@ -504,6 +504,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         distanceView.text = LengthUnitHelper.convertDistanceToString(stats.distance, useImperialUnits)
         waypointsView.text = track.trkpts.size.toString()
         durationView.text = DateTimeHelper.convertToReadableTime(requireContext(), stats.duration)
+        recordingPausedView.text = DateTimeHelper.convertToReadableTime(requireContext(), stats.pause_duration)
         velocityView.text = LengthUnitHelper.convertToVelocityString(stats.velocity, useImperialUnits)
         if (track.trkpts.isNotEmpty())
         {
