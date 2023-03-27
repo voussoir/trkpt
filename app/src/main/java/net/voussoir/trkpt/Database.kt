@@ -73,9 +73,10 @@ class Database(val trackbook: net.voussoir.trkpt.Trackbook)
         Log.i("VOUSSOIR", "Database.insert_trkpt")
         val values = ContentValues().apply {
             put("device_id", trkpt.device_id)
+            put("time", trkpt.time)
             put("lat", trkpt.latitude)
             put("lon", trkpt.longitude)
-            put("time", trkpt.time)
+            put("provider", trkpt.provider)
             put("accuracy", trkpt.accuracy)
             put("sat", trkpt.numberSatellites)
             put("ele", trkpt.altitude)
@@ -88,7 +89,7 @@ class Database(val trackbook: net.voussoir.trkpt.Trackbook)
     {
         Log.i("VOUSSOIR", "Track.trkpt_generator: Querying points between ${start_time} -- ${end_time}.")
         return _trkpt_generator(this.connection.rawQuery(
-            "SELECT device_id, lat, lon, time, ele, accuracy, sat FROM trkpt WHERE device_id = ? AND time >= ? AND time <= ? ORDER BY time ASC",
+            "SELECT device_id, lat, lon, time, provider, ele, accuracy, sat FROM trkpt WHERE device_id = ? AND time >= ? AND time <= ? ORDER BY time ASC",
             arrayOf(device_id, start_time.toString(), end_time.toString())
         ))
     }
@@ -97,7 +98,7 @@ class Database(val trackbook: net.voussoir.trkpt.Trackbook)
     {
         Log.i("VOUSSOIR", "Track.trkpt_generator: Querying points between $north, $south, $east, $west.")
         return _trkpt_generator(this.connection.rawQuery(
-            "SELECT device_id, lat, lon, time, ele, accuracy, sat FROM trkpt WHERE device_id = ? AND lat >= ? AND lat <= ? AND lon >= ? AND lon <= ? ORDER BY time ASC",
+            "SELECT device_id, lat, lon, time, provider, ele, accuracy, sat FROM trkpt WHERE device_id = ? AND lat >= ? AND lat <= ? AND lon >= ? AND lon <= ? ORDER BY time ASC",
             arrayOf(device_id, south.toString(), north.toString(), west.toString(), east.toString())
         ))
     }
@@ -107,6 +108,7 @@ class Database(val trackbook: net.voussoir.trkpt.Trackbook)
         val COLUMN_DEVICE = cursor.getColumnIndex("device_id")
         val COLUMN_LAT = cursor.getColumnIndex("lat")
         val COLUMN_LON = cursor.getColumnIndex("lon")
+        val COLUMN_PROVIDER = cursor.getColumnIndex("provider")
         val COLUMN_ELE = cursor.getColumnIndex("ele")
         val COLUMN_SAT = cursor.getColumnIndex("sat")
         val COLUMN_ACCURACY = cursor.getColumnIndex("accuracy")
@@ -117,7 +119,7 @@ class Database(val trackbook: net.voussoir.trkpt.Trackbook)
             {
                 val trkpt = Trkpt(
                     device_id=cursor.getString(COLUMN_DEVICE),
-                    provider="",
+                    provider=cursor.getString(COLUMN_PROVIDER),
                     latitude=cursor.getDouble(COLUMN_LAT),
                     longitude=cursor.getDouble(COLUMN_LON),
                     altitude=cursor.getDouble(COLUMN_ELE),
@@ -173,7 +175,7 @@ class Database(val trackbook: net.voussoir.trkpt.Trackbook)
     {
         begin_transaction()
         this.connection.execSQL("CREATE TABLE IF NOT EXISTS meta(name TEXT PRIMARY KEY, value TEXT)")
-        this.connection.execSQL("CREATE TABLE IF NOT EXISTS trkpt(lat REAL NOT NULL, lon REAL NOT NULL, time INTEGER NOT NULL, accuracy REAL, device_id INTEGER NOT NULL, ele INTEGER, sat INTEGER, PRIMARY KEY(device_id, time))")
+        this.connection.execSQL("CREATE TABLE IF NOT EXISTS trkpt(device_id INTEGER NOT NULL, time INTEGER NOT NULL, lat REAL NOT NULL, lon REAL NOT NULL, provider TEXT, accuracy REAL, ele INTEGER, sat INTEGER, PRIMARY KEY(device_id, time))")
         this.connection.execSQL("CREATE TABLE IF NOT EXISTS homepoints(id INTEGER PRIMARY KEY, lat REAL NOT NULL, lon REAL NOT NULL, radius REAL NOT NULL, name TEXT)")
         this.connection.execSQL("CREATE INDEX IF NOT EXISTS index_trkpt_device_id_time on trkpt(device_id, time)")
         // The pragmas don't seem to execute unless you call moveToNext.
