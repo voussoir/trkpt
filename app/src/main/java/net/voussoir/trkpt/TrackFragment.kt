@@ -84,7 +84,6 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     lateinit var track_query_end_date: DatePicker
     lateinit var track_query_end_time: TimePicker
     private lateinit var datepicker_changed_listener: DatePicker.OnDateChangedListener
-    private lateinit var timepicker_changed_listener: TimePicker.OnTimeChangedListener
     private var datetime_change_listener_enabled: Boolean = true
     lateinit var delete_selected_trkpt_button: ImageButton
     lateinit var isolate_trkseg_button: ImageButton
@@ -129,28 +128,6 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                     return
                 }
                 handler.removeCallbacks(requery_and_render)
-                handler.postDelayed(requery_and_render, RERENDER_DELAY)
-            }
-        }
-        timepicker_changed_listener = object : TimePicker.OnTimeChangedListener{
-            override fun onTimeChanged(p0: TimePicker?, p1: Int, p2: Int)
-            {
-                if (! datetime_change_listener_enabled)
-                {
-                    return
-                }
-                handler.removeCallbacks(requery_and_render)
-                val newminute = (p1 * 60) + p2
-                Log.i("VOUSSOIR", "End time changed $newminute")
-                if (newminute < track_query_start_time_previous && (track_query_start_time_previous - newminute > 60))
-                {
-                    increment_datepicker(track_query_start_date)
-                }
-                else if (newminute > track_query_start_time_previous && (newminute - track_query_start_time_previous > 60))
-                {
-                    decrement_datepicker(track_query_start_date)
-                }
-                track_query_start_time_previous = newminute
                 handler.postDelayed(requery_and_render, RERENDER_DELAY)
             }
         }
@@ -226,13 +203,53 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         track_query_start_time = rootView.findViewById(R.id.track_query_start_time)
         track_query_start_time.setIs24HourView(true)
         set_datetime(track_query_start_date, track_query_start_time, actual_start_time, _ending=false)
-        track_query_start_time.setOnTimeChangedListener(timepicker_changed_listener)
+        track_query_start_time.setOnTimeChangedListener(object : TimePicker.OnTimeChangedListener{
+            override fun onTimeChanged(p0: TimePicker?, p1: Int, p2: Int)
+            {
+                if (! datetime_change_listener_enabled)
+                {
+                    return
+                }
+                handler.removeCallbacks(requery_and_render)
+                val newminute = (p1 * 60) + p2
+                if (newminute < track_query_start_time_previous && (track_query_start_time_previous - newminute > 60))
+                {
+                    increment_datepicker(track_query_start_date)
+                }
+                else if (newminute > track_query_start_time_previous && (newminute - track_query_start_time_previous > 60))
+                {
+                    decrement_datepicker(track_query_start_date)
+                }
+                track_query_start_time_previous = newminute
+                handler.postDelayed(requery_and_render, RERENDER_DELAY)
+            }
+        })
 
         track_query_end_date = rootView.findViewById(R.id.track_query_end_date)
         track_query_end_time = rootView.findViewById(R.id.track_query_end_time)
         track_query_end_time.setIs24HourView(true)
         set_datetime(track_query_end_date, track_query_end_time, actual_end_time, _ending=true)
-        track_query_end_time.setOnTimeChangedListener(timepicker_changed_listener)
+        track_query_end_time.setOnTimeChangedListener(object : TimePicker.OnTimeChangedListener{
+            override fun onTimeChanged(p0: TimePicker?, p1: Int, p2: Int)
+            {
+                if (! datetime_change_listener_enabled)
+                {
+                    return
+                }
+                handler.removeCallbacks(requery_and_render)
+                val newminute = (p1 * 60) + p2
+                if (newminute < track_query_end_time_previous && (track_query_end_time_previous - newminute > 60))
+                {
+                    increment_datepicker(track_query_end_date)
+                }
+                else if (newminute > track_query_end_time_previous && (newminute - track_query_end_time_previous > 60))
+                {
+                    decrement_datepicker(track_query_end_date)
+                }
+                track_query_end_time_previous = newminute
+                handler.postDelayed(requery_and_render, RERENDER_DELAY)
+            }
+        })
 
         selected_trkpt_info = rootView.findViewById(R.id.selected_trkpt_info)
         delete_selected_trkpt_button = rootView.findViewById(R.id.delete_selected_trkpt_button)
