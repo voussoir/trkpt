@@ -71,6 +71,7 @@ class TrackerService: Service()
     var lastCommit: Long = 0
     var location_min_time_ms: Long = 0
     private val RECENT_TRKPT_COUNT = 7200
+    private val DISPLACEMENT_LOCATION_COUNT = 5
     lateinit var recent_displacement_locations: Deque<Location>
     lateinit var recent_trackpoints_for_mapview: MutableList<GeoPoint>
     var bound: Boolean = false
@@ -282,7 +283,7 @@ class TrackerService: Service()
                 }
 
                 recent_displacement_locations.add(location)
-                while (recent_displacement_locations.size > 5)
+                while (recent_displacement_locations.size > DISPLACEMENT_LOCATION_COUNT)
                 {
                     recent_displacement_locations.removeFirst()
                 }
