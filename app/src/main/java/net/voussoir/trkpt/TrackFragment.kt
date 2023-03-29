@@ -404,7 +404,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         track_points_overlay!!.setOnClickListener(object : SimpleFastPointOverlay.OnClickListener {
             override fun onClick(points: SimpleFastPointOverlay.PointAdapter?, point: Int?)
             {
-                if (points == null || point == null || point == 0)
+                if (points == null || point == null)
                 {
                     return
                 }
