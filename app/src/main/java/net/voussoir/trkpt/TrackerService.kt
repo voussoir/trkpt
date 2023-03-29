@@ -57,6 +57,7 @@ import net.voussoir.trkpt.helpers.isRecentEnough
 import net.voussoir.trkpt.helpers.iso8601_local
 import net.voussoir.trkpt.helpers.random_device_id
 import org.osmdroid.util.GeoPoint
+import java.lang.ref.WeakReference
 import java.util.*
 
 class TrackerService: Service()
@@ -70,12 +71,12 @@ class TrackerService: Service()
     var currentBestLocation: Location = getDefaultLocation()
     var lastCommit: Long = 0
     var location_min_time_ms: Long = 0
-    private val RECENT_TRKPT_COUNT = 7200
+    private val RECENT_TRKPT_COUNT = 3600
     private val DISPLACEMENT_LOCATION_COUNT = 5
     lateinit var recent_displacement_locations: Deque<Location>
     lateinit var recent_trackpoints_for_mapview: MutableList<GeoPoint>
     var bound: Boolean = false
-    private val binder = LocalBinder()
+    private val binder = TrackerServiceBinder(this)
 
     private lateinit var notificationManager: NotificationManager
     private lateinit var notification_builder: NotificationCompat.Builder
@@ -562,8 +563,8 @@ class TrackerService: Service()
             }
         }
     }
-
-    inner class LocalBinder : Binder() {
-        val service: TrackerService = this@TrackerService
-    }
+}
+class TrackerServiceBinder(trackerservice: TrackerService) : Binder()
+{
+    val service: WeakReference<TrackerService> = WeakReference(trackerservice)
 }

@@ -296,17 +296,22 @@ class MapFragment : Fragment()
         }
     }
 
+    override fun onDestroyView()
+    {
+        Log.i("VOUSSOIR", "MapFragment.onDestroy")
+        super.onDestroyView()
+        if (database_changed_listener in trackbook.database_changed_listeners)
+        {
+            trackbook.database_changed_listeners.remove(database_changed_listener)
+        }
+    }
+
     override fun onDestroy()
     {
         Log.i("VOUSSOIR", "MapFragment.onDestroy")
         super.onDestroy()
         trackerService.mapfragment = null
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
-        if (database_changed_listener in trackbook.database_changed_listeners)
-        {
-            trackbook.database_changed_listeners.remove(database_changed_listener)
-        }
     }
 
     private val requestLocationPermissionLauncher = registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
@@ -594,10 +599,14 @@ class MapFragment : Fragment()
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, service: IBinder)
         {
+            // get reference to tracker service]
+            val serviceref = (service as TrackerServiceBinder).service.get()
+            if (serviceref == null)
+            {
+                return
+            }
             bound = true
-            // get reference to tracker service
-            val binder = service as TrackerService.LocalBinder
-            trackerService = binder.service
+            trackerService = serviceref
             trackerService.mapfragment = thismapfragment
             // get state of tracking and update button if necessary
             trackingState = trackerService.trackingState
