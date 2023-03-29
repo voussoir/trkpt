@@ -54,7 +54,7 @@ import net.voussoir.trkpt.helpers.isDifferentEnough
 import net.voussoir.trkpt.helpers.isGpsEnabled
 import net.voussoir.trkpt.helpers.isNetworkEnabled
 import net.voussoir.trkpt.helpers.isRecentEnough
-import net.voussoir.trkpt.helpers.iso8601
+import net.voussoir.trkpt.helpers.iso8601_local
 import net.voussoir.trkpt.helpers.random_device_id
 import org.osmdroid.util.GeoPoint
 import java.util.*
@@ -315,7 +315,7 @@ class TrackerService: Service()
 
     private fun displayNotification(): Notification
     {
-        val timestamp = iso8601(currentBestLocation.time)
+        val timestamp = iso8601_local(currentBestLocation.time)
         if (shouldCreateNotificationChannel())
         {
             createNotificationChannel()
