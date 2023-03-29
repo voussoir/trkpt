@@ -59,7 +59,7 @@ data class Track (
         write("""
         <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
         <gpx
-            version="1.1" creator="Trackbook App (Android)"
+            version="1.1" creator="${BuildConfig.APPLICATION_ID} ${BuildConfig.VERSION_NAME}"
             xmlns="http://www.topografix.com/GPX/1/1"
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd"
@@ -67,6 +67,7 @@ data class Track (
         """.trimIndent())
         write("\t<metadata>")
         write("\t\t<name>${this.name}</name>")
+        write("\t\t<application>${BuildConfig.APPLICATION_ID} ${BuildConfig.VERSION_NAME}</application>")
         write("\t\t<device>${this.device_id}</device>")
         write("\t</metadata>")
 
