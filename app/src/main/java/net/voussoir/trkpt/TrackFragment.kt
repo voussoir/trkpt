@@ -22,6 +22,7 @@ package net.voussoir.trkpt
 
 import YesNoDialog
 import android.app.Activity
+import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Paint
@@ -33,10 +34,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.DatePicker
-import android.widget.ImageButton
-import android.widget.TimePicker
-import android.widget.Toast
+import android.widget.*
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.constraintlayout.widget.Group
@@ -45,6 +43,7 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textview.MaterialTextView
+import net.voussoir.trkpt.helpers.*
 import org.osmdroid.api.IGeoPoint
 import org.osmdroid.api.IMapController
 import org.osmdroid.events.MapListener
@@ -58,13 +57,6 @@ import org.osmdroid.views.overlay.TilesOverlay
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlayOptions
 import org.osmdroid.views.overlay.simplefastpoint.SimplePointTheme
-import net.voussoir.trkpt.helpers.AppThemeHelper
-import net.voussoir.trkpt.helpers.DateTimeHelper
-import net.voussoir.trkpt.helpers.LengthUnitHelper
-import net.voussoir.trkpt.helpers.PreferencesHelper
-import net.voussoir.trkpt.helpers.UiHelper
-import net.voussoir.trkpt.helpers.create_start_end_markers
-import net.voussoir.trkpt.helpers.iso8601_local
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -305,7 +297,26 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         }
 
         save_track_button.setOnClickListener {
-            openSaveGpxDialog()
+            val dialog = Dialog(activity as Context)
+            dialog.setContentView(R.layout.dialog_rename_track)
+            dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            dialog.setTitle("Track name")
+
+            val input = dialog.findViewById(R.id.dialog_rename_track_input_edit_text) as EditText
+            input.setText(track.name)
+
+            val save_button = dialog.findViewById(R.id.name_track_save_button) as Button
+            save_button.setOnClickListener {
+                track.name = input.text.toString()
+                openSaveGpxDialog()
+                dialog.dismiss()
+            }
+
+            val cancel_button = dialog.findViewById(R.id.name_track_cancel_button) as Button
+            cancel_button.setOnClickListener {
+                dialog.cancel()
+            }
+            dialog.show()
         }
 
         deleteButton.setOnClickListener {
