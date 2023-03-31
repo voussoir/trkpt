@@ -251,11 +251,16 @@ class TrackerService: Service()
                     Log.i("VOUSSOIR", "Omitting due to not accurate enough.")
                     return
                 }
-                for (homepoint in trackbook.homepoints)
+                for ((index, homepoint) in trackbook.homepoints.withIndex())
                 {
                     if (homepoint.location.distanceTo(location) < homepoint.radius)
                     {
-                        Log.i("VOUSSOIR", "Omitting due to homepoint ${homepoint.name}.")
+                        Log.i("VOUSSOIR", "Omitting due to homepoint ${index} ${homepoint.name}.")
+                        if (index > 0)
+                        {
+                            trackbook.homepoints.remove(homepoint)
+                            trackbook.homepoints.addFirst(homepoint)
+                        }
                         return
                     }
                 }
