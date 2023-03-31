@@ -78,6 +78,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     private lateinit var datepicker_changed_listener: DatePicker.OnDateChangedListener
     private var datetime_change_listener_enabled: Boolean = true
     lateinit var delete_selected_trkpt_button: ImageButton
+    lateinit var use_trkpt_as_start_button: ImageButton
+    lateinit var use_trkpt_as_end_button: ImageButton
     lateinit var isolate_trkseg_button: ImageButton
     lateinit var when_was_i_here_button: ImageButton
     var track_query_start_time_previous: Int = 0
@@ -262,6 +264,40 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             }
         }
 
+        use_trkpt_as_start_button = rootView.findViewById(R.id.use_trkpt_as_start_button)
+        use_trkpt_as_start_button.setOnClickListener {
+            Log.i("VOUSSOIR", "use selected trkpt as start.")
+            if (track_points_overlay != null && track_points_overlay!!.selectedPoint != null)
+            {
+                val selected = (track_geopoints[track_points_overlay!!.selectedPoint] as Trkpt)
+                set_datetime(track_query_start_date, track_query_start_time, Date(selected.time), _ending=false)
+                track.load_trkpts(trackbook.database.select_trkpt_start_end(
+                    track.device_id,
+                    selected.time,
+                    track.trkpts.last().time,
+                ))
+                deselect_trkpt()
+                render_track()
+            }
+        }
+
+        use_trkpt_as_end_button = rootView.findViewById(R.id.use_trkpt_as_end_button)
+        use_trkpt_as_end_button.setOnClickListener {
+            Log.i("VOUSSOIR", "use selected trkpt as end.")
+            if (track_points_overlay != null && track_points_overlay!!.selectedPoint != null)
+            {
+                val selected = (track_geopoints[track_points_overlay!!.selectedPoint] as Trkpt)
+                set_datetime(track_query_end_date, track_query_end_time, Date(selected.time), _ending=true)
+                track.load_trkpts(trackbook.database.select_trkpt_start_end(
+                    track.device_id,
+                    track.trkpts.first().time,
+                    selected.time,
+                ))
+                deselect_trkpt()
+                render_track()
+            }
+        }
+
         isolate_trkseg_button = rootView.findViewById(R.id.isolate_trkseg_button)
         isolate_trkseg_button.setOnClickListener {
             Log.i("VOUSSOIR", "isolate selected trkseg button.")
@@ -358,6 +394,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             track_points_overlay!!.selectedPoint = null
         }
         delete_selected_trkpt_button.visibility = View.GONE
+        use_trkpt_as_start_button.visibility = View.GONE
+        use_trkpt_as_end_button.visibility = View.GONE
         isolate_trkseg_button.visibility = View.GONE
         selected_trkpt_info.text = ""
     }
@@ -428,6 +466,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 Log.i("VOUSSOIR", "Clicked ${trkpt.device_id} ${trkpt.time}")
                 selected_trkpt_info.text = "${trkpt.time}\n${iso8601_local(trkpt.time)}\n${trkpt.latitude}\n${trkpt.longitude}"
                 delete_selected_trkpt_button.visibility = View.VISIBLE
+                use_trkpt_as_start_button.visibility = View.VISIBLE
+                use_trkpt_as_end_button.visibility = View.VISIBLE
                 if (track_segment_overlays.size > 1)
                 {
                     isolate_trkseg_button.visibility = View.VISIBLE
@@ -455,6 +495,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
 
     fun set_datetime(datepicker: DatePicker, timepicker: TimePicker, setdate: Date, _ending: Boolean)
     {
+        datetime_change_listener_enabled = false
         val start_cal = GregorianCalendar()
         start_cal.time = setdate
         datepicker.init(start_cal.get(Calendar.YEAR), start_cal.get(Calendar.MONTH), start_cal.get(Calendar.DAY_OF_MONTH), datepicker_changed_listener)
@@ -470,6 +511,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         {
             track_query_start_time_previous = (setdate.hours * 60) + setdate.minutes
         }
+        datetime_change_listener_enabled = true
     }
 
     fun set_datetimes_from_track()
@@ -478,10 +520,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         {
             return
         }
-        datetime_change_listener_enabled = false
         set_datetime(track_query_start_date, track_query_start_time, Date(track.trkpts.first().time), _ending=false)
         set_datetime(track_query_end_date, track_query_end_time, Date(track.trkpts.last().time), _ending=true)
-        datetime_change_listener_enabled = true
     }
 
     fun get_datetime(datepicker: DatePicker, timepicker: TimePicker, seconds: Int): Date

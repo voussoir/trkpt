@@ -84,6 +84,30 @@
                 app:srcCompat="@drawable/ic_gps_24dp" />
 
             <ImageButton
+                android:id="@+id/use_trkpt_as_end_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:tooltipText="End here"
+                android:src="@drawable/ic_end_here_24dp"
+                android:visibility="gone"
+                app:backgroundTint="@color/default_transparent"
+                app:layout_constraintTop_toBottomOf="@+id/when_was_i_here_button"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:srcCompat="@drawable/ic_end_here_24dp" />
+
+            <ImageButton
+                android:id="@+id/use_trkpt_as_start_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:tooltipText="Start here"
+                android:src="@drawable/ic_start_here_24dp"
+                android:visibility="gone"
+                app:backgroundTint="@color/default_transparent"
+                app:layout_constraintTop_toTopOf="@+id/use_trkpt_as_end_button"
+                app:layout_constraintEnd_toStartOf="@+id/use_trkpt_as_end_button"
+                app:srcCompat="@drawable/ic_start_here_24dp" />
+
+            <ImageButton
                 android:id="@+id/isolate_trkseg_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
