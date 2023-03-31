@@ -160,6 +160,7 @@ class MapFragment : Fragment()
                 Log.i("VOUSSOIR", "MapFragment MapEventsReceiver.longPressHelper")
                 val dialog = Dialog(activity as Context)
                 dialog.setContentView(R.layout.dialog_homepoint)
+                dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                 dialog.setTitle("Homepoint")
 
                 (dialog.findViewById(R.id.homepoint_dialog_title) as TextView).text = "Add a homepoint"
@@ -514,6 +515,7 @@ class MapFragment : Fragment()
                         Log.i("VOUSSOIR", "MapFragment homepoint.longpress")
                         val dialog = Dialog(activity as Context)
                         dialog.setContentView(R.layout.dialog_homepoint)
+                        dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                         dialog.setTitle("Homepoint")
 
                         (dialog.findViewById(R.id.homepoint_dialog_title) as TextView).text = "Edit homepoint"

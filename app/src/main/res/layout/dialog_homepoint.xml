@@ -14,44 +14,45 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/homepoint_name_label"
-        android:layout_width="wrap_content"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/homepoint_name_textlayout"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="Name"
+        android:hint="Name"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/homepoint_dialog_title" />
+        app:layout_constraintTop_toBottomOf="@+id/homepoint_dialog_title">
 
-    <EditText
-        android:id="@+id/homepoint_name_input"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:inputType="textPersonName"
-        android:minHeight="48dp"
-        android:text=""
-        app:layout_constraintStart_toStartOf="@+id/homepoint_name_label"
-        app:layout_constraintTop_toBottomOf="@+id/homepoint_name_label" />
+        <EditText
+            android:id="@+id/homepoint_name_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPersonName"
+            android:minHeight="48dp"
+            android:text=""
+            app:layout_constraintStart_toStartOf="@+id/homepoint_name_label"
+            app:layout_constraintTop_toBottomOf="@+id/homepoint_name_label" />
+    </com.google.android.material.textfield.TextInputLayout>
 
-    <TextView
-        android:id="@+id/homepoint_radius_label"
-        android:layout_width="wrap_content"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/homepoint_radius_textlayout"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="Radius"
-        app:layout_constraintStart_toStartOf="@+id/homepoint_name_input"
-        app:layout_constraintTop_toBottomOf="@+id/homepoint_name_input" />
+        android:hint="Radius"
+        app:layout_constraintStart_toStartOf="@+id/homepoint_name_textlayout"
+        app:layout_constraintTop_toBottomOf="@+id/homepoint_name_textlayout">
 
-    <EditText
-        android:id="@+id/homepoint_radius_input"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:inputType="number"
-        android:minHeight="48dp"
-        app:layout_constraintStart_toStartOf="@+id/homepoint_radius_label"
-        app:layout_constraintTop_toBottomOf="@+id/homepoint_radius_label" />
+        <EditText
+            android:id="@+id/homepoint_radius_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:digits="0123456789."
+            android:inputType="numberDecimal"
+            android:minHeight="48dp" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
 
     <Button
         android:id="@+id/homepoint_save_button"
@@ -61,7 +62,7 @@
         android:text="Save"
         app:cornerRadius="8dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/homepoint_radius_input" />
+        app:layout_constraintTop_toBottomOf="@+id/homepoint_radius_textlayout" />
 
     <Button
         android:id="@+id/homepoint_delete_cancel_button"
@@ -71,6 +72,6 @@
         android:text="Delete"
         app:cornerRadius="8dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/homepoint_radius_input" />
+        app:layout_constraintTop_toBottomOf="@+id/homepoint_radius_textlayout" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

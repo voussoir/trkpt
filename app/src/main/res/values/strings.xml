@@ -31,7 +31,7 @@
     <string name="dialog_generic_button_okay">OK</string>
     <string name="dialog_generic_details_button">Show details</string>
     <string name="dialog_rename_track_button">Rename</string>
-    <string name="dialog_rename_track_input_hint">Enter a new name</string>
+    <string name="dialog_rename_track_input_hint">Name this track</string>
     <string name="dialog_share_gpx">Share GPX file with</string>
     <string name="dialog_yes_no_positive_button_default">Yes</string>
     <string name="dialog_yes_no_positive_button_delete_recording">Delete</string>
