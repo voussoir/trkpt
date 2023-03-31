@@ -30,9 +30,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
-import android.widget.Button
-import android.widget.EditText
-import android.widget.TextView
+import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -62,13 +60,9 @@ class MapFragment : Fragment()
 
     private var bound: Boolean = false
     val handler: Handler = Handler(Looper.getMainLooper())
-    private var trackingState: Int = Keys.STATE_TRACKING_STOPPED
-    private var gpsProviderActive: Boolean = false
-    private var networkProviderActive: Boolean = false
-    private lateinit var currentBestLocation: Location
 
     var continuous_auto_center: Boolean = true
-    private lateinit var trackerService: TrackerService
+    private var trackerService: TrackerService? = null
     private lateinit var database_changed_listener: DatabaseChangedListener
 
     var thismapfragment: MapFragment? = null
@@ -79,6 +73,8 @@ class MapFragment : Fragment()
     lateinit var zoom_in_button: FloatingActionButton
     lateinit var zoom_out_button: FloatingActionButton
     lateinit var currentLocationButton: FloatingActionButton
+    lateinit var map_current_time: TextView
+    lateinit var power_level_indicator: ImageButton
     private var current_track_overlay: Polyline? = null
     private var current_position_overlays = ArrayList<Overlay>()
     private var homepoints_overlays = ArrayList<Overlay>()
@@ -107,8 +103,6 @@ class MapFragment : Fragment()
                 update_main_button()
             }
         }
-        currentBestLocation = getLastKnownLocation(requireContext())
-        trackingState = PreferencesHelper.loadTrackingState()
     }
 
     /* Overrides onStop from Fragment */
@@ -121,6 +115,8 @@ class MapFragment : Fragment()
         currentLocationButton = rootView.findViewById(R.id.location_button)
         zoom_in_button = rootView.findViewById(R.id.zoom_in_button)
         zoom_out_button = rootView.findViewById(R.id.zoom_out_button)
+        map_current_time = rootView.findViewById(R.id.map_current_time)
+        power_level_indicator = rootView.findViewById(R.id.power_level_indicator)
         mainButton = rootView.findViewById(R.id.main_button)
         locationErrorBar = Snackbar.make(mapView, String(), Snackbar.LENGTH_INDEFINITE)
 
@@ -200,9 +196,7 @@ class MapFragment : Fragment()
             trackbook.database_changed_listeners.add(database_changed_listener)
         }
 
-        create_current_position_overlays(currentBestLocation, trackingState)
-
-        centerMap(currentBestLocation)
+        centerMap(getLastKnownLocation(requireContext()))
 
         current_track_overlay = null
 
@@ -213,9 +207,14 @@ class MapFragment : Fragment()
 
         update_main_button()
         mainButton.setOnClickListener {
-            if (trackingState == Keys.STATE_TRACKING_ACTIVE)
+            val tracker = trackerService
+            if (tracker == null)
             {
-                trackerService.stopTracking()
+                return@setOnClickListener
+            }
+            if (tracker.trackingState == Keys.STATE_TRACKING_ACTIVE)
+            {
+                tracker.stopTracking()
             }
             else
             {
@@ -224,7 +223,12 @@ class MapFragment : Fragment()
             handler.postDelayed(location_update_redraw, 0)
         }
         currentLocationButton.setOnClickListener {
-            centerMap(currentBestLocation, animated=true)
+            val tracker = trackerService
+            if (tracker == null)
+            {
+                return@setOnClickListener
+            }
+            centerMap(tracker.currentBestLocation, animated=true)
         }
         zoom_in_button.setOnClickListener {
             mapView.controller.setZoom(mapView.zoomLevelDouble + 0.5)
@@ -256,6 +260,7 @@ class MapFragment : Fragment()
     {
         Log.i("VOUSSOIR", "MapFragment.onResume")
         super.onResume()
+        redraw()
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         // if (bound) {
         //     trackerService.addGpsLocationListener()
@@ -268,26 +273,31 @@ class MapFragment : Fragment()
     {
         Log.i("VOUSSOIR", "MapFragment.onPause")
         super.onPause()
-        if (::trackerService.isInitialized)
-        {
-            trackerService.mapfragment = null
-        }
-        saveBestLocationState(currentBestLocation)
-        if (bound && trackingState != Keys.STATE_TRACKING_ACTIVE) {
-            trackerService.removeGpsLocationListener()
-            trackerService.removeNetworkLocationListener()
-            trackerService.trackbook.database.commit()
-        }
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+        val tracker = trackerService
+        if (tracker == null)
+        {
+            return
+        }
+        saveBestLocationState(tracker.currentBestLocation)
+        tracker.mapfragment = null
+        if (bound && tracker.trackingState != Keys.STATE_TRACKING_ACTIVE)
+        {
+            tracker.removeGpsLocationListener()
+            tracker.removeNetworkLocationListener()
+            tracker.trackbook.database.commit()
+        }
     }
 
     /* Overrides onStop from Fragment */
     override fun onStop()
     {
         super.onStop()
-        if (::trackerService.isInitialized)
+        val tracker = trackerService
+        if (tracker != null)
         {
-            trackerService.mapfragment = null
+            tracker.mapfragment = null
         }
         // unbind from TrackerService
         if (bound)
@@ -311,7 +321,10 @@ class MapFragment : Fragment()
     {
         Log.i("VOUSSOIR", "MapFragment.onDestroy")
         super.onDestroy()
-        trackerService.mapfragment = null
+        if (trackerService != null)
+        {
+            trackerService!!.mapfragment = null
+        }
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
@@ -328,6 +341,8 @@ class MapFragment : Fragment()
             // permission denied - unbind service
             activity?.unbindService(connection)
         }
+        val gpsProviderActive = if (trackerService == null) false else trackerService!!.gpsProviderActive
+        val networkProviderActive = if (trackerService == null) false else trackerService!!.networkProviderActive
         toggleLocationErrorBar(gpsProviderActive, networkProviderActive)
     }
 
@@ -344,7 +359,10 @@ class MapFragment : Fragment()
         {
             activity?.startService(intent)
         }
-        trackerService.startTracking()
+        if (trackerService != null)
+        {
+            trackerService!!.startTracking()
+        }
     }
 
 
@@ -354,24 +372,14 @@ class MapFragment : Fragment()
         bound = false
         // unregister listener for changes in shared preferences
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
-        if (::trackerService.isInitialized)
+        if (trackerService != null)
         {
-            trackerService.mapfragment = null
+            trackerService!!.mapfragment = null
         }
     }
 
     private val sharedPreferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
-        when (key)
-        {
-            Keys.PREF_TRACKING_STATE ->
-            {
-                if (activity != null)
-                {
-                    trackingState = PreferencesHelper.loadTrackingState()
-                }
-            }
-        }
-        update_main_button()
+        redraw()
     }
 
     fun centerMap(location: Location, animated: Boolean = false) {
@@ -557,6 +565,7 @@ class MapFragment : Fragment()
 
     fun update_main_button()
     {
+        val tracker = trackerService
         mainButton.isEnabled = trackbook.database.ready
         currentLocationButton.isVisible = true
         if (! trackbook.database.ready)
@@ -564,13 +573,13 @@ class MapFragment : Fragment()
             mainButton.text = requireContext().getString(R.string.button_not_ready)
             mainButton.icon = null
         }
-        else if (trackingState == Keys.STATE_TRACKING_STOPPED)
+        else if (tracker == null || tracker.trackingState == Keys.STATE_TRACKING_STOPPED)
         {
             mainButton.setIconResource(R.drawable.ic_fiber_manual_record_inactive_24dp)
             mainButton.text = requireContext().getString(R.string.button_start)
             mainButton.contentDescription = requireContext().getString(R.string.descr_button_start)
         }
-        else if (trackingState == Keys.STATE_TRACKING_ACTIVE)
+        else if (tracker.trackingState == Keys.STATE_TRACKING_ACTIVE)
         {
             mainButton.setIconResource(R.drawable.ic_fiber_manual_stop_24dp)
             mainButton.text = requireContext().getString(R.string.button_pause)
@@ -609,11 +618,9 @@ class MapFragment : Fragment()
             }
             bound = true
             trackerService = serviceref
-            trackerService.mapfragment = thismapfragment
+            trackerService!!.mapfragment = thismapfragment
             // get state of tracking and update button if necessary
-            trackingState = trackerService.trackingState
-            update_main_button()
-            handler.postDelayed(location_update_redraw, 0)
+            redraw()
             // register listener for changes in shared preferences
             PreferencesHelper.registerPreferenceChangeListener(sharedPreferenceChangeListener)
             // start listening for location updates
@@ -625,27 +632,57 @@ class MapFragment : Fragment()
         }
     }
 
+    fun redraw()
+    {
+        // Log.i("VOUSSOIR", "MapFragment.redraw")
+        update_main_button()
+        val tracker = trackerService
+        if (tracker == null)
+        {
+            return
+        }
+        create_current_position_overlays(tracker.currentBestLocation, tracker.trackingState)
+        if (current_track_overlay == null)
+        {
+            create_track_overlay()
+        }
+        current_track_overlay!!.setPoints(tracker.recent_trackpoints_for_mapview)
+
+        if (continuous_auto_center)
+        {
+            centerMap(tracker.currentBestLocation, animated=false)
+        }
+
+        map_current_time.text = iso8601_local_noms(tracker.currentBestLocation.time)
+
+        if (tracker.arrived_at_home == 0L)
+        {
+            power_level_indicator.setImageResource(R.drawable.ic_satellite_24dp)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                power_level_indicator.tooltipText = "GPS tracking at full power"
+            }
+        }
+        else if (tracker.location_interval == tracker.LOCATION_INTERVAL_SLEEP)
+        {
+            power_level_indicator.setImageResource(R.drawable.ic_sleep_24dp)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                power_level_indicator.tooltipText = "GPS sleeping until movement"
+            }
+        }
+        else
+        {
+            power_level_indicator.setImageResource(R.drawable.ic_homepoint_24dp)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                power_level_indicator.tooltipText = "You are at home"
+            }
+        }
+    }
+
     val location_update_redraw: Runnable = object : Runnable
     {
         override fun run()
         {
-            Log.i("VOUSSOIR", "MapFragment.location_update_redraw")
-            currentBestLocation = trackerService.currentBestLocation
-            gpsProviderActive = trackerService.gpsProviderActive
-            networkProviderActive = trackerService.networkProviderActive
-            trackingState = trackerService.trackingState
-
-            create_current_position_overlays(currentBestLocation, trackingState)
-            if (current_track_overlay == null)
-            {
-                create_track_overlay()
-            }
-            current_track_overlay!!.setPoints(trackerService.recent_trackpoints_for_mapview)
-
-            if (continuous_auto_center)
-            {
-                centerMap(currentBestLocation, animated=false)
-            }
+            redraw()
         }
     }
 }

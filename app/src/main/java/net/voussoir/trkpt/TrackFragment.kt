@@ -57,7 +57,6 @@ import org.osmdroid.views.overlay.TilesOverlay
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlayOptions
 import org.osmdroid.views.overlay.simplefastpoint.SimplePointTheme
-import java.text.SimpleDateFormat
 import java.util.*
 
 class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener

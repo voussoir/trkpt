@@ -20,16 +20,10 @@ fun iso8601_local(timestamp: Long): String
     return iso8601_format.format(timestamp)
 }
 
-fun iso8601(datetime: Date): String
+fun iso8601_local_noms(timestamp: Long): String
 {
-    return iso8601(datetime.time)
-}
-
-fun iso8601_parse(datetime: String): Date
-{
-    val iso8601_format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-    iso8601_format.timeZone = TimeZone.getTimeZone("UTC")
-    return iso8601_format.parse(datetime)
+    val iso8601_format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+    return iso8601_format.format(timestamp)
 }
 
 fun random_int(): Int
