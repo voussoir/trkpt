@@ -1,6 +1,8 @@
 trkpt
 =====
 
+<p align="center"><img src="https://raw.githubusercontent.com/voussoir/trkpt/master/trkpt_squircle_128x128.png"/></p>
+
 This is a fork of [Trackbook](https://codeberg.org/y20k/trackbook) by y20k. Thank you y20k for this great project.
 
 The goal of this fork is to make 24/7 recording easier. I want to be able to run trkpt nearly all of the time. The main differences between trkpt and Trackbook are:
