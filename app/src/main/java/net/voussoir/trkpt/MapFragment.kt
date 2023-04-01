@@ -49,8 +49,6 @@ import org.osmdroid.views.overlay.OverlayItem
 import org.osmdroid.views.overlay.Polygon
 import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.TilesOverlay
-import org.osmdroid.views.overlay.compass.CompassOverlay
-import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider
 import net.voussoir.trkpt.helpers.*
 
 class MapFragment : Fragment()
@@ -135,13 +133,6 @@ class MapFragment : Fragment()
         {
             mapView.overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
         }
-
-        val densityScalingFactor: Float = UiHelper.getDensityScalingFactor(requireContext())
-        val compassOverlay = CompassOverlay(requireContext(), InternalCompassOrientationProvider(requireContext()), mapView)
-        compassOverlay.enableCompass()
-        val screen_width = Resources.getSystem().displayMetrics.widthPixels
-        compassOverlay.setCompassCenter((screen_width / densityScalingFactor) - 36f, 36f)
-        mapView.overlays.add(compassOverlay)
 
         val receiver: MapEventsReceiver = object: MapEventsReceiver
         {
