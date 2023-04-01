@@ -26,6 +26,11 @@ object Keys {
     // application name
     const val APPLICATION_NAME: String = "trkpt"
 
+    // axioms
+    const val ONE_SECOND_IN_MILLISECONDS: Long = 1000
+    const val ONE_MINUTE_IN_MILLISECONDS: Long = 60 * ONE_SECOND_IN_MILLISECONDS
+    const val ONE_HOUR_IN_MILLISECONDS: Long = 60 * ONE_MINUTE_IN_MILLISECONDS
+
     // version numbers
     const val CURRENT_TRACK_FORMAT_VERSION: Int = 4
     const val DATABASE_VERSION: Int = 1
@@ -63,6 +68,9 @@ object Keys {
     // states
     const val STATE_TRACKING_STOPPED: Int = 0
     const val STATE_TRACKING_ACTIVE: Int = 1
+    const val LOCATION_INTERVAL_FULL_POWER: Long = 0
+    const val LOCATION_INTERVAL_SLEEP: Long = ONE_MINUTE_IN_MILLISECONDS
+    const val LOCATION_INTERVAL_GIVE_UP: Long = -1
     const val STATE_THEME_FOLLOW_SYSTEM: String = "stateFollowSystem"
     const val STATE_THEME_LIGHT_MODE: String = "stateLightMode"
     const val STATE_THEME_DARK_MODE: String = "stateDarkMode"
@@ -85,9 +93,6 @@ object Keys {
 
     // default values
     val DEFAULT_DATE: Date = Date(0L)
-    const val ONE_SECOND_IN_MILLISECONDS: Long = 1000
-    const val ONE_MINUTE_IN_MILLISECONDS: Long = 60 * ONE_SECOND_IN_MILLISECONDS
-    const val ONE_HOUR_IN_MILLISECONDS: Long = 60 * ONE_MINUTE_IN_MILLISECONDS
     const val EMPTY_STRING_RESOURCE: Int = 0
     const val REQUEST_CURRENT_LOCATION_INTERVAL: Long = 1 * ONE_SECOND_IN_MILLISECONDS
     const val SAVE_TEMP_TRACK_INTERVAL: Long = 30 * ONE_SECOND_IN_MILLISECONDS

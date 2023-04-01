@@ -107,6 +107,7 @@ class MainActivity: AppCompatActivity()
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACTIVITY_RECOGNITION,
         )
         val permissions_needed = ArrayList<String>()
         for (permission in permissions_wanted)

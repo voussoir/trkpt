@@ -34,12 +34,12 @@ fun create_start_end_markers(context: Context, map_view: MapView, startpoint: Tr
 {
     Log.i("VOUSSOIR", "MapOverlayHelper.create_start_end_markers")
     val overlayItems: ArrayList<OverlayItem> = ArrayList<OverlayItem>()
-    val startmarker: OverlayItem = createOverlayItem(context, startpoint.latitude, startpoint.longitude, startpoint.accuracy, startpoint.provider, startpoint.time)
+    val startmarker: OverlayItem = createOverlayItem(startpoint.latitude, startpoint.longitude, title="Start", iso8601_local_noms(startpoint.time))
     startmarker.setMarker(ContextCompat.getDrawable(context, R.drawable.ic_marker_track_start_48dp)!!)
     overlayItems.add(startmarker)
     if (startpoint != endpoint)
     {
-        val endmarker: OverlayItem = createOverlayItem(context, endpoint.latitude, endpoint.longitude, endpoint.accuracy, endpoint.provider, endpoint.time)
+        val endmarker: OverlayItem = createOverlayItem(endpoint.latitude, endpoint.longitude, title="End", description= iso8601_local_noms(endpoint.time))
         endmarker.setMarker(ContextCompat.getDrawable(context, R.drawable.ic_marker_track_end_48dp)!!)
         overlayItems.add(endmarker)
     }
@@ -48,10 +48,8 @@ fun create_start_end_markers(context: Context, map_view: MapView, startpoint: Tr
     return overlay
 }
 
-fun createOverlayItem(context: Context, latitude: Double, longitude: Double, accuracy: Float, provider: String, time: Long): OverlayItem
+fun createOverlayItem(latitude: Double, longitude: Double, title: String, description: String): OverlayItem
 {
-    val title = "${context.getString(R.string.marker_description_time)}: ${SimpleDateFormat.getTimeInstance(SimpleDateFormat.MEDIUM, Locale.getDefault()).format(time)}"
-    val description = "${context.getString(R.string.marker_description_time)}: ${SimpleDateFormat.getTimeInstance(SimpleDateFormat.MEDIUM, Locale.getDefault()).format(time)} | ${context.getString(R.string.marker_description_accuracy)}: ${DecimalFormat("#0.00").format(accuracy)} (${provider})"
     val position = GeoPoint(latitude, longitude)
     val item = OverlayItem(title, description, position)
     item.markerHotspot = OverlayItem.HotspotPlace.CENTER

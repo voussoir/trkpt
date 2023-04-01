@@ -97,19 +97,6 @@
             app:layout_constraintTop_toTopOf="parent"
             />
 
-        <ImageButton
-            android:id="@+id/power_level_indicator"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="16dp"
-            android:src="@drawable/ic_satellite_24dp"
-            app:backgroundTint="@color/default_transparent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_satellite_24dp"
-            app:tint="@color/location_button_icon" />
-
         <!-- GROUPS -->
 
     </androidx.constraintlayout.widget.ConstraintLayout>

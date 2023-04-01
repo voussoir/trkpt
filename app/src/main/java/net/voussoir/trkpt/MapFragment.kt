@@ -71,7 +71,6 @@ class MapFragment : Fragment()
     lateinit var zoom_out_button: FloatingActionButton
     lateinit var currentLocationButton: FloatingActionButton
     lateinit var map_current_time: TextView
-    lateinit var power_level_indicator: ImageButton
     private var current_track_overlay: Polyline? = null
     private var current_position_overlays = ArrayList<Overlay>()
     private var homepoints_overlays = ArrayList<Overlay>()
@@ -113,7 +112,6 @@ class MapFragment : Fragment()
         zoom_in_button = rootView.findViewById(R.id.zoom_in_button)
         zoom_out_button = rootView.findViewById(R.id.zoom_out_button)
         map_current_time = rootView.findViewById(R.id.map_current_time)
-        power_level_indicator = rootView.findViewById(R.id.power_level_indicator)
         mainButton = rootView.findViewById(R.id.main_button)
         locationErrorBar = Snackbar.make(mapView, String(), Snackbar.LENGTH_INDEFINITE)
 
@@ -390,38 +388,74 @@ class MapFragment : Fragment()
     }
 
     /* Mark current position on map */
-    fun create_current_position_overlays(location: Location, trackingState: Int = Keys.STATE_TRACKING_STOPPED)
+    fun create_current_position_overlays()
     {
         clear_current_position_overlays()
 
-        val locationIsOld: Boolean = !(isRecentEnough(location))
+        val tracker = trackerService
+        if (tracker == null)
+        {
+            return
+        }
+
+        val locationIsOld: Boolean = !(isRecentEnough(tracker.currentBestLocation))
 
         val newMarker: Drawable
         val fillcolor: Int
-        if (locationIsOld)
+        val description: String
+        if (tracker.listeners_enabled_at == 0L)
+        {
+            fillcolor = Color.argb(64, 0, 0, 0)
+            newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_skull_24dp)!!
+            description = "No location listeners are enabled"
+        }
+        else if (tracker.trackingState == Keys.STATE_TRACKING_ACTIVE && tracker.location_interval == Keys.LOCATION_INTERVAL_GIVE_UP)
+        {
+            fillcolor = Color.argb(64, 0, 0, 0)
+            newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_skull_24dp)!!
+            description = "GPS is struggling; disabled until movement"
+        }
+        else if (tracker.trackingState == Keys.STATE_TRACKING_ACTIVE && tracker.location_interval == Keys.LOCATION_INTERVAL_SLEEP)
+        {
+            fillcolor = Color.argb(64, 220, 61, 51)
+            newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_sleep_24dp)!!
+            description = "GPS sleeping until movement"
+        }
+        else if (locationIsOld)
         {
             fillcolor = Color.argb(64, 0, 0, 0)
             newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_black_24dp)!!
+            description = "GPS tracking at full power"
         }
-        else if (trackingState == Keys.STATE_TRACKING_ACTIVE)
+        else if (tracker.trackingState == Keys.STATE_TRACKING_ACTIVE)
         {
             fillcolor = Color.argb(64, 220, 61, 51)
             newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_red_24dp)!!
+            description = "GPS tracking at full power"
         }
         else
         {
             fillcolor = Color.argb(64, 60, 152, 219)
             newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_blue_24dp)!!
+            description = "GPS tracking at full power"
         }
 
         val current_location_radius = Polygon()
-        current_location_radius.points = Polygon.pointsAsCircle(GeoPoint(location.latitude, location.longitude), location.accuracy.toDouble())
+        current_location_radius.points = Polygon.pointsAsCircle(
+            GeoPoint(tracker.currentBestLocation.latitude, tracker.currentBestLocation.longitude),
+            tracker.currentBestLocation.accuracy.toDouble()
+        )
         current_location_radius.fillPaint.color = fillcolor
         current_location_radius.outlinePaint.color = Color.argb(0, 0, 0, 0)
         current_position_overlays.add(current_location_radius)
 
         val overlayItems: java.util.ArrayList<OverlayItem> = java.util.ArrayList<OverlayItem>()
-        val overlayItem: OverlayItem = createOverlayItem(requireContext(), location.latitude, location.longitude, location.accuracy, location.provider.toString(), location.time)
+        val overlayItem: OverlayItem = createOverlayItem(
+            tracker.currentBestLocation.latitude,
+            tracker.currentBestLocation.longitude,
+            title="Current location",
+            description=description,
+        )
         overlayItem.setMarker(newMarker)
         overlayItems.add(overlayItem)
         current_position_overlays.add(createOverlay(requireContext(), overlayItems))
@@ -478,12 +512,10 @@ class MapFragment : Fragment()
 
             val overlayItems: java.util.ArrayList<OverlayItem> = java.util.ArrayList<OverlayItem>()
             val overlayItem: OverlayItem = createOverlayItem(
-                context,
                 homepoint.location.latitude,
                 homepoint.location.longitude,
-                homepoint.location.accuracy,
-                homepoint.location.provider.toString(),
-                homepoint.location.time
+                title=homepoint.name,
+                description="Radius ${homepoint.radius}"
             )
             overlayItem.setMarker(newMarker)
             overlayItems.add(overlayItem)
@@ -615,7 +647,7 @@ class MapFragment : Fragment()
         {
             return
         }
-        create_current_position_overlays(tracker.currentBestLocation, tracker.trackingState)
+        create_current_position_overlays()
         if (current_track_overlay == null)
         {
             create_track_overlay()
@@ -629,28 +661,7 @@ class MapFragment : Fragment()
 
         map_current_time.text = iso8601_local_noms(tracker.currentBestLocation.time)
 
-
-        if (tracker.location_interval == tracker.LOCATION_INTERVAL_FULL_POWER)
-        {
-            power_level_indicator.setImageResource(R.drawable.ic_satellite_24dp)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                power_level_indicator.tooltipText = "GPS tracking at full power"
-            }
-        }
-        else if (tracker.location_interval == tracker.LOCATION_INTERVAL_SLEEP)
-        {
-            power_level_indicator.setImageResource(R.drawable.ic_sleep_24dp)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                power_level_indicator.tooltipText = "GPS sleeping until movement"
-            }
-        }
-        else if (tracker.location_interval == tracker.LOCATION_INTERVAL_GIVE_UP)
-        {
-            power_level_indicator.setImageResource(R.drawable.ic_skull_24dp)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                power_level_indicator.tooltipText = "GPS is struggling; disabled until movement"
-            }
-        }
+        mapView.invalidate()
     }
 
     val redraw_runnable: Runnable = object : Runnable

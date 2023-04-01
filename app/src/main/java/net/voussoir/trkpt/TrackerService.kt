@@ -31,10 +31,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.hardware.Sensor
-import android.hardware.SensorManager
-import android.hardware.TriggerEvent
-import android.hardware.TriggerEventListener
+import android.hardware.*
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -68,9 +65,9 @@ class TrackerService: Service()
     var last_significant_motion: Long = 0
     var arrived_at_home: Long = 0
     var location_interval: Long = 0
-    val LOCATION_INTERVAL_FULL_POWER: Long = 0
-    val LOCATION_INTERVAL_SLEEP: Long = Keys.ONE_MINUTE_IN_MILLISECONDS
-    val LOCATION_INTERVAL_GIVE_UP: Long = -1
+    val TIME_UNTIL_SLEEP: Long = 2 * Keys.ONE_MINUTE_IN_MILLISECONDS
+    val TIME_UNTIL_GIVE_UP: Long = 3 * Keys.ONE_MINUTE_IN_MILLISECONDS
+    val WATCHDOG_INTERVAL: Long = 30 * Keys.ONE_SECOND_IN_MILLISECONDS
     private val RECENT_TRKPT_COUNT = 3600
     private val DISPLACEMENT_LOCATION_COUNT = 5
     lateinit var recent_displacement_locations: Deque<Location>
@@ -94,27 +91,23 @@ class TrackerService: Service()
 
     private lateinit var sensor_manager: SensorManager
     private var significant_motion_sensor: Sensor? = null
+    private var step_counter_sensor: Sensor? = null
+    var has_motion_sensor: Boolean = false
 
-    private fun addGpsLocationListener(interval: Long)
+    private fun addGpsLocationListener(interval: Long): Boolean
     {
-        if (! use_gps_location)
-        {
-            Log.i("VOUSSOIR", "Skipping GPS listener.")
-            return
-        }
-
         gpsProviderActive = isGpsEnabled(locationManager)
         if (! gpsProviderActive)
         {
             Log.w("VOUSSOIR", "Device GPS is not enabled.")
-            return
+            return false
         }
 
         val has_permission: Boolean = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         if (! has_permission)
         {
             Log.w("VOUSSOIR", "Location permission is not granted.")
-            return
+            return false
         }
 
         locationManager.requestLocationUpdates(
@@ -125,28 +118,23 @@ class TrackerService: Service()
         )
         gpsLocationListenerRegistered = true
         Log.i("VOUSSOIR", "Added GPS location listener.")
+        return true
     }
 
-    private fun addNetworkLocationListener(interval: Long)
+    private fun addNetworkLocationListener(interval: Long): Boolean
     {
-        if (! use_network_location)
-        {
-            Log.i("VOUSSOIR", "Skipping Network listener.")
-            return
-        }
-
         networkProviderActive = isNetworkEnabled(locationManager)
         if (!networkProviderActive)
         {
             Log.w("VOUSSOIR", "Unable to add Network location listener.")
-            return
+            return false
         }
 
         val has_permission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         if (! has_permission)
         {
             Log.w("VOUSSOIR", "Unable to add Network location listener. Location permission is not granted.")
-            return
+            return false
         }
 
         locationManager.requestLocationUpdates(
@@ -157,6 +145,7 @@ class TrackerService: Service()
         )
         networkLocationListenerRegistered = true
         Log.i("VOUSSOIR", "Added Network location listener.")
+        return true
     }
 
     fun removeGpsLocationListener()
@@ -193,19 +182,17 @@ class TrackerService: Service()
         location_interval = interval
         var gps_added = false
         var network_added = false
-        if (use_gps_location && interval != LOCATION_INTERVAL_GIVE_UP)
+        if (use_gps_location && interval != Keys.LOCATION_INTERVAL_GIVE_UP)
         {
-            addGpsLocationListener(interval)
-            gps_added = true
+            gps_added = addGpsLocationListener(interval)
         }
         else if (gpsLocationListenerRegistered)
         {
             removeGpsLocationListener()
         }
-        if (use_network_location && interval != LOCATION_INTERVAL_GIVE_UP)
+        if (use_network_location && interval != Keys.LOCATION_INTERVAL_GIVE_UP)
         {
-            addNetworkLocationListener(interval)
-            network_added = true
+            network_added = addNetworkLocationListener(interval)
         }
         else if (networkLocationListenerRegistered)
         {
@@ -219,7 +206,9 @@ class TrackerService: Service()
         else
         {
             listeners_enabled_at = 0
+            location_interval = Keys.LOCATION_INTERVAL_GIVE_UP
         }
+        displayNotification()
     }
 
     private fun createLocationListener(): LocationListener
@@ -277,16 +266,20 @@ class TrackerService: Service()
                             Log.i("VOUSSOIR", "Arrived at home.")
                             arrived_at_home = System.currentTimeMillis()
                         }
-                        else if (location_interval == LOCATION_INTERVAL_SLEEP || significant_motion_sensor == null)
+                        else if (location_interval == Keys.LOCATION_INTERVAL_SLEEP)
                         {
                             // If we are already asleep, do not reset the listeners again because
                             // that immediately fetches a new location.
-                            // If we cannot rely on the motion sensor, then don't sleep!
                         }
-                        else if (allow_sleep && (System.currentTimeMillis() - arrived_at_home) > Keys.ONE_MINUTE_IN_MILLISECONDS)
+                        else if (
+                            allow_sleep &&
+                            has_motion_sensor &&
+                            (System.currentTimeMillis() - arrived_at_home) > TIME_UNTIL_SLEEP &&
+                            (System.currentTimeMillis() - last_significant_motion) > TIME_UNTIL_SLEEP
+                        )
                         {
                             Log.i("VOUSSOIR", "Staying at home, sleeping.")
-                            reset_location_listeners(interval=LOCATION_INTERVAL_SLEEP)
+                            reset_location_listeners(interval=Keys.LOCATION_INTERVAL_SLEEP)
                         }
                         return
                     }
@@ -295,7 +288,7 @@ class TrackerService: Service()
                 {
                     Log.i("VOUSSOIR", "Leaving home.")
                     arrived_at_home = 0
-                    reset_location_listeners(interval=LOCATION_INTERVAL_FULL_POWER)
+                    reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
                 }
 
                 if (! isRecentEnough(location))
@@ -365,31 +358,41 @@ class TrackerService: Service()
 
     private fun displayNotification(): Notification
     {
-        val timestamp = iso8601_local_noms(currentBestLocation.time)
+        notification_builder.setWhen(currentBestLocation.time)
         if (shouldCreateNotificationChannel())
         {
             createNotificationChannel()
         }
 
-        if (location_interval == LOCATION_INTERVAL_SLEEP)
-        {
-            notification_builder.setContentText("${timestamp} (sleeping)")
-        }
-        else
-        {
-            notification_builder.setContentText(timestamp)
-        }
-        notification_builder.setWhen(currentBestLocation.time)
-
+        val timestamp = iso8601_local_noms(currentBestLocation.time)
         if (trackingState == Keys.STATE_TRACKING_ACTIVE)
         {
             notification_builder.setContentTitle(this.getString(R.string.notification_title_trackbook_running))
-            notification_builder.setLargeIcon(AppCompatResources.getDrawable(this, R.drawable.ic_notification_icon_large_tracking_active_48dp)!!.toBitmap())
+            if (location_interval == Keys.LOCATION_INTERVAL_FULL_POWER)
+            {
+                notification_builder.setContentTitle("${timestamp} (recording)")
+                notification_builder.setSmallIcon(R.drawable.ic_satellite_24dp)
+            }
+            else if (location_interval == Keys.LOCATION_INTERVAL_SLEEP)
+            {
+                notification_builder.setContentTitle("${timestamp} (sleeping)")
+                notification_builder.setSmallIcon(R.drawable.ic_sleep_24dp)
+            }
+            else if (location_interval == Keys.LOCATION_INTERVAL_GIVE_UP)
+            {
+                notification_builder.setContentTitle("${timestamp} (deadzone)")
+                notification_builder.setSmallIcon(R.drawable.ic_skull_24dp)
+            }
+            else
+            {
+                notification_builder.setContentText(timestamp)
+                notification_builder.setSmallIcon(R.drawable.ic_fiber_manual_record_inactive_24dp)
+            }
         }
         else
         {
-            notification_builder.setContentTitle(this.getString(R.string.notification_title_trackbook_not_running))
-            notification_builder.setLargeIcon(AppCompatResources.getDrawable(this, R.drawable.ic_notification_icon_large_tracking_stopped_48dp)!!.toBitmap())
+            notification_builder.setContentTitle("${timestamp} (stopped)")
+            notification_builder.setSmallIcon(R.drawable.ic_fiber_manual_stop_24dp)
         }
 
         val notification = notification_builder.build()
@@ -452,8 +455,9 @@ class TrackerService: Service()
         Log.i("VOUSSOIR", "TrackerService.onBind")
         if (listeners_enabled_at == 0L)
         {
-            reset_location_listeners(interval=LOCATION_INTERVAL_FULL_POWER)
+            reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
         }
+        displayNotification()
         bound = true
         return binder
     }
@@ -464,8 +468,9 @@ class TrackerService: Service()
         Log.i("VOUSSOIR", "TrackerService.onRebind")
         if (listeners_enabled_at == 0L)
         {
-            reset_location_listeners(interval=LOCATION_INTERVAL_FULL_POWER)
+            reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
         }
+        displayNotification()
         bound = true
     }
 
@@ -478,7 +483,7 @@ class TrackerService: Service()
         // stop receiving location updates - if not tracking
         if (trackingState != Keys.STATE_TRACKING_ACTIVE)
         {
-            reset_location_listeners(LOCATION_INTERVAL_GIVE_UP)
+            reset_location_listeners(interval=Keys.LOCATION_INTERVAL_GIVE_UP)
         }
         // ensures onRebind is called
         return true
@@ -516,6 +521,52 @@ class TrackerService: Service()
         currentBestLocation = getLastKnownLocation(this)
         PreferencesHelper.registerPreferenceChangeListener(sharedPreferenceChangeListener)
 
+        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        has_motion_sensor = false
+        sensor_manager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        significant_motion_sensor = sensor_manager.getDefaultSensor(Sensor.TYPE_SIGNIFICANT_MOTION)
+        if (significant_motion_sensor != null)
+        {
+            val significant_motion_listener = object : TriggerEventListener() {
+                override fun onTrigger(event: TriggerEvent?) {
+                    Log.i("VOUSSOIR", "Significant motion")
+                    last_significant_motion = System.currentTimeMillis()
+                    if (trackingState == Keys.STATE_TRACKING_ACTIVE && location_interval != Keys.LOCATION_INTERVAL_FULL_POWER)
+                    {
+                        vibrator.vibrate(100)
+                        reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
+                    }
+                    sensor_manager.requestTriggerSensor(this, significant_motion_sensor)
+                }
+            }
+            Log.i("VOUSSOIR", "Got significant motion sensor.")
+            sensor_manager.requestTriggerSensor(significant_motion_listener, significant_motion_sensor)
+            has_motion_sensor = true
+        }
+
+        step_counter_sensor = sensor_manager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+        if (step_counter_sensor != null)
+        {
+            val step_counter_listener = object: SensorEventListener {
+                override fun onSensorChanged(event: SensorEvent?) {
+                    Log.i("VOUSSOIR", "Step counter changed")
+                    last_significant_motion = System.currentTimeMillis()
+                    if (trackingState == Keys.STATE_TRACKING_ACTIVE && location_interval != Keys.LOCATION_INTERVAL_FULL_POWER)
+                    {
+                        // beeper.startTone(ToneGenerator.TONE_PROP_ACK, 150)
+                        vibrator.vibrate(100)
+                        reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
+                    }
+                }
+
+                override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
+                }
+            }
+            Log.i("VOUSSOIR", "Got step count sensor.")
+            sensor_manager.registerListener(step_counter_listener, step_counter_sensor, 5_000_000, 5_000_000)
+            has_motion_sensor = true
+        }
+
         handler.post(background_watchdog)
     }
 
@@ -523,28 +574,6 @@ class TrackerService: Service()
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
     {
         Log.i("VOUSSOIR", "TrackerService.onStartCommand")
-
-        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        sensor_manager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        significant_motion_sensor = sensor_manager.getDefaultSensor(Sensor.TYPE_SIGNIFICANT_MOTION)
-        if (significant_motion_sensor != null)
-        {
-            val triggerEventListener = object : TriggerEventListener() {
-                override fun onTrigger(event: TriggerEvent?) {
-                    Log.i("VOUSSOIR", "Significant motion")
-                    last_significant_motion = System.currentTimeMillis()
-                    arrived_at_home = 0L
-                    if (location_interval != LOCATION_INTERVAL_FULL_POWER)
-                    {
-                        // beeper.startTone(ToneGenerator.TONE_PROP_ACK, 150)
-                        vibrator.vibrate(100)
-                        reset_location_listeners(LOCATION_INTERVAL_FULL_POWER)
-                    }
-                    sensor_manager.requestTriggerSensor(this, significant_motion_sensor)
-                }
-            }
-            sensor_manager.requestTriggerSensor(triggerEventListener, significant_motion_sensor)
-        }
 
         // SERVICE RESTART (via START_STICKY)
         if (intent == null)
@@ -580,7 +609,7 @@ class TrackerService: Service()
         stopForeground(STOP_FOREGROUND_REMOVE)
         notificationManager.cancel(Keys.TRACKER_SERVICE_NOTIFICATION_ID) // this call was not necessary prior to Android 12
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
-        reset_location_listeners(LOCATION_INTERVAL_GIVE_UP)
+        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_GIVE_UP)
         handler.removeCallbacks(background_watchdog)
     }
 
@@ -588,7 +617,7 @@ class TrackerService: Service()
     {
         Log.i("VOUSSOIR", "TrackerService.startTracking")
         arrived_at_home = 0
-        reset_location_listeners(interval=LOCATION_INTERVAL_FULL_POWER)
+        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
         trackingState = Keys.STATE_TRACKING_ACTIVE
         PreferencesHelper.saveTrackingState(trackingState)
         recent_displacement_locations.clear()
@@ -600,7 +629,7 @@ class TrackerService: Service()
         Log.i("VOUSSOIR", "TrackerService.stopTracking")
         trackbook.database.commit()
         arrived_at_home = 0
-        reset_location_listeners(interval=LOCATION_INTERVAL_FULL_POWER)
+        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
         trackingState = Keys.STATE_TRACKING_STOPPED
         PreferencesHelper.saveTrackingState(trackingState)
         recent_displacement_locations.clear()
@@ -614,12 +643,12 @@ class TrackerService: Service()
             Keys.PREF_LOCATION_GPS ->
             {
                 use_gps_location = PreferencesHelper.load_location_gps()
-                reset_location_listeners(interval=LOCATION_INTERVAL_FULL_POWER)
+                reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
             }
             Keys.PREF_LOCATION_NETWORK ->
             {
                 use_network_location = PreferencesHelper.load_location_network()
-                reset_location_listeners(interval=LOCATION_INTERVAL_FULL_POWER)
+                reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
             }
             Keys.PREF_USE_IMPERIAL_UNITS ->
             {
@@ -632,9 +661,9 @@ class TrackerService: Service()
             Keys.PREF_ALLOW_SLEEP ->
             {
                 allow_sleep = PreferencesHelper.loadAllowSleep()
-                if (! allow_sleep && location_interval != LOCATION_INTERVAL_FULL_POWER)
+                if (! allow_sleep && location_interval != Keys.LOCATION_INTERVAL_FULL_POWER)
                 {
-                    reset_location_listeners(LOCATION_INTERVAL_FULL_POWER)
+                    reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
                 }
             }
             Keys.PREF_DEVICE_ID ->
@@ -649,28 +678,19 @@ class TrackerService: Service()
         override fun run()
         {
             Log.i("VOUSSOIR", "TrackerService.background_watchdog")
-            handler.postDelayed(this, 30 * Keys.ONE_SECOND_IN_MILLISECONDS)
+            handler.postDelayed(this, WATCHDOG_INTERVAL)
             val now = System.currentTimeMillis()
-            val struggletime: Long
-            if (location_interval == LOCATION_INTERVAL_FULL_POWER)
-            {
-                struggletime = 2 * Keys.ONE_MINUTE_IN_MILLISECONDS
-            }
-            else
-            {
-                struggletime = 4 * Keys.ONE_MINUTE_IN_MILLISECONDS
-            }
             if (
                 allow_sleep &&
+                has_motion_sensor &&
                 trackingState == Keys.STATE_TRACKING_ACTIVE &&
-                location_interval != LOCATION_INTERVAL_GIVE_UP &&
-                significant_motion_sensor != null &&
-                (now - listeners_enabled_at) > struggletime &&
-                (now - currentBestLocation.time) > struggletime &&
-                (now - last_significant_motion) > struggletime
+                location_interval != Keys.LOCATION_INTERVAL_GIVE_UP &&
+                (now - listeners_enabled_at) > TIME_UNTIL_GIVE_UP &&
+                (now - currentBestLocation.time) > TIME_UNTIL_GIVE_UP &&
+                (now - last_significant_motion) > TIME_UNTIL_GIVE_UP
             )
             {
-                reset_location_listeners(LOCATION_INTERVAL_GIVE_UP)
+                reset_location_listeners(Keys.LOCATION_INTERVAL_GIVE_UP)
             }
         }
     }
