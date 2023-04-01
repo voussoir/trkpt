@@ -217,7 +217,7 @@ class MapFragment : Fragment()
             {
                 return@setOnClickListener
             }
-            centerMap(tracker.currentBestLocation, animated=true)
+            centerMap(tracker.currentBestLocation)
         }
         zoom_in_button.setOnClickListener {
             mapView.controller.setZoom(mapView.zoomLevelDouble + 0.5)
@@ -363,16 +363,10 @@ class MapFragment : Fragment()
         redraw()
     }
 
-    fun centerMap(location: Location, animated: Boolean = false) {
+    fun centerMap(location: Location)
+    {
         val position = GeoPoint(location.latitude, location.longitude)
-        if (animated)
-        {
-            mapView.controller.animateTo(position)
-        }
-        else
-        {
-            mapView.controller.setCenter(position)
-        }
+        mapView.controller.setCenter(position)
         continuous_auto_center = true
     }
 
@@ -630,7 +624,7 @@ class MapFragment : Fragment()
 
         if (continuous_auto_center)
         {
-            centerMap(tracker.currentBestLocation, animated=false)
+            centerMap(tracker.currentBestLocation)
         }
 
         map_current_time.text = iso8601_local_noms(tracker.currentBestLocation.time)
