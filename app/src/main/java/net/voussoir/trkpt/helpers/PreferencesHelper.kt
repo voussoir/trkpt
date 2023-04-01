@@ -98,7 +98,11 @@ object PreferencesHelper
     }
 
     fun loadOmitRests(): Boolean {
-        return sharedPreferences.getBoolean(Keys.PREF_OMIT_RESTS, true)
+        return sharedPreferences.getBoolean(Keys.PREF_OMIT_RESTS, Keys.DEFAULT_OMIT_RESTS)
+    }
+
+    fun loadAllowSleep(): Boolean {
+        return sharedPreferences.getBoolean(Keys.PREF_ALLOW_SLEEP, Keys.DEFAULT_ALLOW_SLEEP)
     }
 
     /* Loads the state of a map */

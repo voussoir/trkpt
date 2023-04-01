@@ -60,6 +60,7 @@ class TrackerService: Service()
     var trackingState: Int = Keys.STATE_TRACKING_STOPPED
     var useImperial: Boolean = false
     var omitRests: Boolean = true
+    var allow_sleep: Boolean = true
     var device_id: String = random_device_id()
     var currentBestLocation: Location = getDefaultLocation()
     var lastCommit: Long = 0
@@ -282,7 +283,7 @@ class TrackerService: Service()
                             // that immediately fetches a new location.
                             // If we cannot rely on the motion sensor, then don't sleep!
                         }
-                        else if ((System.currentTimeMillis() - arrived_at_home) > Keys.ONE_MINUTE_IN_MILLISECONDS)
+                        else if (allow_sleep && (System.currentTimeMillis() - arrived_at_home) > Keys.ONE_MINUTE_IN_MILLISECONDS)
                         {
                             Log.i("VOUSSOIR", "Staying at home, sleeping.")
                             reset_location_listeners(interval=LOCATION_INTERVAL_SLEEP)
@@ -497,6 +498,7 @@ class TrackerService: Service()
         device_id = PreferencesHelper.load_device_id()
         useImperial = PreferencesHelper.loadUseImperialUnits()
         omitRests = PreferencesHelper.loadOmitRests()
+        allow_sleep = PreferencesHelper.loadAllowSleep()
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notification_builder = NotificationCompat.Builder(this, Keys.NOTIFICATION_CHANNEL_RECORDING)
@@ -627,6 +629,14 @@ class TrackerService: Service()
             {
                 omitRests = PreferencesHelper.loadOmitRests()
             }
+            Keys.PREF_ALLOW_SLEEP ->
+            {
+                allow_sleep = PreferencesHelper.loadAllowSleep()
+                if (! allow_sleep && location_interval != LOCATION_INTERVAL_FULL_POWER)
+                {
+                    reset_location_listeners(LOCATION_INTERVAL_FULL_POWER)
+                }
+            }
             Keys.PREF_DEVICE_ID ->
             {
                 device_id = PreferencesHelper.load_device_id()
@@ -651,6 +661,7 @@ class TrackerService: Service()
                 struggletime = 4 * Keys.ONE_MINUTE_IN_MILLISECONDS
             }
             if (
+                allow_sleep &&
                 trackingState == Keys.STATE_TRACKING_ACTIVE &&
                 location_interval != LOCATION_INTERVAL_GIVE_UP &&
                 significant_motion_sensor != null &&

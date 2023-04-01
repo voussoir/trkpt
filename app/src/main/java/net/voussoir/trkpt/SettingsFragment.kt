@@ -22,8 +22,6 @@ package net.voussoir.trkpt
 
 import YesNoDialog
 import android.app.Activity
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -34,7 +32,6 @@ import android.provider.DocumentsContract
 import android.provider.Settings
 import android.util.Log
 import android.view.View
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.preference.EditTextPreference
 import androidx.preference.ListPreference
@@ -131,6 +128,17 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         preferenceOmitRests.setDefaultValue(Keys.DEFAULT_OMIT_RESTS)
         preferenceCategoryGeneral.contains(preferenceOmitRests)
         screen.addPreference(preferenceOmitRests)
+
+        val prefAllowSleep = SwitchPreferenceCompat(activity as Context)
+        prefAllowSleep.isSingleLineTitle = false
+        prefAllowSleep.title = "Allow sleep at homepoints and in deadzones"
+        prefAllowSleep.setIcon(R.drawable.ic_sleep_24dp)
+        prefAllowSleep.key = Keys.PREF_ALLOW_SLEEP
+        prefAllowSleep.summaryOn = "trkpt will fall asleep near homepoints or when location fixes are completely unavailable. The motion sensor will wake it."
+        prefAllowSleep.summaryOff = "trkpt will never fall asleep, tracking will always run at full power."
+        prefAllowSleep.setDefaultValue(Keys.DEFAULT_ALLOW_SLEEP)
+        preferenceCategoryGeneral.contains(prefAllowSleep)
+        screen.addPreference(prefAllowSleep)
 
         val preferenceDeviceID = EditTextPreference(activity as Context)
         preferenceDeviceID.title = getString(R.string.pref_device_id)
