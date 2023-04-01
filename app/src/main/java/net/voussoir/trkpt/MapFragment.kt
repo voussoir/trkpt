@@ -52,7 +52,6 @@ import org.osmdroid.views.overlay.TilesOverlay
 import org.osmdroid.views.overlay.compass.CompassOverlay
 import org.osmdroid.views.overlay.compass.InternalCompassOrientationProvider
 import net.voussoir.trkpt.helpers.*
-import net.voussoir.trkpt.R
 
 class MapFragment : Fragment()
 {
@@ -205,7 +204,6 @@ class MapFragment : Fragment()
             false
         }
 
-        update_main_button()
         mainButton.setOnClickListener {
             val tracker = trackerService
             if (tracker == null)
@@ -220,7 +218,7 @@ class MapFragment : Fragment()
             {
                 startTracking()
             }
-            handler.postDelayed(location_update_redraw, 0)
+            handler.postDelayed(redraw_runnable, 0)
         }
         currentLocationButton.setOnClickListener {
             val tracker = trackerService
@@ -238,6 +236,7 @@ class MapFragment : Fragment()
         }
 
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        handler.post(redraw_runnable)
         return rootView
     }
 
@@ -253,6 +252,7 @@ class MapFragment : Fragment()
         }
         // bind to TrackerService
         activity?.bindService(Intent(activity, TrackerService::class.java), connection, Context.BIND_AUTO_CREATE)
+        handler.post(redraw_runnable)
     }
 
     /* Overrides onResume from Fragment */
@@ -260,7 +260,7 @@ class MapFragment : Fragment()
     {
         Log.i("VOUSSOIR", "MapFragment.onResume")
         super.onResume()
-        redraw()
+        handler.post(redraw_runnable)
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         // if (bound) {
         //     trackerService.addGpsLocationListener()
@@ -281,30 +281,26 @@ class MapFragment : Fragment()
             return
         }
         saveBestLocationState(tracker.currentBestLocation)
-        tracker.mapfragment = null
         if (bound && tracker.trackingState != Keys.STATE_TRACKING_ACTIVE)
         {
             tracker.removeGpsLocationListener()
             tracker.removeNetworkLocationListener()
             tracker.trackbook.database.commit()
         }
+        handler.removeCallbacks(redraw_runnable)
     }
 
     /* Overrides onStop from Fragment */
     override fun onStop()
     {
         super.onStop()
-        val tracker = trackerService
-        if (tracker != null)
-        {
-            tracker.mapfragment = null
-        }
         // unbind from TrackerService
         if (bound)
         {
             activity?.unbindService(connection)
             handleServiceUnbind()
         }
+        handler.removeCallbacks(redraw_runnable)
     }
 
     override fun onDestroyView()
@@ -315,17 +311,15 @@ class MapFragment : Fragment()
         {
             trackbook.database_changed_listeners.remove(database_changed_listener)
         }
+        handler.removeCallbacks(redraw_runnable)
     }
 
     override fun onDestroy()
     {
         Log.i("VOUSSOIR", "MapFragment.onDestroy")
         super.onDestroy()
-        if (trackerService != null)
-        {
-            trackerService!!.mapfragment = null
-        }
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        handler.removeCallbacks(redraw_runnable)
     }
 
     private val requestLocationPermissionLauncher = registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
@@ -372,10 +366,6 @@ class MapFragment : Fragment()
         bound = false
         // unregister listener for changes in shared preferences
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
-        if (trackerService != null)
-        {
-            trackerService!!.mapfragment = null
-        }
     }
 
     private val sharedPreferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
@@ -618,7 +608,6 @@ class MapFragment : Fragment()
             }
             bound = true
             trackerService = serviceref
-            trackerService!!.mapfragment = thismapfragment
             // get state of tracking and update button if necessary
             redraw()
             // register listener for changes in shared preferences
@@ -655,7 +644,8 @@ class MapFragment : Fragment()
 
         map_current_time.text = iso8601_local_noms(tracker.currentBestLocation.time)
 
-        if (tracker.arrived_at_home == 0L)
+
+        if (tracker.location_interval == tracker.LOCATION_INTERVAL_FULL_POWER)
         {
             power_level_indicator.setImageResource(R.drawable.ic_satellite_24dp)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -669,19 +659,20 @@ class MapFragment : Fragment()
                 power_level_indicator.tooltipText = "GPS sleeping until movement"
             }
         }
-        else
+        else if (tracker.location_interval == tracker.LOCATION_INTERVAL_GIVE_UP)
         {
-            power_level_indicator.setImageResource(R.drawable.ic_homepoint_24dp)
+            power_level_indicator.setImageResource(R.drawable.ic_skull_24dp)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                power_level_indicator.tooltipText = "You are at home"
+                power_level_indicator.tooltipText = "GPS is struggling; disabled until movement"
             }
         }
     }
 
-    val location_update_redraw: Runnable = object : Runnable
+    val redraw_runnable: Runnable = object : Runnable
     {
         override fun run()
         {
+            handler.postDelayed(this, 975)
             redraw()
         }
     }
