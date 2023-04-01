@@ -190,7 +190,7 @@ data class TrackStatistics(
         }
         if (first != null && last != null)
         {
-            duration = last.time - first.time
+            duration = (last.time - first.time) - pause_duration
             if (duration > 1000)
             {
                 velocity = distance / (duration / 1000)
