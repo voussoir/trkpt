@@ -40,10 +40,8 @@ import android.media.ToneGenerator
 import android.os.*
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.toBitmap
 import net.voussoir.trkpt.helpers.*
 import org.osmdroid.util.GeoPoint
 import java.lang.ref.WeakReference

@@ -51,7 +51,7 @@ class MainActivity: AppCompatActivity()
         super.onCreate(savedInstanceState)
         request_permissions(this)
         // todo: remove after testing finished
-        if (net.voussoir.trkpt.BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+        if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
         {
             StrictMode.setVmPolicy(
                 VmPolicy.Builder()
@@ -62,14 +62,14 @@ class MainActivity: AppCompatActivity()
         }
 
         // set user agent to prevent getting banned from the osm servers
-        Configuration.getInstance().userAgentValue = net.voussoir.trkpt.BuildConfig.APPLICATION_ID
+        Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
         // set the path for osmdroid's files (e.g. tile cache)
         Configuration.getInstance().osmdroidBasePath = this.getExternalFilesDir(null)
 
         // set up views
         setContentView(R.layout.activity_main)
         navHostFragment  = supportFragmentManager.findFragmentById(R.id.main_container) as NavHostFragment
-        bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottom_navigation_view)
+        bottomNavigationView = findViewById(R.id.bottom_navigation_view)
         // Prevents the UI from flickering when clicking the tab that you are already on.
         // Problem: clicking the Tracks nav while looking at a track should bring you back to the
         // list of tracks.

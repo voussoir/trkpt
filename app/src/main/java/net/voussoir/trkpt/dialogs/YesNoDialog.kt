@@ -56,7 +56,7 @@ class YesNoDialog (private var yesNoDialogListener: YesNoDialogListener)
              payloadString: String = Keys.DIALOG_EMPTY_PAYLOAD_STRING) {
 
         // prepare dialog builder
-        val builder: MaterialAlertDialogBuilder = MaterialAlertDialogBuilder(context, R.style.AlertDialogTheme)
+        val builder = MaterialAlertDialogBuilder(context, R.style.AlertDialogTheme)
 
         // set title and message
         builder.setMessage(messageString)

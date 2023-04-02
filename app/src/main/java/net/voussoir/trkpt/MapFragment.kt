@@ -13,6 +13,9 @@
  * Trackbook uses osmdroid - OpenStreetMap-Tools for Android
  * https://github.com/osmdroid/osmdroid
  */
+/*
+ * Modified by voussoir for trkpt, forked from Trackbook.
+ */
 
 package net.voussoir.trkpt
 
@@ -20,7 +23,6 @@ import android.Manifest
 import android.app.Dialog
 import android.content.*
 import android.content.pm.PackageManager
-import android.content.res.Resources
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.location.Location

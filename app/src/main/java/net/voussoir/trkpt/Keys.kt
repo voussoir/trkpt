@@ -13,6 +13,9 @@
  * Trackbook uses osmdroid - OpenStreetMap-Tools for Android
  * https://github.com/osmdroid/osmdroid
  */
+/*
+ * Modified by voussoir for trkpt, forked from Trackbook.
+ */
 
 package net.voussoir.trkpt
 
@@ -22,10 +25,6 @@ import java.util.*
  * Keys object
  */
 object Keys {
-
-    // application name
-    const val APPLICATION_NAME: String = "trkpt"
-
     // axioms
     const val ONE_SECOND_IN_MILLISECONDS: Long = 1000
     const val ONE_MINUTE_IN_MILLISECONDS: Long = 60 * ONE_SECOND_IN_MILLISECONDS
@@ -77,7 +76,6 @@ object Keys {
 
     // dialog types
     const val DIALOG_DELETE_TRACK: Int = 1
-    const val DIALOG_DELETE_NON_STARRED: Int = 2
 
     // dialog results
     const val DIALOG_EMPTY_PAYLOAD_STRING: String = ""
@@ -94,11 +92,8 @@ object Keys {
     // default values
     val DEFAULT_DATE: Date = Date(0L)
     const val EMPTY_STRING_RESOURCE: Int = 0
-    const val REQUEST_CURRENT_LOCATION_INTERVAL: Long = 1 * ONE_SECOND_IN_MILLISECONDS
-    const val SAVE_TEMP_TRACK_INTERVAL: Long = 30 * ONE_SECOND_IN_MILLISECONDS
     const val SIGNIFICANT_TIME_DIFFERENCE: Long = 1 * ONE_MINUTE_IN_MILLISECONDS
     const val STOP_OVER_THRESHOLD: Long = 5 * ONE_MINUTE_IN_MILLISECONDS
-    const val IMPLAUSIBLE_TRACK_START_SPEED: Double = 250.0                     // 250 km/h
     const val DEFAULT_LATITUDE: Double = 71.172500                              // latitude Nordkapp, Norway
     const val DEFAULT_LONGITUDE: Double = 25.784444                             // longitude Nordkapp, Norway
     const val DEFAULT_ACCURACY: Float = 300f                                    // in meters
@@ -111,7 +106,6 @@ object Keys {
     const val DEFAULT_ZOOM_LEVEL: Double = 16.0
     const val DEFAULT_OMIT_RESTS: Boolean = true
     const val DEFAULT_ALLOW_SLEEP: Boolean = true
-    const val ALTITUDE_MEASUREMENT_ERROR_THRESHOLD = 10 // altitude changes of 10 meter or more (per 15 seconds) are being discarded
 
     // notification
     const val TRACKER_SERVICE_NOTIFICATION_ID: Int = 1

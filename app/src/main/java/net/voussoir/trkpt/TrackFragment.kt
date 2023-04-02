@@ -438,11 +438,12 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         style.style = Paint.Style.FILL
         style.color = requireContext().getColor(R.color.fuchsia)
         style.flags = Paint.ANTI_ALIAS_FLAG
+        val density_scaling_factor = requireContext().resources.displayMetrics.density
         val overlayOptions: SimpleFastPointOverlayOptions = SimpleFastPointOverlayOptions.getDefaultStyle()
             .setAlgorithm(SimpleFastPointOverlayOptions.RenderingAlgorithm.MEDIUM_OPTIMIZATION)
             .setSymbol(SimpleFastPointOverlayOptions.Shape.CIRCLE)
             .setPointStyle(style)
-            .setRadius(((Keys.POLYLINE_THICKNESS + 1 ) / 2) * UiHelper.getDensityScalingFactor(requireContext()))
+            .setRadius(((Keys.POLYLINE_THICKNESS + 1 ) / 2) * density_scaling_factor)
             .setIsClickable(true)
             .setCellSize(12)
         track_points_overlay = SimpleFastPointOverlay(pointTheme, overlayOptions)
@@ -549,7 +550,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
 
     private fun setupStatisticsViews()
     {
-        val stats: TrackStatistics = TrackStatistics(track.trkpts)
+        val stats = TrackStatistics(track.trkpts)
         trackNameView.text = track.name
         distanceView.text = LengthUnitHelper.convertDistanceToString(stats.distance, useImperialUnits)
         waypointsView.text = track.trkpts.size.toString()

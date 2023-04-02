@@ -115,17 +115,6 @@ class TracklistFragment : Fragment(), TracklistAdapter.TracklistAdapterListener,
         override fun onLayoutCompleted(state: RecyclerView.State?)
         {
             super.onLayoutCompleted(state)
-            // handle delete request from TrackFragment - after layout calculations are complete
-            val deleteTrackId: Long = arguments?.getLong(Keys.ARG_TRACK_ID, -1L) ?: -1L
-            arguments?.putLong(Keys.ARG_TRACK_ID, -1L)
-            if (deleteTrackId == -1L)
-            {
-                return
-            }
-            CoroutineScope(Main). launch {
-                tracklistAdapter.delete_track_by_id(this@TracklistFragment.activity as Context, deleteTrackId)
-                toggleOnboardingLayout()
-            }
         }
 
     }

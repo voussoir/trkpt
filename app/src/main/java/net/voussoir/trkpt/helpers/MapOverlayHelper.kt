@@ -26,11 +26,9 @@ import org.osmdroid.views.overlay.ItemizedIconOverlay
 import org.osmdroid.views.overlay.OverlayItem
 import net.voussoir.trkpt.R
 import net.voussoir.trkpt.Trkpt
-import java.text.DecimalFormat
-import java.text.SimpleDateFormat
 import java.util.*
 
-fun create_start_end_markers(context: Context, map_view: MapView, startpoint: Trkpt, endpoint: Trkpt): ItemizedIconOverlay<OverlayItem>?
+fun create_start_end_markers(context: Context, map_view: MapView, startpoint: Trkpt, endpoint: Trkpt): ItemizedIconOverlay<OverlayItem>
 {
     Log.i("VOUSSOIR", "MapOverlayHelper.create_start_end_markers")
     val overlayItems: ArrayList<OverlayItem> = ArrayList<OverlayItem>()

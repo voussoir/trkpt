@@ -39,7 +39,7 @@ interface DatabaseChangedListener
 
 class Trackbook : Application()
 {
-    val database: net.voussoir.trkpt.Database = net.voussoir.trkpt.Database(this)
+    val database = Database(this)
     val homepoints: ArrayDeque<Homepoint> = ArrayDeque()
     val database_changed_listeners = ArrayList<DatabaseChangedListener>()
 

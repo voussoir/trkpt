@@ -28,12 +28,12 @@ fun iso8601_local_noms(timestamp: Long): String
 
 fun random_int(): Int
 {
-    return abs(RNG.nextInt())
+    return kotlin.math.abs(RNG.nextInt())
 }
 
 fun random_long(): Long
 {
-    return abs(RNG.nextLong())
+    return kotlin.math.abs(RNG.nextLong())
 }
 
 fun random_device_id(): String

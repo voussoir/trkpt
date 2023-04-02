@@ -8,12 +8,12 @@ class Homepoint(val id: Long, val latitude: Double, val longitude: Double, val r
 
     private fun to_location(): Location
     {
-        val location: Location = Location("homepoint")
+        val location = Location("homepoint")
         location.latitude = latitude
         location.longitude = longitude
         location.altitude = 0.0
         location.accuracy = radius.toFloat()
-        location.time = GregorianCalendar.getInstance().time.time
+        location.time = System.currentTimeMillis()
         return location
     }
 }

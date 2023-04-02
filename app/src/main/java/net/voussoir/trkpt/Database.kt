@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteDatabase.openOrCreateDatabase
 import android.util.Log
 import java.io.File
 
-class Database(val trackbook: net.voussoir.trkpt.Trackbook)
+class Database(val trackbook: Trackbook)
 {
     var ready: Boolean = false
     lateinit var file: File
@@ -68,7 +68,7 @@ class Database(val trackbook: net.voussoir.trkpt.Trackbook)
         this.commit()
     }
 
-    fun insert_trkpt(trkpt: net.voussoir.trkpt.Trkpt)
+    fun insert_trkpt(trkpt: Trkpt)
     {
         Log.i("VOUSSOIR", "Database.insert_trkpt")
         val values = ContentValues().apply {
@@ -183,7 +183,7 @@ class Database(val trackbook: net.voussoir.trkpt.Trackbook)
         cursor = this.connection.rawQuery("PRAGMA journal_mode = DELETE", null)
         cursor.moveToNext()
         cursor.close()
-        cursor = this.connection.rawQuery("PRAGMA user_version = ${net.voussoir.trkpt.Keys.DATABASE_VERSION}", null)
+        cursor = this.connection.rawQuery("PRAGMA user_version = ${Keys.DATABASE_VERSION}", null)
         cursor.moveToNext()
         cursor.close()
         // Not using this.commit because this.ready is not true yet.

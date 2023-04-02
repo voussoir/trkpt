@@ -34,7 +34,7 @@ import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
-class TracklistAdapter(val fragment: Fragment, val database: net.voussoir.trkpt.Database) : RecyclerView.Adapter<RecyclerView.ViewHolder>()
+class TracklistAdapter(val fragment: Fragment, val database: Database) : RecyclerView.Adapter<RecyclerView.ViewHolder>()
 {
     private lateinit var tracklistListener: TracklistAdapterListener
     val tracks: ArrayList<Track> = ArrayList<Track>()
@@ -64,15 +64,12 @@ class TracklistAdapter(val fragment: Fragment, val database: net.voussoir.trkpt.
             {
                 val trackdate = cursor.getString(0)
                 val device_id = cursor.getString(1)
-                val start_time: Long? = df.parse(trackdate + "T00:00:00.000").time
-                val stop_time: Long? = df.parse(trackdate + "T23:59:59.999").time
+                val start_time: Long = df.parse(trackdate + "T00:00:00.000").time
+                val stop_time: Long = df.parse(trackdate + "T23:59:59.999").time
                 Log.i("VOUSSOIR", "TracklistAdapter prep track ${trackdate}")
-                if (start_time != null && stop_time != null)
-                {
-                    val track = Track(database=database, device_id=device_id, _start_time=start_time, _end_time=stop_time)
-                    track.name = "$trackdate $device_id"
-                    tracks.add(track)
-                }
+                val track = Track(database=database, device_id=device_id, _start_time=start_time, _end_time=stop_time)
+                track.name = "$trackdate $device_id"
+                tracks.add(track)
             }
         }
         finally
@@ -118,27 +115,6 @@ class TracklistAdapter(val fragment: Fragment, val database: net.voussoir.trkpt.
         return SimpleDateFormat("yyyy-MM-dd", Locale.US).format(tracks[positionInRecyclerView]._start_time)
     }
 
-    fun delete_track_at_position(context: Context, index: Int)
-    {
-        // val track = tracklist.tracks[index]
-        // track.delete()
-        // tracklist.tracks.remove(track)
-        // notifyItemRemoved(index)
-        // notifyItemRangeChanged(index, this.itemCount);
-    }
-
-    fun delete_track_by_id(context: Context, trackId: Long)
-    {
-        // val index: Int = tracklist.tracks.indexOfFirst {it.id == trackId}
-        // if (index == -1) {
-        //     return
-        // }
-        // tracklist.tracks[index].delete()
-        // tracklist.tracks.removeAt(index)
-        // notifyItemRemoved(index)
-        // notifyItemRangeChanged(index, this.itemCount);
-    }
-
     fun isEmpty(): Boolean
     {
         return tracks.size == 0
@@ -149,17 +125,6 @@ class TracklistAdapter(val fragment: Fragment, val database: net.voussoir.trkpt.
     {
         val track: Track = tracks[position]
         return "device: " + track.device_id
-        // val track_duration_string = DateTimeHelper.convertToReadableTime(context, track.duration)
-        // val trackDataString: String
-        // if (track.name == track.dateString)
-        // {
-        //     trackDataString = "${LengthUnitHelper.convertDistanceToString(track.distance, useImperial)} • ${track_duration_string}"
-        // }
-        // else
-        // {
-        //     trackDataString = "${track.dateString} • ${LengthUnitHelper.convertDistanceToString(track.distance, useImperial)} • ${track_duration_string}"
-        // }
-        // return trackDataString
     }
 
     inner class ElementTrackViewHolder (elementTrackLayout: View): RecyclerView.ViewHolder(elementTrackLayout) {

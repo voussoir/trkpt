@@ -79,14 +79,14 @@ object LengthUnitHelper
     /* Determines which unit system the device is using (metric or imperial) */
     fun useImperialUnits(): Boolean {
         // America (US), Liberia (LR), Myanmar(MM) use the imperial system
-        val imperialSystemCountries = Arrays.asList("US", "LR", "MM")
+        val imperialSystemCountries = listOf("US", "LR", "MM")
         val countryCode = Locale.getDefault().country
         return imperialSystemCountries.contains(countryCode)
     }
 
     /* Converts for the given unit System distance and duration values to a readable velocity string */
     fun convertToVelocityString(velocity: Double, useImperialUnits: Boolean = false) : String {
-        var speed: String = "0"
+        var speed = "0"
 
         if (velocity > 0.0) {
             // speed in km/h / mph

@@ -20,7 +20,6 @@
 
 package net.voussoir.trkpt
 
-import YesNoDialog
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -46,7 +45,7 @@ import net.voussoir.trkpt.helpers.LengthUnitHelper
 import net.voussoir.trkpt.helpers.PreferencesHelper
 import net.voussoir.trkpt.helpers.random_device_id
 
-class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogListener
+class SettingsFragment : PreferenceFragmentCompat()
 {
     /* Overrides onViewCreated from PreferenceFragmentCompat */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -222,7 +221,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         source_code.summary = "Available on github, gitlab, and codeberg."
         source_code.setOnPreferenceClickListener {
             val intent = Intent(Intent.ACTION_VIEW)
-            intent.setData(Uri.parse("https://github.com/voussoir/trkpt"))
+            intent.data = Uri.parse("https://github.com/voussoir/trkpt")
             startActivity(intent)
             return@setOnPreferenceClickListener true
         }
@@ -235,7 +234,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         fork_notice.summary = "Thank you y20k."
         fork_notice.setOnPreferenceClickListener {
             val intent = Intent(Intent.ACTION_VIEW)
-            intent.setData(Uri.parse("https://codeberg.org/y20k/trackbook"))
+            intent.data = Uri.parse("https://codeberg.org/y20k/trackbook")
             startActivity(intent)
             return@setOnPreferenceClickListener true
         }
@@ -248,7 +247,7 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         copyright_notice.setIcon(R.drawable.ic_map_24dp)
         copyright_notice.setOnPreferenceClickListener {
             val intent = Intent(Intent.ACTION_VIEW)
-            intent.setData(Uri.parse("https://www.openstreetmap.org"))
+            intent.data = Uri.parse("https://www.openstreetmap.org")
             startActivity(intent)
             return@setOnPreferenceClickListener true
         }
@@ -263,17 +262,6 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         screen.addPreference(preferenceAppVersion)
 
         preferenceScreen = screen
-    }
-
-    /* Overrides onYesNoDialog from YesNoDialogListener */
-    override fun onYesNoDialog(type: Int, dialogResult: Boolean, payload: Int, payloadString: String) {
-        when (type) {
-            Keys.DIALOG_DELETE_NON_STARRED -> {
-            }
-            else -> {
-                super.onYesNoDialog(type, dialogResult, payload, payloadString)
-            }
-        }
     }
 }
 

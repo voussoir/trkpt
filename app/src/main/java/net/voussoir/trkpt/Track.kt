@@ -31,7 +31,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 data class Track (
-    val database: net.voussoir.trkpt.Database,
+    val database: Database,
     val device_id: String,
     var name: String = "",
     var _start_time: Long = 0L,
