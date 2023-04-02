@@ -477,6 +477,7 @@ class MapFragment : Fragment()
         val pl = Polyline(mapView)
         pl.outlinePaint.strokeWidth = Keys.POLYLINE_THICKNESS
         pl.outlinePaint.color = requireContext().getColor(R.color.fuchsia)
+        pl.infoWindow = null
         mapView.overlays.add(pl)
         current_track_overlay = pl
     }
