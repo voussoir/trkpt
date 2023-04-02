@@ -714,15 +714,17 @@ class TrackerService: Service()
             handler.postDelayed(this, WATCHDOG_INTERVAL)
             val now = System.currentTimeMillis()
             last_watchdog = now
+
+            val struggletime = if (location_interval == Keys.LOCATION_INTERVAL_SLEEP) (TIME_UNTIL_GIVE_UP * 2) else TIME_UNTIL_GIVE_UP
             if (
                 allow_sleep &&
                 has_motion_sensor &&
                 !device_is_charging &&
                 trackingState == Keys.STATE_TRACKING_ACTIVE &&
                 location_interval != Keys.LOCATION_INTERVAL_GIVE_UP &&
-                (now - listeners_enabled_at) > TIME_UNTIL_GIVE_UP &&
-                (now - currentBestLocation.time) > TIME_UNTIL_GIVE_UP &&
-                (now - last_significant_motion) > TIME_UNTIL_GIVE_UP
+                (now - listeners_enabled_at) > struggletime &&
+                (now - currentBestLocation.time) > struggletime &&
+                (now - last_significant_motion) > struggletime
             )
             {
                 reset_location_listeners(Keys.LOCATION_INTERVAL_GIVE_UP)
