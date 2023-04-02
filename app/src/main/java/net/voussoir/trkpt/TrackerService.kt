@@ -202,6 +202,10 @@ class TrackerService: Service()
         if (gps_added || network_added)
         {
             listeners_enabled_at = System.currentTimeMillis()
+            if (interval != Keys.LOCATION_INTERVAL_SLEEP)
+            {
+                arrived_at_home = 0
+            }
         }
         else
         {
@@ -284,7 +288,6 @@ class TrackerService: Service()
                 if (arrived_at_home > 0)
                 {
                     Log.i("VOUSSOIR", "Leaving home.")
-                    arrived_at_home = 0
                     reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
                 }
 
@@ -613,7 +616,6 @@ class TrackerService: Service()
     fun startTracking()
     {
         Log.i("VOUSSOIR", "TrackerService.startTracking")
-        arrived_at_home = 0
         reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
         trackingState = Keys.STATE_TRACKING_ACTIVE
         PreferencesHelper.saveTrackingState(trackingState)
@@ -625,7 +627,6 @@ class TrackerService: Service()
     {
         Log.i("VOUSSOIR", "TrackerService.stopTracking")
         trackbook.database.commit()
-        arrived_at_home = 0
         reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
         trackingState = Keys.STATE_TRACKING_STOPPED
         PreferencesHelper.saveTrackingState(trackingState)
