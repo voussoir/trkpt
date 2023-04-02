@@ -92,6 +92,9 @@ class TrackerService: Service()
     private var step_counter_sensor: Sensor? = null
     var has_motion_sensor: Boolean = false
 
+    var device_is_charging: Boolean = false
+    private var charging_broadcast_receiver: BroadcastReceiver? = null
+
     private fun addGpsLocationListener(interval: Long): Boolean
     {
         gpsProviderActive = isGpsEnabled(locationManager)
@@ -565,6 +568,31 @@ class TrackerService: Service()
             has_motion_sensor = true
         }
 
+        device_is_charging = get_device_charging()
+        charging_broadcast_receiver = object: BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent)
+            {
+                if (intent.action == Intent.ACTION_POWER_CONNECTED)
+                {
+                    Log.i("VOUSSOIR", "Power connected")
+                    device_is_charging = true
+                    if (location_interval == Keys.LOCATION_INTERVAL_GIVE_UP)
+                    {
+                        reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
+                    }
+                }
+                else if (intent.action == Intent.ACTION_POWER_DISCONNECTED)
+                {
+                    Log.i("VOUSSOIR", "Power disconnected")
+                    device_is_charging = false
+                }
+            }
+        }
+        val charging_intent_filter = IntentFilter()
+        charging_intent_filter.addAction(Intent.ACTION_POWER_CONNECTED)
+        charging_intent_filter.addAction(Intent.ACTION_POWER_DISCONNECTED)
+        registerReceiver(charging_broadcast_receiver, charging_intent_filter)
+
         handler.post(background_watchdog)
     }
 
@@ -609,6 +637,7 @@ class TrackerService: Service()
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
         reset_location_listeners(interval=Keys.LOCATION_INTERVAL_GIVE_UP)
         handler.removeCallbacks(background_watchdog)
+        unregisterReceiver(charging_broadcast_receiver)
     }
 
     fun startTracking()
@@ -669,6 +698,19 @@ class TrackerService: Service()
         }
     }
 
+    fun get_device_charging(): Boolean
+    {
+        val intent = applicationContext.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        val status = intent!!.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1)
+        var plugged = (
+            status == BatteryManager.BATTERY_PLUGGED_AC ||
+            status == BatteryManager.BATTERY_PLUGGED_USB ||
+            status == BatteryManager.BATTERY_PLUGGED_WIRELESS
+        )
+        Log.i("VOUSSOIR", "Charging: ${plugged}")
+        return plugged
+    }
+
     val background_watchdog: Runnable = object : Runnable
     {
         override fun run()
@@ -679,6 +721,7 @@ class TrackerService: Service()
             if (
                 allow_sleep &&
                 has_motion_sensor &&
+                !device_is_charging &&
                 trackingState == Keys.STATE_TRACKING_ACTIVE &&
                 location_interval != Keys.LOCATION_INTERVAL_GIVE_UP &&
                 (now - listeners_enabled_at) > TIME_UNTIL_GIVE_UP &&
