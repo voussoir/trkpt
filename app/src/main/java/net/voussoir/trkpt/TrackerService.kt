@@ -451,7 +451,7 @@ class TrackerService: Service()
     override fun onBind(p0: Intent?): IBinder
     {
         Log.i("VOUSSOIR", "TrackerService.onBind")
-        if (listeners_enabled_at == 0L)
+        if (listeners_enabled_at == 0L && location_interval != Keys.LOCATION_INTERVAL_GIVE_UP)
         {
             reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
         }
@@ -464,7 +464,7 @@ class TrackerService: Service()
     override fun onRebind(intent: Intent?)
     {
         Log.i("VOUSSOIR", "TrackerService.onRebind")
-        if (listeners_enabled_at == 0L)
+        if (listeners_enabled_at == 0L && location_interval != Keys.LOCATION_INTERVAL_GIVE_UP)
         {
             reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
         }
