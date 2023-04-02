@@ -232,14 +232,14 @@ class TrackerService: Service()
                 {
                     return
                 }
-
-                displayNotification()
-
                 if(! trackbook.database.ready)
                 {
                     Log.i("VOUSSOIR", "Omitting due to database not ready.")
                     return
                 }
+
+                displayNotification()
+
                 if (location.latitude == 0.0 || location.longitude == 0.0)
                 {
                     Log.i("VOUSSOIR", "Omitting due to 0,0 location.")
@@ -249,7 +249,7 @@ class TrackerService: Service()
                 // The Homepoint checks need to come before the other checks because if there
                 // is even the slightest chance that the user has left the homepoint, we want to
                 // wake back up to full power. We do not want to put this below the isAccurateEnough
-                // of isRecentEnough checks because we already know that the sleeping GPS produces
+                // or isRecentEnough checks because we already know that the sleeping GPS produces
                 // very inaccurate points so if those bail early we'd stay in sleep mode.
                 for ((index, homepoint) in trackbook.homepoints.withIndex())
                 {
