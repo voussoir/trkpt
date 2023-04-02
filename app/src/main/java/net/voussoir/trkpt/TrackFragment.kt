@@ -463,7 +463,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 }
                 val trkpt = (points[point]) as Trkpt
                 Log.i("VOUSSOIR", "Clicked ${trkpt.device_id} ${trkpt.time}")
-                selected_trkpt_info.text = "${trkpt.time}\n${iso8601_local(trkpt.time)}\n${trkpt.latitude}\n${trkpt.longitude}"
+                selected_trkpt_info.text = "${trkpt.time}\n${iso8601_local(trkpt.time)}\n${trkpt.latitude}\n${trkpt.longitude}\n${trkpt.accuracy}"
                 delete_selected_trkpt_button.visibility = View.VISIBLE
                 use_trkpt_as_start_button.visibility = View.VISIBLE
                 use_trkpt_as_end_button.visibility = View.VISIBLE
