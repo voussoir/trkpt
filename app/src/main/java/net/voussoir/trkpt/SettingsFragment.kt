@@ -242,6 +242,19 @@ class SettingsFragment : PreferenceFragmentCompat(), YesNoDialog.YesNoDialogList
         preferenceCategoryAbout.contains(fork_notice)
         screen.addPreference(fork_notice)
 
+        val copyright_notice = Preference(context)
+        copyright_notice.title = "Map data"
+        copyright_notice.summary = "© OpenStreetMap contributors."
+        copyright_notice.setIcon(R.drawable.ic_map_24dp)
+        copyright_notice.setOnPreferenceClickListener {
+            val intent = Intent(Intent.ACTION_VIEW)
+            intent.setData(Uri.parse("https://www.openstreetmap.org"))
+            startActivity(intent)
+            return@setOnPreferenceClickListener true
+        }
+        preferenceCategoryAbout.contains(copyright_notice)
+        screen.addPreference(copyright_notice)
+
         val preferenceAppVersion = Preference(context)
         preferenceAppVersion.title = getString(R.string.pref_app_version_title)
         preferenceAppVersion.setIcon(R.drawable.ic_info_24dp)
