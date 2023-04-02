@@ -105,6 +105,10 @@ object PreferencesHelper
         return sharedPreferences.getBoolean(Keys.PREF_ALLOW_SLEEP, Keys.DEFAULT_ALLOW_SLEEP)
     }
 
+    fun loadShowDebug(): Boolean {
+        return sharedPreferences.getBoolean(Keys.PREF_SHOW_DEBUG, Keys.DEFAULT_SHOW_DEBUG)
+    }
+
     /* Loads the state of a map */
     fun loadCurrentBestLocation(): Location {
         val provider: String = sharedPreferences.getString(Keys.PREF_CURRENT_BEST_LOCATION_PROVIDER, LocationManager.NETWORK_PROVIDER) ?: LocationManager.NETWORK_PROVIDER

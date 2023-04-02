@@ -139,6 +139,17 @@ class SettingsFragment : PreferenceFragmentCompat()
         preferenceCategoryGeneral.contains(prefAllowSleep)
         screen.addPreference(prefAllowSleep)
 
+        val prefShowDebug = SwitchPreferenceCompat(activity as Context)
+        prefShowDebug.isSingleLineTitle = false
+        prefShowDebug.title = "Show debug info"
+        prefShowDebug.setIcon(R.drawable.ic_bar_chart_24)
+        prefShowDebug.key = Keys.PREF_SHOW_DEBUG
+        prefShowDebug.summaryOn = "Debug info shown on map screen."
+        prefShowDebug.summaryOff = "Debug info hidden."
+        prefShowDebug.setDefaultValue(Keys.DEFAULT_SHOW_DEBUG)
+        preferenceCategoryGeneral.contains(prefShowDebug)
+        screen.addPreference(prefShowDebug)
+
         val preferenceDeviceID = EditTextPreference(activity as Context)
         preferenceDeviceID.title = getString(R.string.pref_device_id)
         preferenceDeviceID.setIcon(R.drawable.ic_smartphone_24dp)

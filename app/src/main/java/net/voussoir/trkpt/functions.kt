@@ -22,6 +22,10 @@ fun iso8601_local(timestamp: Long): String
 
 fun iso8601_local_noms(timestamp: Long): String
 {
+    if (timestamp == 0L)
+    {
+        return "0"
+    }
     val iso8601_format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
     return iso8601_format.format(timestamp)
 }

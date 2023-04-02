@@ -61,6 +61,7 @@ object Keys {
     const val PREF_LOCATION_GPS: String = "prefLocationGPS"
     const val PREF_OMIT_RESTS: String = "prefOmitRests"
     const val PREF_ALLOW_SLEEP: String = "prefAllowSleep"
+    const val PREF_SHOW_DEBUG: String = "prefShowDebug"
     const val PREF_DEVICE_ID: String = "prefDeviceID"
     const val PREF_DATABASE_DIRECTORY: String = "prefDatabaseDirectory"
 
@@ -106,6 +107,7 @@ object Keys {
     const val DEFAULT_ZOOM_LEVEL: Double = 16.0
     const val DEFAULT_OMIT_RESTS: Boolean = true
     const val DEFAULT_ALLOW_SLEEP: Boolean = true
+    const val DEFAULT_SHOW_DEBUG: Boolean = false
 
     // notification
     const val TRACKER_SERVICE_NOTIFICATION_ID: Int = 1

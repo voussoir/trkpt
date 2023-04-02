@@ -63,6 +63,7 @@ class MapFragment : Fragment()
     var continuous_auto_center: Boolean = true
     private var trackerService: TrackerService? = null
     private lateinit var database_changed_listener: DatabaseChangedListener
+    var show_debug: Boolean = false
 
     var thismapfragment: MapFragment? = null
     lateinit var rootView: View
@@ -226,6 +227,8 @@ class MapFragment : Fragment()
             mapView.controller.setZoom(mapView.zoomLevelDouble - 0.5)
         }
 
+        show_debug = PreferencesHelper.loadShowDebug()
+
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         handler.post(redraw_runnable)
         return rootView
@@ -360,6 +363,10 @@ class MapFragment : Fragment()
     }
 
     private val sharedPreferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
+        if (key == Keys.PREF_SHOW_DEBUG)
+        {
+            show_debug = sharedPreferences.getBoolean(Keys.PREF_SHOW_DEBUG, Keys.DEFAULT_SHOW_DEBUG)
+        }
         redraw()
     }
 
@@ -632,7 +639,6 @@ class MapFragment : Fragment()
             redraw()
             // register listener for changes in shared preferences
             PreferencesHelper.registerPreferenceChangeListener(sharedPreferenceChangeListener)
-            // start listening for location updates
         }
         override fun onServiceDisconnected(arg0: ComponentName)
         {
@@ -662,7 +668,22 @@ class MapFragment : Fragment()
             centerMap(tracker.currentBestLocation)
         }
 
-        map_current_time.text = iso8601_local_noms(tracker.currentBestLocation.time)
+        if (show_debug)
+        {
+            map_current_time.text = """
+            now: ${iso8601_local_noms(System.currentTimeMillis())}
+            location: ${iso8601_local_noms(tracker.currentBestLocation.time)}
+            listeners: ${iso8601_local_noms(tracker.listeners_enabled_at)}
+            motion: ${iso8601_local_noms(tracker.last_significant_motion)}
+            watchdog: ${iso8601_local_noms(tracker.last_watchdog)}
+            died: ${iso8601_local_noms(tracker.gave_up_at)}
+            power: ${tracker.device_is_charging}
+            """.trimIndent()
+        }
+        else
+        {
+            map_current_time.text = iso8601_local_noms(tracker.currentBestLocation.time)
+        }
 
         mapView.invalidate()
     }
