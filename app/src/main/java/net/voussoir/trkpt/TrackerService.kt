@@ -266,14 +266,10 @@ class TrackerService: Service()
                             Log.i("VOUSSOIR", "Arrived at home.")
                             arrived_at_home = System.currentTimeMillis()
                         }
-                        else if (location_interval == Keys.LOCATION_INTERVAL_SLEEP)
-                        {
-                            // If we are already asleep, do not reset the listeners again because
-                            // that immediately fetches a new location.
-                        }
                         else if (
                             allow_sleep &&
                             has_motion_sensor &&
+                            location_interval != Keys.LOCATION_INTERVAL_SLEEP &&
                             (System.currentTimeMillis() - arrived_at_home) > TIME_UNTIL_SLEEP &&
                             (System.currentTimeMillis() - last_significant_motion) > TIME_UNTIL_SLEEP
                         )
