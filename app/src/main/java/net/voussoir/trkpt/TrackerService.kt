@@ -253,32 +253,33 @@ class TrackerService: Service()
                 // very inaccurate points so if those bail early we'd stay in sleep mode.
                 for ((index, homepoint) in trackbook.homepoints.withIndex())
                 {
-                    if (homepoint.location.distanceTo(location) < homepoint.radius)
+                    if (homepoint.location.distanceTo(location) > homepoint.radius)
                     {
-                        Log.i("VOUSSOIR", "Omitting due to homepoint ${index} ${homepoint.name}.")
-                        if (index > 0)
-                        {
-                            trackbook.homepoints.remove(homepoint)
-                            trackbook.homepoints.addFirst(homepoint)
-                        }
-                        if (arrived_at_home == 0L)
-                        {
-                            Log.i("VOUSSOIR", "Arrived at home.")
-                            arrived_at_home = System.currentTimeMillis()
-                        }
-                        else if (
-                            allow_sleep &&
-                            has_motion_sensor &&
-                            location_interval != Keys.LOCATION_INTERVAL_SLEEP &&
-                            (System.currentTimeMillis() - arrived_at_home) > TIME_UNTIL_SLEEP &&
-                            (System.currentTimeMillis() - last_significant_motion) > TIME_UNTIL_SLEEP
-                        )
-                        {
-                            Log.i("VOUSSOIR", "Staying at home, sleeping.")
-                            reset_location_listeners(interval=Keys.LOCATION_INTERVAL_SLEEP)
-                        }
-                        return
+                        continue
                     }
+                    Log.i("VOUSSOIR", "Omitting due to homepoint ${index} ${homepoint.name}.")
+                    if (index > 0)
+                    {
+                        trackbook.homepoints.remove(homepoint)
+                        trackbook.homepoints.addFirst(homepoint)
+                    }
+                    if (arrived_at_home == 0L)
+                    {
+                        Log.i("VOUSSOIR", "Arrived at home.")
+                        arrived_at_home = System.currentTimeMillis()
+                    }
+                    else if (
+                        allow_sleep &&
+                        has_motion_sensor &&
+                        location_interval != Keys.LOCATION_INTERVAL_SLEEP &&
+                        (System.currentTimeMillis() - arrived_at_home) > TIME_UNTIL_SLEEP &&
+                        (System.currentTimeMillis() - last_significant_motion) > TIME_UNTIL_SLEEP
+                    )
+                    {
+                        Log.i("VOUSSOIR", "Staying at home, sleeping.")
+                        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_SLEEP)
+                    }
+                    return
                 }
                 if (arrived_at_home > 0)
                 {
