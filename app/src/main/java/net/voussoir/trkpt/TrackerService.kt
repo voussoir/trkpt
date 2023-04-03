@@ -178,7 +178,7 @@ class TrackerService: Service()
         location_interval = interval
         var gps_added = false
         var network_added = false
-        if (use_gps_location && interval != Keys.LOCATION_INTERVAL_DEAD)
+        if (use_gps_location && interval != Keys.LOCATION_INTERVAL_DEAD && interval != Keys.LOCATION_INTERVAL_STOP)
         {
             gps_added = addGpsLocationListener(interval)
         }
@@ -186,7 +186,7 @@ class TrackerService: Service()
         {
             removeGpsLocationListener()
         }
-        if (use_network_location && interval != Keys.LOCATION_INTERVAL_DEAD)
+        if (use_network_location && interval != Keys.LOCATION_INTERVAL_DEAD && interval != Keys.LOCATION_INTERVAL_STOP)
         {
             network_added = addNetworkLocationListener(interval)
         }
@@ -202,6 +202,10 @@ class TrackerService: Service()
             {
                 arrived_at_home = 0
             }
+        }
+        else if (interval == Keys.LOCATION_INTERVAL_STOP)
+        {
+            listeners_enabled_at = 0
         }
         else
         {
@@ -479,7 +483,7 @@ class TrackerService: Service()
         // stop receiving location updates - if not tracking
         if (trackingState != Keys.STATE_TRACKING_ACTIVE)
         {
-            reset_location_listeners(interval=Keys.LOCATION_INTERVAL_DEAD)
+            reset_location_listeners(interval=Keys.LOCATION_INTERVAL_STOP)
         }
         // ensures onRebind is called
         return true

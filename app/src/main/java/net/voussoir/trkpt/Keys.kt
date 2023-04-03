@@ -71,6 +71,7 @@ object Keys {
     const val LOCATION_INTERVAL_FULL_POWER: Long = 0
     const val LOCATION_INTERVAL_SLEEP: Long = ONE_MINUTE_IN_MILLISECONDS
     const val LOCATION_INTERVAL_DEAD: Long = -1
+    const val LOCATION_INTERVAL_STOP: Long = -2
     const val STATE_THEME_FOLLOW_SYSTEM: String = "stateFollowSystem"
     const val STATE_THEME_LIGHT_MODE: String = "stateLightMode"
     const val STATE_THEME_DARK_MODE: String = "stateDarkMode"
