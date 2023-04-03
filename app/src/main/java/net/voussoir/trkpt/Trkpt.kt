@@ -20,6 +20,7 @@ import android.location.Location
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.overlay.Polyline
 import net.voussoir.trkpt.helpers.getNumberOfSatellites
+import net.voussoir.trkpt.helpers.iso8601_local
 
 class Trkpt(
     val device_id: String,
@@ -52,5 +53,10 @@ class Trkpt(
         location.accuracy = accuracy
         location.time = this.time
         return location
+    }
+
+    override fun toString(): String
+    {
+        return "${device_id} ${iso8601_local(time)} ${latitude}/${longitude}"
     }
 }

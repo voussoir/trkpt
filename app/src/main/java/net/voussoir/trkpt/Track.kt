@@ -36,10 +36,42 @@ data class Track (
     var name: String = "",
     var _start_time: Long = 0L,
     var _end_time: Long = 0L,
-    val trkpts: ArrayList<Trkpt> = ArrayList<Trkpt>(),
+    val trkpts: ArrayDeque<Trkpt> = ArrayDeque<Trkpt>(),
     var trackFormatVersion: Int = Keys.CURRENT_TRACK_FORMAT_VERSION,
 )
 {
+    /**
+     * Discover the true bounds of this trkseg by querying for points until the stop over threshold.
+     * This is extremely helpful when using the "when was I here" button on an area, then expanding
+     * the trkseg to its ends.
+     */
+    fun expand_to_trkseg_bounds()
+    {
+        if (trkpts.isEmpty())
+        {
+            return
+        }
+        var previous = trkpts.first()
+        for (trkpt in database.select_trkpt_start_end(device_id, start_time=0L, end_time=trkpts.first().time, order="DESC"))
+        {
+            if ((previous.time - trkpt.time) > Keys.STOP_OVER_THRESHOLD)
+            {
+                break
+            }
+            trkpts.addFirst(trkpt)
+            previous = trkpt
+        }
+        previous = trkpts.last()
+        for (trkpt in database.select_trkpt_start_end(device_id, start_time=trkpts.last().time, end_time=Long.MAX_VALUE, order="ASC"))
+        {
+            if ((trkpt.time - previous.time) > Keys.STOP_OVER_THRESHOLD)
+            {
+                break
+            }
+            trkpts.add(trkpt)
+            previous = trkpt
+        }
+    }
     fun export_gpx(context: Context, fileuri: Uri): Uri?
     {
         if (! database.ready)
@@ -133,7 +165,7 @@ data class Track (
 }
 
 data class TrackStatistics(
-    val trkpts: ArrayList<Trkpt>,
+    val trkpts: ArrayDeque<Trkpt>,
     var distance: Double = 0.0,
     var duration: Long = 0,
     var pause_duration: Long = 0,

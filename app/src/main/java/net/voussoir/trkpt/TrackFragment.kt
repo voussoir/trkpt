@@ -311,6 +311,9 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                         (polyline.actualPoints.first() as Trkpt).time,
                         (polyline.actualPoints.last() as Trkpt).time,
                     ))
+
+                    track.expand_to_trkseg_bounds()
+
                     set_datetimes_from_track()
                     render_track()
                 }
@@ -468,10 +471,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 delete_selected_trkpt_button.visibility = View.VISIBLE
                 use_trkpt_as_start_button.visibility = View.VISIBLE
                 use_trkpt_as_end_button.visibility = View.VISIBLE
-                if (track_segment_overlays.size > 1)
-                {
-                    isolate_trkseg_button.visibility = View.VISIBLE
-                }
+                isolate_trkseg_button.visibility = View.VISIBLE
                 return
             }
         })

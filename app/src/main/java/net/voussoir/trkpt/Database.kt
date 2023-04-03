@@ -85,11 +85,11 @@ class Database(val trackbook: Trackbook)
         connection.insert("trkpt", null, values)
     }
 
-    fun select_trkpt_start_end(device_id: String, start_time: Long, end_time: Long): Iterator<Trkpt>
+    fun select_trkpt_start_end(device_id: String, start_time: Long, end_time: Long, order: String="ASC"): Iterator<Trkpt>
     {
         Log.i("VOUSSOIR", "Track.trkpt_generator: Querying points between ${start_time} -- ${end_time}.")
         return _trkpt_generator(this.connection.rawQuery(
-            "SELECT device_id, lat, lon, time, provider, ele, accuracy, sat FROM trkpt WHERE device_id = ? AND time >= ? AND time <= ? ORDER BY time ASC",
+            "SELECT device_id, lat, lon, time, provider, ele, accuracy, sat FROM trkpt WHERE device_id = ? AND time >= ? AND time <= ? ORDER BY time ${order}",
             arrayOf(device_id, start_time.toString(), end_time.toString())
         ))
     }
