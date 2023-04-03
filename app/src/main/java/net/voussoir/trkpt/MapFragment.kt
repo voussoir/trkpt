@@ -418,7 +418,7 @@ class MapFragment : Fragment()
             newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_skull_24dp)!!
             description = "No location listeners are enabled"
         }
-        else if (tracker.trackingState == Keys.STATE_TRACKING_ACTIVE && tracker.location_interval == Keys.LOCATION_INTERVAL_GIVE_UP)
+        else if (tracker.trackingState == Keys.STATE_TRACKING_ACTIVE && tracker.location_interval == Keys.LOCATION_INTERVAL_DEAD)
         {
             fillcolor = Color.argb(64, 0, 0, 0)
             newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_skull_24dp)!!

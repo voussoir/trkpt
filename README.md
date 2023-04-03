@@ -19,11 +19,31 @@ The goal of this fork is to make 24/7 recording easier. I want to be able to run
 
 ## Power management
 
-When you are near a homepoint, trkpt will slow down the GPS polling frequency to reduce power consumption. When trkpt detects movement from the device's accelerometers, or when the GPS detects you are away from the homepoint, it will wake back up to full power.
+trkpt has three states of power management. The states transition like this:
 
-If the GPS is completely unable to receive a fix because you are indoors, underground, or trapped in a Faraday cage, trkpt will turn it off after a few minutes. Without any fix, we can't even tell if we're near a homepoint, and the GPS burns a lot of energy trying. Again, the motion sensor will wake it back up to full power.
+1. **FULL POWER**: receives location updates as fast as Android provides them.
 
-When you are away from a homepoint, and the GPS is not struggling, trkpt will always run the GPS at full power.
+    Stay near homepoint for a few minutes → Sleep
+
+    Unable to receive fix for several minutes and not charging → Dead
+
+2. **SLEEPING**: receives location updates at a slower pace.
+
+    Motion sensors → Full power
+
+    Location leaves homepoint → Full power (presumably motion sensors will trigger, but just in case)
+
+    Unplugged from charger → Full power (maybe you are getting ready to depart)
+
+    Unable to receive fix for several minutes and not charging → Dead (time is doubled to accommodate slower sleeping pace)
+
+3. **DEAD**: disables location updates.
+
+    Motion sensors → Full power
+
+    Plugged in to charger → Full power
+
+Although saving battery power is important, capturing trackpoints is the #1 priority. I'd rather have a few too many wakeups than too few.
 
 If your device doesn't support the motion sensors used here, then trkpt will always run at full power. It will not sleep or kill the GPS. Maybe we can find another solution to improve battery performance for devices in this scenario.
 

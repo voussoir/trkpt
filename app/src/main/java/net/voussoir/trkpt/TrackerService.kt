@@ -59,7 +59,7 @@ class TrackerService: Service()
     var arrived_at_home: Long = 0
     var location_interval: Long = 0
     val TIME_UNTIL_SLEEP: Long = 2 * Keys.ONE_MINUTE_IN_MILLISECONDS
-    val TIME_UNTIL_GIVE_UP: Long = 3 * Keys.ONE_MINUTE_IN_MILLISECONDS
+    val TIME_UNTIL_DEAD: Long = 3 * Keys.ONE_MINUTE_IN_MILLISECONDS
     val WATCHDOG_INTERVAL: Long = 30 * Keys.ONE_SECOND_IN_MILLISECONDS
     private val RECENT_TRKPT_COUNT = 3600
     private val DISPLACEMENT_LOCATION_COUNT = 5
@@ -178,7 +178,7 @@ class TrackerService: Service()
         location_interval = interval
         var gps_added = false
         var network_added = false
-        if (use_gps_location && interval != Keys.LOCATION_INTERVAL_GIVE_UP)
+        if (use_gps_location && interval != Keys.LOCATION_INTERVAL_DEAD)
         {
             gps_added = addGpsLocationListener(interval)
         }
@@ -186,7 +186,7 @@ class TrackerService: Service()
         {
             removeGpsLocationListener()
         }
-        if (use_network_location && interval != Keys.LOCATION_INTERVAL_GIVE_UP)
+        if (use_network_location && interval != Keys.LOCATION_INTERVAL_DEAD)
         {
             network_added = addNetworkLocationListener(interval)
         }
@@ -206,7 +206,7 @@ class TrackerService: Service()
         else
         {
             listeners_enabled_at = 0
-            location_interval = Keys.LOCATION_INTERVAL_GIVE_UP
+            location_interval = Keys.LOCATION_INTERVAL_DEAD
         }
         displayNotification()
     }
@@ -374,9 +374,9 @@ class TrackerService: Service()
                 notification_builder.setContentTitle("${timestamp} (sleeping)")
                 notification_builder.setSmallIcon(R.drawable.ic_sleep_24dp)
             }
-            else if (location_interval == Keys.LOCATION_INTERVAL_GIVE_UP)
+            else if (location_interval == Keys.LOCATION_INTERVAL_DEAD)
             {
-                notification_builder.setContentTitle("${timestamp} (deadzone)")
+                notification_builder.setContentTitle("${timestamp} (dead)")
                 notification_builder.setSmallIcon(R.drawable.ic_skull_24dp)
             }
             else
@@ -449,7 +449,7 @@ class TrackerService: Service()
     override fun onBind(p0: Intent?): IBinder
     {
         Log.i("VOUSSOIR", "TrackerService.onBind")
-        if (listeners_enabled_at == 0L && location_interval != Keys.LOCATION_INTERVAL_GIVE_UP)
+        if (listeners_enabled_at == 0L && location_interval != Keys.LOCATION_INTERVAL_DEAD)
         {
             reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
         }
@@ -462,7 +462,7 @@ class TrackerService: Service()
     override fun onRebind(intent: Intent?)
     {
         Log.i("VOUSSOIR", "TrackerService.onRebind")
-        if (listeners_enabled_at == 0L && location_interval != Keys.LOCATION_INTERVAL_GIVE_UP)
+        if (listeners_enabled_at == 0L && location_interval != Keys.LOCATION_INTERVAL_DEAD)
         {
             reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
         }
@@ -479,7 +479,7 @@ class TrackerService: Service()
         // stop receiving location updates - if not tracking
         if (trackingState != Keys.STATE_TRACKING_ACTIVE)
         {
-            reset_location_listeners(interval=Keys.LOCATION_INTERVAL_GIVE_UP)
+            reset_location_listeners(interval=Keys.LOCATION_INTERVAL_DEAD)
         }
         // ensures onRebind is called
         return true
@@ -530,7 +530,7 @@ class TrackerService: Service()
                     if (trackingState == Keys.STATE_TRACKING_ACTIVE && location_interval != Keys.LOCATION_INTERVAL_FULL_POWER)
                     {
                         vibrator.vibrate(100)
-                        reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
+                        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
                     }
                     sensor_manager.requestTriggerSensor(this, significant_motion_sensor)
                 }
@@ -551,7 +551,7 @@ class TrackerService: Service()
                     {
                         // beeper.startTone(ToneGenerator.TONE_PROP_ACK, 150)
                         vibrator.vibrate(100)
-                        reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
+                        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
                     }
                 }
 
@@ -571,15 +571,21 @@ class TrackerService: Service()
                 {
                     Log.i("VOUSSOIR", "Power connected")
                     device_is_charging = true
-                    if (location_interval == Keys.LOCATION_INTERVAL_GIVE_UP)
+                    if (location_interval == Keys.LOCATION_INTERVAL_DEAD)
                     {
-                        reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
+                        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
                     }
                 }
                 else if (intent.action == Intent.ACTION_POWER_DISCONNECTED)
                 {
                     Log.i("VOUSSOIR", "Power disconnected")
                     device_is_charging = false
+                    // If the user has just unplugged their device, maybe they're getting ready
+                    // to go out.
+                    if (location_interval == Keys.LOCATION_INTERVAL_SLEEP)
+                    {
+                        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
+                    }
                 }
             }
         }
@@ -630,7 +636,7 @@ class TrackerService: Service()
         stopForeground(STOP_FOREGROUND_REMOVE)
         notificationManager.cancel(Keys.TRACKER_SERVICE_NOTIFICATION_ID) // this call was not necessary prior to Android 12
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
-        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_GIVE_UP)
+        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_DEAD)
         handler.removeCallbacks(background_watchdog)
         unregisterReceiver(charging_broadcast_receiver)
     }
@@ -683,7 +689,7 @@ class TrackerService: Service()
                 allow_sleep = PreferencesHelper.loadAllowSleep()
                 if (! allow_sleep && location_interval != Keys.LOCATION_INTERVAL_FULL_POWER)
                 {
-                    reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
+                    reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
                 }
             }
             Keys.PREF_DEVICE_ID ->
@@ -715,19 +721,19 @@ class TrackerService: Service()
             val now = System.currentTimeMillis()
             last_watchdog = now
 
-            val struggletime = if (location_interval == Keys.LOCATION_INTERVAL_SLEEP) (TIME_UNTIL_GIVE_UP * 2) else TIME_UNTIL_GIVE_UP
+            val struggletime = if (location_interval == Keys.LOCATION_INTERVAL_SLEEP) (TIME_UNTIL_DEAD * 2) else TIME_UNTIL_DEAD
             if (
                 allow_sleep &&
                 has_motion_sensor &&
                 !device_is_charging &&
                 trackingState == Keys.STATE_TRACKING_ACTIVE &&
-                location_interval != Keys.LOCATION_INTERVAL_GIVE_UP &&
+                location_interval != Keys.LOCATION_INTERVAL_DEAD &&
                 (now - listeners_enabled_at) > struggletime &&
                 (now - currentBestLocation.time) > struggletime &&
                 (now - last_significant_motion) > struggletime
             )
             {
-                reset_location_listeners(Keys.LOCATION_INTERVAL_GIVE_UP)
+                reset_location_listeners(interval=Keys.LOCATION_INTERVAL_DEAD)
                 gave_up_at = now
             }
         }

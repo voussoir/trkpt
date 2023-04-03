@@ -75,13 +75,10 @@ object PreferencesHelper
     }
 
     fun loadTrackingState(): Int {
-        val state = sharedPreferences.getInt(Keys.PREF_TRACKING_STATE, Keys.STATE_TRACKING_STOPPED)
-        Log.i("VOUSSOIR", "PreferencesHelper.loadTrackingState ${state}")
-        return state
+        return sharedPreferences.getInt(Keys.PREF_TRACKING_STATE, Keys.STATE_TRACKING_STOPPED)
     }
 
     fun saveTrackingState(trackingState: Int) {
-        Log.i("VOUSSOIR", "PreferencesHelper.saveTrackingState ${trackingState}")
         sharedPreferences.edit { putInt(Keys.PREF_TRACKING_STATE, trackingState) }
     }
 
