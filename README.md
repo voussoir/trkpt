@@ -43,7 +43,7 @@ trkpt has three states of power management. The states transition like this:
 
     Plugged in to charger → Full power
 
-Although saving battery power is important, capturing trackpoints is the #1 priority. I'd rather have a few too many wakeups than too few.
+Although saving battery power is important, capturing trackpoints is the #1 priority. I'd rather have too many wakeups than too few.
 
 If your device doesn't support the motion sensors used here, then trkpt will always run at full power. It will not sleep or kill the GPS. Maybe we can find another solution to improve battery performance for devices in this scenario.
 
