@@ -638,7 +638,6 @@ class TrackerService: Service()
             stopTracking()
         }
         stopForeground(STOP_FOREGROUND_REMOVE)
-        notificationManager.cancel(Keys.TRACKER_SERVICE_NOTIFICATION_ID) // this call was not necessary prior to Android 12
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
         reset_location_listeners(interval=Keys.LOCATION_INTERVAL_DEAD)
         handler.removeCallbacks(background_watchdog)
