@@ -380,7 +380,7 @@ class TrackerService: Service()
 
     private fun displayNotification(): Notification
     {
-        notification_builder.setWhen(currentBestLocation.time)
+        notification_builder.setWhen(System.currentTimeMillis())
         if (shouldCreateNotificationChannel())
         {
             createNotificationChannel()
