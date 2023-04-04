@@ -562,23 +562,15 @@ class TrackerService: Service()
             {
                 if (intent.action == Intent.ACTION_POWER_CONNECTED)
                 {
-                    Log.i("VOUSSOIR", "Power connected")
                     device_is_charging = true
-                    if (location_interval == Keys.LOCATION_INTERVAL_DEAD)
-                    {
-                        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
-                    }
                 }
                 else if (intent.action == Intent.ACTION_POWER_DISCONNECTED)
                 {
-                    Log.i("VOUSSOIR", "Power disconnected")
                     device_is_charging = false
-                    // If the user has just unplugged their device, maybe they're getting ready
-                    // to go out.
-                    if (location_interval == Keys.LOCATION_INTERVAL_SLEEP)
-                    {
-                        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
-                    }
+                }
+                if (trackingState == Keys.STATE_TRACKING_ACTIVE)
+                {
+                    reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
                 }
             }
         }
@@ -682,7 +674,7 @@ class TrackerService: Service()
             Keys.PREF_ALLOW_SLEEP ->
             {
                 allow_sleep = PreferencesHelper.loadAllowSleep()
-                if (! allow_sleep && location_interval != Keys.LOCATION_INTERVAL_FULL_POWER)
+                if (! allow_sleep && trackingState == Keys.STATE_TRACKING_ACTIVE && location_interval != Keys.LOCATION_INTERVAL_FULL_POWER)
                 {
                     reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
                 }
@@ -716,16 +708,22 @@ class TrackerService: Service()
             val now = System.currentTimeMillis()
             last_watchdog = now
 
-            val struggletime = if (location_interval == Keys.LOCATION_INTERVAL_SLEEP) (TIME_UNTIL_DEAD * 2) else TIME_UNTIL_DEAD
             if (
                 allow_sleep &&
                 has_motion_sensor &&
                 !device_is_charging &&
+                // We only go to dead during active tracking because if you are looking at the
+                // device in non-tracking mode you are probably waiting for your signal to recover.
                 trackingState == Keys.STATE_TRACKING_ACTIVE &&
-                location_interval != Keys.LOCATION_INTERVAL_DEAD &&
-                (now - listeners_enabled_at) > struggletime &&
-                (now - currentBestLocation.time) > struggletime &&
-                (now - last_significant_motion) > struggletime
+                // We only go to dead from full power because in the sleep state, the wakelock is
+                // turned off and the device may go into doze. During doze, the device stops
+                // updating the location listeners anyway, so there is no benefit in going to dead.
+                // When the user interacts with the device and it leaves doze, it's better to come
+                // from sleep state than dead state.
+                location_interval == Keys.LOCATION_INTERVAL_FULL_POWER &&
+                (now - listeners_enabled_at) > TIME_UNTIL_DEAD &&
+                (now - currentBestLocation.time) > TIME_UNTIL_DEAD &&
+                (now - last_significant_motion) > TIME_UNTIL_DEAD
             )
             {
                 reset_location_listeners(interval=Keys.LOCATION_INTERVAL_DEAD)

@@ -33,15 +33,13 @@ trkpt has three states of power management. The states transition like this:
 
     Location leaves homepoint → Full power (presumably motion sensors will trigger, but just in case)
 
-    Unplugged from charger → Full power (maybe you are getting ready to depart)
-
-    Unable to receive fix for several minutes and not charging → Dead (time is doubled to accommodate slower sleeping pace)
+    Plugged/unplugged charger → Full power
 
 3. **DEAD**: disables location updates.
 
     Motion sensors → Full power
 
-    Plugged in to charger → Full power
+    Plugged/unplugged charger → Full power
 
 Although saving battery power is important, capturing trackpoints is the #1 priority. I'd rather have too many wakeups than too few.
 
