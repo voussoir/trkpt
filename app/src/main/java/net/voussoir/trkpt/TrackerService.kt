@@ -58,9 +58,9 @@ class TrackerService: Service()
     var gave_up_at: Long = 0
     var arrived_at_home: Long = 0
     var location_interval: Long = 0
-    val TIME_UNTIL_SLEEP: Long = 2 * Keys.ONE_MINUTE_IN_MILLISECONDS
+    val TIME_UNTIL_SLEEP: Long = 5 * Keys.ONE_MINUTE_IN_MILLISECONDS
     val TIME_UNTIL_DEAD: Long = 3 * Keys.ONE_MINUTE_IN_MILLISECONDS
-    val WATCHDOG_INTERVAL: Long = 30 * Keys.ONE_SECOND_IN_MILLISECONDS
+    val WATCHDOG_INTERVAL: Long = 61 * Keys.ONE_SECOND_IN_MILLISECONDS
     private val RECENT_TRKPT_COUNT = 3600
     private val DISPLACEMENT_LOCATION_COUNT = 5
     lateinit var recent_displacement_locations: Deque<Location>
