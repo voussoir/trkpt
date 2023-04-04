@@ -141,11 +141,11 @@ class SettingsFragment : PreferenceFragmentCompat()
 
         val prefShowDebug = SwitchPreferenceCompat(activity as Context)
         prefShowDebug.isSingleLineTitle = false
-        prefShowDebug.title = "Show debug info"
+        prefShowDebug.title = getString(R.string.pref_show_debug_title)
         prefShowDebug.setIcon(R.drawable.ic_bar_chart_24)
         prefShowDebug.key = Keys.PREF_SHOW_DEBUG
-        prefShowDebug.summaryOn = "Debug info shown on map screen."
-        prefShowDebug.summaryOff = "Debug info hidden."
+        prefShowDebug.summaryOn = getString(R.string.pref_show_debug_summary_on)
+        prefShowDebug.summaryOff = getString(R.string.pref_show_debug_summary_off)
         prefShowDebug.setDefaultValue(Keys.DEFAULT_SHOW_DEBUG)
         preferenceCategoryGeneral.contains(prefShowDebug)
         screen.addPreference(prefShowDebug)
@@ -210,8 +210,8 @@ class SettingsFragment : PreferenceFragmentCompat()
             if (!context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(context.packageName))
             {
                 val battery_optimization_button = Preference(context)
-                battery_optimization_button.title = "Disable battery optimization"
-                battery_optimization_button.summary = "If your device kills the app, you can give this a try."
+                battery_optimization_button.title = getString(R.string.pref_disable_battery_optimization_title)
+                battery_optimization_button.summary = getString(R.string.pref_disable_battery_optimization_summary)
                 battery_optimization_button.setOnPreferenceClickListener {
                     val i: Intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).setData(Uri.parse("package:${context.packageName}"))
                     context.startActivity(i)
@@ -227,9 +227,9 @@ class SettingsFragment : PreferenceFragmentCompat()
         screen.addPreference(preferenceCategoryAbout)
 
         val source_code = Preference(context)
-        source_code.title = "Source code"
+        source_code.title = getString(R.string.pref_source_code_title)
         source_code.setIcon(R.drawable.ic_bug_report_24dp)
-        source_code.summary = "Available on github, gitlab, and codeberg."
+        source_code.summary = getString(R.string.pref_source_code_summary)
         source_code.setOnPreferenceClickListener {
             val intent = Intent(Intent.ACTION_VIEW)
             intent.data = Uri.parse("https://github.com/voussoir/trkpt")
@@ -240,9 +240,9 @@ class SettingsFragment : PreferenceFragmentCompat()
         screen.addPreference(source_code)
 
         val fork_notice = Preference(context)
-        fork_notice.title = "trkpt is a fork of Trackbook"
+        fork_notice.title = getString(R.string.pref_fork_notice_title)
         fork_notice.setIcon(R.drawable.ic_notebook_24dp)
-        fork_notice.summary = "Thank you y20k."
+        fork_notice.summary = getString(R.string.pref_fork_notice_summary)
         fork_notice.setOnPreferenceClickListener {
             val intent = Intent(Intent.ACTION_VIEW)
             intent.data = Uri.parse("https://codeberg.org/y20k/trackbook")
@@ -253,8 +253,8 @@ class SettingsFragment : PreferenceFragmentCompat()
         screen.addPreference(fork_notice)
 
         val copyright_notice = Preference(context)
-        copyright_notice.title = "Map data"
-        copyright_notice.summary = "© OpenStreetMap contributors."
+        copyright_notice.title = getString(R.string.pref_copyright_notice_title)
+        copyright_notice.summary = getString(R.string.pref_copyright_notice_summary)
         copyright_notice.setIcon(R.drawable.ic_map_24dp)
         copyright_notice.setOnPreferenceClickListener {
             val intent = Intent(Intent.ACTION_VIEW)

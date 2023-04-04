@@ -114,6 +114,18 @@
     <string name="pref_theme_selection_mode_light">Light mode</string>
     <string name="pref_theme_selection_summary">Current theme:</string>
     <string name="pref_theme_selection_title">App theme</string>
+    <string name="pref_show_debug_title">Show debug info</string>
+    <string name="pref_show_debug_summary_on">Debug info shown on map screen.</string>
+    <string name="pref_show_debug_summary_off">Debug info hidden.</string>
+    <string name="pref_disable_battery_optimization_title">Disable battery optimization</string>
+    <string name="pref_disable_battery_optimization_summary">If your device kills the app, you can give this a try.</string>
+    <string name="pref_source_code_title">Source code</string>
+    <string name="pref_source_code_summary">Available on github, gitlab, and codeberg.</string>
+    <string name="pref_fork_notice_title">trkpt is a fork of Trackbook</string>
+    <string name="pref_fork_notice_summary">Thank you y20k.</string>
+    <string name="pref_copyright_notice_title">Map data</string>
+    <string name="pref_copyright_notice_summary">© OpenStreetMap contributors.</string>
+
     <!-- Abbreviations -->
     <string name="abbreviation_hours">hrs</string>
     <string name="abbreviation_minutes">min</string>
