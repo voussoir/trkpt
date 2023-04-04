@@ -70,7 +70,6 @@ class TrackerService: Service()
 
     private lateinit var notificationManager: NotificationManager
     private lateinit var notification_builder: NotificationCompat.Builder
-    val beeper = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
 
     private lateinit var locationManager: LocationManager
     private lateinit var gpsLocationListener: LocationListener
@@ -244,8 +243,6 @@ class TrackerService: Service()
             override fun onLocationChanged(location: Location)
             {
                 Log.i("VOUSSOIR", "Processing point ${location.time} ${location.latitude}, ${location.longitude}.")
-
-                // beeper.startTone(ToneGenerator.TONE_PROP_ACK, 150)
 
                 if (location.time <= currentBestLocation.time)
                 {
@@ -440,36 +437,6 @@ class TrackerService: Service()
         ).apply { description = this@TrackerService.getString(R.string.notification_channel_recording_description) }
         notificationManager.createNotificationChannel(notificationChannel)
     }
-
-    /* Notification pending intents */
-    // private val stopActionPendingIntent = PendingIntent.getService(
-    //     this,
-    //     14,
-    //     Intent(this, TrackerService::class.java).setAction(Keys.ACTION_STOP),
-    //     PendingIntent.FLAG_IMMUTABLE
-    // )
-    // private val resumeActionPendingIntent = PendingIntent.getService(
-    //     this,
-    //     16,
-    //     Intent(this, TrackerService::class.java).setAction(Keys.ACTION_START),
-    //     PendingIntent.FLAG_IMMUTABLE
-    // )
-    /* Notification actions */
-    // private val stopAction = NotificationCompat.Action(
-    //     R.drawable.ic_notification_action_stop_24dp,
-    //     this.getString(R.string.notification_pause),
-    //     stopActionPendingIntent
-    // )
-    // private val resumeAction = NotificationCompat.Action(
-    //     R.drawable.ic_notification_action_resume_36dp,
-    //     this.getString(R.string.notification_resume),
-    //     resumeActionPendingIntent
-    // )
-    // private val showAction = NotificationCompat.Action(
-    //     R.drawable.ic_notification_action_show_36dp,
-    //     this.getString(R.string.notification_show),
-    //     showActionPendingIntent
-    // )
 
     /* Overrides onBind from Service */
     override fun onBind(p0: Intent?): IBinder
