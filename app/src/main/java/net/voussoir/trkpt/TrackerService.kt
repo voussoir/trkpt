@@ -90,8 +90,11 @@ class TrackerService: Service()
     var device_is_charging: Boolean = false
     private var charging_broadcast_receiver: BroadcastReceiver? = null
 
+    lateinit var wakelock: PowerManager.WakeLock
+
     private fun addGpsLocationListener(interval: Long): Boolean
     {
+        gpsLocationListenerRegistered = false
         gpsProviderActive = isGpsEnabled(locationManager)
         if (! gpsProviderActive)
         {
@@ -119,6 +122,7 @@ class TrackerService: Service()
 
     private fun addNetworkLocationListener(interval: Long): Boolean
     {
+        networkLocationListenerRegistered = false
         networkProviderActive = isNetworkEnabled(locationManager)
         if (!networkProviderActive)
         {
@@ -176,11 +180,9 @@ class TrackerService: Service()
     {
         Log.i("VOUSSOIR", "TrackerService.reset_location_listeners")
         location_interval = interval
-        var gps_added = false
-        var network_added = false
         if (use_gps_location && interval != Keys.LOCATION_INTERVAL_DEAD && interval != Keys.LOCATION_INTERVAL_STOP)
         {
-            gps_added = addGpsLocationListener(interval)
+            addGpsLocationListener(interval)
         }
         else if (gpsLocationListenerRegistered)
         {
@@ -188,14 +190,19 @@ class TrackerService: Service()
         }
         if (use_network_location && interval != Keys.LOCATION_INTERVAL_DEAD && interval != Keys.LOCATION_INTERVAL_STOP)
         {
-            network_added = addNetworkLocationListener(interval)
+            addNetworkLocationListener(interval)
         }
         else if (networkLocationListenerRegistered)
         {
             removeNetworkLocationListener()
         }
 
-        if (gps_added || network_added)
+        if (interval != Keys.LOCATION_INTERVAL_DEAD)
+        {
+            gave_up_at = 0
+        }
+
+        if (gpsLocationListenerRegistered || networkLocationListenerRegistered)
         {
             listeners_enabled_at = System.currentTimeMillis()
             if (interval != Keys.LOCATION_INTERVAL_SLEEP)
@@ -212,6 +219,21 @@ class TrackerService: Service()
             listeners_enabled_at = 0
             location_interval = Keys.LOCATION_INTERVAL_DEAD
         }
+
+        if (
+            (gpsLocationListenerRegistered || networkLocationListenerRegistered) &&
+            trackingState == Keys.STATE_TRACKING_ACTIVE &&
+            interval == Keys.LOCATION_INTERVAL_FULL_POWER &&
+            !wakelock.isHeld
+        )
+        {
+            wakelock.acquire()
+        }
+        else if (wakelock.isHeld)
+        {
+            wakelock.release()
+        }
+
         displayNotification()
     }
 
@@ -598,6 +620,9 @@ class TrackerService: Service()
         charging_intent_filter.addAction(Intent.ACTION_POWER_DISCONNECTED)
         registerReceiver(charging_broadcast_receiver, charging_intent_filter)
 
+        val powermanager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakelock = powermanager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "trkpt::wakelock")
+
         handler.post(background_watchdog)
     }
 
@@ -647,8 +672,8 @@ class TrackerService: Service()
     fun startTracking()
     {
         Log.i("VOUSSOIR", "TrackerService.startTracking")
-        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
         trackingState = Keys.STATE_TRACKING_ACTIVE
+        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
         PreferencesHelper.saveTrackingState(trackingState)
         recent_displacement_locations.clear()
         startForeground(Keys.TRACKER_SERVICE_NOTIFICATION_ID, displayNotification())
@@ -658,8 +683,8 @@ class TrackerService: Service()
     {
         Log.i("VOUSSOIR", "TrackerService.stopTracking")
         trackbook.database.commit()
-        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
         trackingState = Keys.STATE_TRACKING_STOPPED
+        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
         PreferencesHelper.saveTrackingState(trackingState)
         recent_displacement_locations.clear()
         displayNotification()

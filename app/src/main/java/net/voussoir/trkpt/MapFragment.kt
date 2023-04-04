@@ -671,13 +671,14 @@ class MapFragment : Fragment()
         if (show_debug)
         {
             map_current_time.text = """
-            now: ${iso8601_local_noms(System.currentTimeMillis())}
-            location: ${iso8601_local_noms(tracker.currentBestLocation.time)}
+                  now: ${iso8601_local_noms(System.currentTimeMillis())}
+             location: ${iso8601_local_noms(tracker.currentBestLocation.time)}
             listeners: ${iso8601_local_noms(tracker.listeners_enabled_at)}
-            motion: ${iso8601_local_noms(tracker.last_significant_motion)}
-            watchdog: ${iso8601_local_noms(tracker.last_watchdog)}
-            died: ${iso8601_local_noms(tracker.gave_up_at)}
-            power: ${tracker.device_is_charging}
+               motion: ${iso8601_local_noms(tracker.last_significant_motion)}
+             watchdog: ${iso8601_local_noms(tracker.last_watchdog)}
+                 died: ${iso8601_local_noms(tracker.gave_up_at)}
+                power: ${tracker.device_is_charging}
+             wakelock: ${tracker.wakelock.isHeld}
             """.trimIndent()
         }
         else
