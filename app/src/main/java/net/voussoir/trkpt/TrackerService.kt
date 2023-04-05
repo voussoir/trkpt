@@ -219,14 +219,17 @@ class TrackerService: Service()
             location_interval = Keys.LOCATION_INTERVAL_DEAD
         }
 
-        if (
+        val should_wakelock = (
             (gpsLocationListenerRegistered || networkLocationListenerRegistered) &&
             trackingState == Keys.STATE_TRACKING_ACTIVE &&
-            interval == Keys.LOCATION_INTERVAL_FULL_POWER &&
-            !wakelock.isHeld
+            interval == Keys.LOCATION_INTERVAL_FULL_POWER
         )
+        if (should_wakelock)
         {
-            wakelock.acquire()
+            if (! wakelock.isHeld)
+            {
+                wakelock.acquire()
+            }
         }
         else if (wakelock.isHeld)
         {
