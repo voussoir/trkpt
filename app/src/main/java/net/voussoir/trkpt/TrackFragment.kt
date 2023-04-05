@@ -26,6 +26,7 @@ import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Paint
+import android.location.Location
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -38,6 +39,7 @@ import android.widget.*
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.constraintlayout.widget.Group
+import androidx.core.content.ContextCompat
 import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -54,6 +56,7 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.MapEventsOverlay
+import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.TilesOverlay
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
@@ -111,6 +114,9 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     private var useImperialUnits: Boolean = false
     private val handler: Handler = Handler(Looper.getMainLooper())
     val RERENDER_DELAY: Long = 1000
+
+    var selected_trkpt: Trkpt? = null
+    lateinit var selected_trkpt_marker: Marker
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
@@ -379,6 +385,31 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         statisticsSheetBehavior = BottomSheetBehavior.from<View>(statisticsSheet)
         statisticsSheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
 
+        selected_trkpt_marker = Marker(mapView, requireContext())
+        selected_trkpt_marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+        selected_trkpt_marker.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_fuchsia_24dp)!!
+        selected_trkpt_marker.isDraggable = true
+        selected_trkpt_marker.infoWindow = null
+        selected_trkpt_marker.setOnMarkerDragListener(object : Marker.OnMarkerDragListener {
+            override fun onMarkerDrag(marker: Marker?)
+            {
+                if (marker == null || selected_trkpt == null)
+                {
+                    return
+                }
+                selected_trkpt?.latitude = marker.position.latitude
+                selected_trkpt?.longitude = marker.position.longitude
+                selected_trkpt?.rendered_by_polyline?.setPoints(ArrayList(selected_trkpt?.rendered_by_polyline?.actualPoints))
+            }
+            override fun onMarkerDragStart(marker: Marker?)
+            {
+            }
+            override fun onMarkerDragEnd(marker: Marker?)
+            {
+                selected_trkpt?.let { trackbook.database.update_trkpt(it, commit=true) }
+            }
+        })
+
         track_segment_overlays = ArrayDeque<Polyline>(10)
         render_track()
 
@@ -396,6 +427,11 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         if (track_points_overlay != null)
         {
             track_points_overlay!!.selectedPoint = null
+        }
+        if (selected_trkpt_marker in mapView.overlays)
+        {
+            mapView.overlays.remove(selected_trkpt_marker)
+            mapView.invalidate()
         }
         delete_selected_trkpt_button.visibility = View.GONE
         use_trkpt_as_start_button.visibility = View.GONE
@@ -491,7 +527,13 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 }
                 val trkpt = (points[point]) as Trkpt
                 Log.i("VOUSSOIR", "Clicked ${trkpt.device_id} ${trkpt.time}")
+                selected_trkpt = trkpt
                 selected_trkpt_info.text = "${trkpt.time}\n${iso8601_local(trkpt.time)}\n${trkpt.latitude}\n${trkpt.longitude}\n${trkpt.accuracy}"
+                selected_trkpt_marker.position = trkpt
+                if (selected_trkpt_marker !in mapView.overlays)
+                {
+                    mapView.overlays.add(selected_trkpt_marker)
+                }
                 delete_selected_trkpt_button.visibility = View.VISIBLE
                 use_trkpt_as_start_button.visibility = View.VISIBLE
                 use_trkpt_as_end_button.visibility = View.VISIBLE
