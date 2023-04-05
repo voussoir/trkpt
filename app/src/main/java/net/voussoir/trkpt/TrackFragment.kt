@@ -46,12 +46,14 @@ import com.google.android.material.textview.MaterialTextView
 import net.voussoir.trkpt.helpers.*
 import org.osmdroid.api.IGeoPoint
 import org.osmdroid.api.IMapController
+import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
 import org.osmdroid.events.ZoomEvent
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.TilesOverlay
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
@@ -402,6 +404,25 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         selected_trkpt_info.text = ""
     }
 
+    fun create_event_receiver_overlay()
+    {
+        val receiver: MapEventsReceiver = object: MapEventsReceiver
+        {
+            override fun singleTapConfirmedHelper(p: GeoPoint?): Boolean
+            {
+                Log.i("VOUSSOIR", "MapEventsReceiver.singletap")
+                deselect_trkpt()
+                return true
+            }
+
+            override fun longPressHelper(point: GeoPoint): Boolean
+            {
+                return false
+            }
+        }
+        mapView.overlays.add(MapEventsOverlay(receiver))
+    }
+
     fun render_track()
     {
         Log.i("VOUSSOIR", "TrackFragment.render_track")
@@ -416,6 +437,9 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         {
             return
         }
+
+        create_event_receiver_overlay()
+
         Log.i("VOUSSOIR", "MapOverlayHelper.createTrackOverlay")
         track_geopoints = mutableListOf()
         for (trkpt in track.trkpts)
