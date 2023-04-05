@@ -339,7 +339,7 @@ class TrackerService: Service()
                 }
 
                 val trkpt = Trkpt(device_id=device_id, location=location)
-                trackbook.database.insert_trkpt(trkpt)
+                trackbook.database.insert_trkpt(trkpt, commit=false)
 
                 recent_trackpoints_for_mapview.add(trkpt)
                 while (recent_trackpoints_for_mapview.size > RECENT_TRKPT_COUNT)

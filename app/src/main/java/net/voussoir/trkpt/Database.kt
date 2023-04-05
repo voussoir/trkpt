@@ -52,23 +52,29 @@ class Database(val trackbook: Trackbook)
         this.connection.endTransaction()
     }
 
-    fun delete_trkpt(device_id: String, time: Long)
+    fun delete_trkpt(device_id: String, time: Long, commit: Boolean=false)
     {
         Log.i("VOUSSOIR", "Database.delete_trkpt")
         begin_transaction()
         connection.delete("trkpt", "device_id = ? AND time = ?", arrayOf(device_id, time.toString()))
-        commit()
+        if (commit)
+        {
+            this.commit()
+        }
     }
 
-    fun delete_trkpt_start_end(device_id: String, start_time: Long, end_time: Long)
+    fun delete_trkpt_start_end(device_id: String, start_time: Long, end_time: Long, commit: Boolean=false)
     {
         Log.i("VOUSSOIR", "Track.delete ${device_id} ${start_time} -- ${end_time}.")
         this.begin_transaction()
         this.connection.delete("trkpt", "device_id = ? AND time >= ? AND time <= ?", arrayOf(device_id, start_time.toString(), end_time.toString()))
-        this.commit()
+        if (commit)
+        {
+            this.commit()
+        }
     }
 
-    fun insert_trkpt(trkpt: Trkpt)
+    fun insert_trkpt(trkpt: Trkpt, commit: Boolean=false)
     {
         Log.i("VOUSSOIR", "Database.insert_trkpt")
         val values = ContentValues().apply {
@@ -83,6 +89,10 @@ class Database(val trackbook: Trackbook)
         }
         begin_transaction()
         connection.insert("trkpt", null, values)
+        if (commit)
+        {
+            this.commit()
+        }
     }
 
     fun select_trkpt_start_end(device_id: String, start_time: Long, end_time: Long, order: String="ASC"): Iterator<Trkpt>
@@ -136,15 +146,18 @@ class Database(val trackbook: Trackbook)
         }
     }
 
-    fun delete_homepoint(id: Long)
+    fun delete_homepoint(id: Long, commit: Boolean=false)
     {
         Log.i("VOUSSOIR", "Database.delete_homepoint")
         begin_transaction()
         connection.delete("homepoints", "id = ?", arrayOf(id.toString()))
-        commit()
+        if (commit)
+        {
+            this.commit()
+        }
     }
 
-    fun insert_homepoint(id: Long, name: String, latitude: Double, longitude: Double, radius: Double)
+    fun insert_homepoint(id: Long, name: String, latitude: Double, longitude: Double, radius: Double, commit: Boolean=false)
     {
         Log.i("VOUSSOIR", "Database.insert_homepoint")
         val values = ContentValues().apply {
@@ -156,10 +169,13 @@ class Database(val trackbook: Trackbook)
         }
         begin_transaction()
         connection.insert("homepoints", null, values)
-        commit()
+        if (commit)
+        {
+            this.commit()
+        }
     }
 
-    fun update_homepoint(id: Long, name: String, radius: Double)
+    fun update_homepoint(id: Long, name: String, radius: Double, commit: Boolean=false)
     {
         Log.i("VOUSSOIR", "Database.update_homepoint")
         val values = ContentValues().apply {
@@ -168,7 +184,29 @@ class Database(val trackbook: Trackbook)
         }
         begin_transaction()
         connection.update("homepoints", values, "id = ?", arrayOf(id.toString()))
-        commit()
+        if (commit)
+        {
+            this.commit()
+        }
+    }
+
+    fun update_trkpt(trkpt: Trkpt, commit: Boolean=false)
+    {
+        Log.i("VOUSSOIR", "Database.update_trkpt")
+        val values = ContentValues().apply {
+            put("lat", trkpt.latitude)
+            put("lon", trkpt.longitude)
+            put("provider", trkpt.provider)
+            put("accuracy", trkpt.accuracy)
+            put("sat", trkpt.numberSatellites)
+            put("ele", trkpt.altitude)
+        }
+        begin_transaction()
+        connection.update("trkpt", values, "device_id = ? AND time = ?", arrayOf(trkpt.device_id, trkpt.time.toString()))
+        if (commit)
+        {
+            this.commit()
+        }
     }
 
     private fun initialize_tables()

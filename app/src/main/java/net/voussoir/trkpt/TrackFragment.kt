@@ -259,7 +259,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 Log.i("VOUSSOIR", selected.rendered_by_polyline?.actualPoints?.size.toString())
                 selected.rendered_by_polyline?.setPoints(ArrayList(selected.rendered_by_polyline?.actualPoints))
                 Log.i("VOUSSOIR", selected.rendered_by_polyline?.actualPoints?.size.toString())
-                trackbook.database.delete_trkpt(selected.device_id, selected.time)
+                trackbook.database.delete_trkpt(selected.device_id, selected.time, commit=true)
                 deselect_trkpt()
                 mapView.invalidate()
             }
@@ -674,7 +674,12 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     {
         if (type == Keys.DIALOG_DELETE_TRACK && dialogResult && track.trkpts.isNotEmpty())
         {
-            trackbook.database.delete_trkpt_start_end(track.device_id, track.trkpts.first().time, track.trkpts.last().time)
+            trackbook.database.delete_trkpt_start_end(
+                track.device_id,
+                track.trkpts.first().time,
+                track.trkpts.last().time,
+                commit=true,
+            )
             handler.removeCallbacks(requery_and_render)
             handler.postDelayed(requery_and_render, RERENDER_DELAY)
         }
