@@ -21,7 +21,7 @@ The goal of this fork is to make 24/7 recording easier. I want to be able to run
 
 trkpt has three states of power management. The states transition like this:
 
-1. **FULL POWER**: receives location updates as fast as Android provides them.
+1. **FULL POWER**: receives location updates as fast as Android provides them. A wakelock is used to prevent doze.
 
     Stay near homepoint for a few minutes → Sleep
 
@@ -33,13 +33,13 @@ trkpt has three states of power management. The states transition like this:
 
     Location leaves homepoint → Full power (presumably motion sensors will trigger, but just in case)
 
-    Plugged/unplugged charger → Full power
+    Charger plugged or unplugged → Full power
 
 3. **DEAD**: disables location updates.
 
     Motion sensors → Full power
 
-    Plugged/unplugged charger → Full power
+    Charger plugged or unplugged → Full power
 
 Although saving battery power is important, capturing trackpoints is the #1 priority. I'd rather have too many wakeups than too few.
 
