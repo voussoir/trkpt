@@ -62,6 +62,7 @@ import org.osmdroid.views.overlay.TilesOverlay
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlayOptions
 import org.osmdroid.views.overlay.simplefastpoint.SimplePointTheme
+import java.lang.Math.*
 import java.util.*
 
 class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
@@ -87,7 +88,9 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     lateinit var isolate_trkseg_button: ImageButton
     lateinit var when_was_i_here_button: ImageButton
     lateinit var interpolate_points_button: ImageButton
+    lateinit var straighten_points_button: ImageButton
     var ready_to_interpolate: Boolean = false
+    var ready_to_straighten: Boolean = false
     var track_query_start_time_previous: Int = 0
     var track_query_end_time_previous: Int = 0
     private lateinit var mapView: MapView
@@ -347,6 +350,11 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         interpolate_points_button = rootView.findViewById(R.id.interpolate_points_button)
         interpolate_points_button.setOnClickListener {
             Log.i("VOUSSOIR", "interpolate_points_button.")
+            if (ready_to_straighten)
+            {
+                ready_to_straighten = false
+                straighten_points_button.setColorFilter(null)
+            }
             if (ready_to_interpolate)
             {
                 interpolate_points_button.setColorFilter(null)
@@ -356,6 +364,25 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 interpolate_points_button.setColorFilter(resources.getColor(R.color.fuchsia))
             }
             ready_to_interpolate = !ready_to_interpolate
+        }
+
+        straighten_points_button = rootView.findViewById(R.id.straighten_points_button)
+        straighten_points_button.setOnClickListener {
+            Log.i("VOUSSOIR", "straighten_points_button.")
+            if (ready_to_interpolate)
+            {
+                ready_to_interpolate = false
+                interpolate_points_button.setColorFilter(null)
+            }
+            if (ready_to_straighten)
+            {
+                straighten_points_button.setColorFilter(null)
+            }
+            else
+            {
+                straighten_points_button.setColorFilter(resources.getColor(R.color.fuchsia))
+            }
+            ready_to_straighten = !ready_to_straighten
         }
 
         save_track_button.setOnClickListener {
@@ -450,9 +477,12 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             mapView.invalidate()
         }
         ready_to_interpolate = false
+        ready_to_straighten = false
         interpolate_points_button.setColorFilter(null)
+        straighten_points_button.setColorFilter(null)
         delete_selected_trkpt_button.visibility = View.GONE
         interpolate_points_button.visibility = View.GONE
+        straighten_points_button.visibility = View.GONE
         use_trkpt_as_start_button.visibility = View.GONE
         use_trkpt_as_end_button.visibility = View.GONE
         isolate_trkseg_button.visibility = View.GONE
@@ -560,6 +590,13 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                     handler.post(requery_and_render)
                     return
                 }
+                else if (ready_to_straighten && selected_trkpt != null)
+                {
+                    straighten_points(selected_trkpt!!, trkpt)
+                    deselect_trkpt()
+                    handler.post(requery_and_render)
+                    return
+                }
                 selected_trkpt = trkpt
                 selected_trkpt_info.text = "${trkpt.time}\n${iso8601_local(trkpt.time)}\n${trkpt.latitude}\n${trkpt.longitude}\n${trkpt.accuracy}"
                 selected_trkpt_marker.position = trkpt
@@ -568,6 +605,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                     mapView.overlays.add(selected_trkpt_marker)
                 }
                 interpolate_points_button.visibility = View.VISIBLE
+                straighten_points_button.visibility = View.VISIBLE
                 delete_selected_trkpt_button.visibility = View.VISIBLE
                 use_trkpt_as_start_button.visibility = View.VISIBLE
                 use_trkpt_as_end_button.visibility = View.VISIBLE
@@ -591,6 +629,28 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         track_segment_overlays.add(pl)
         mapView.overlays.add(pl)
         return pl
+    }
+
+    fun straighten_points(a: Trkpt, b: Trkpt)
+    {
+        val subtrack = Track(track.database, track.device_id)
+        subtrack.load_trkpts(trackbook.database.select_trkpt_start_end(
+            track.device_id,
+            start_time=min(a.time, b.time),
+            end_time=max(a.time, b.time),
+        ))
+        val lat_step = (b.latitude - a.latitude) / (b.time - a.time)
+        val lon_step = (b.longitude - a.longitude) / (b.time - a.time)
+        val ele_step = (b.altitude - a.altitude) / (b.time - a.time)
+        for (trkpt in subtrack.trkpts)
+        {
+            val index = trkpt.time - a.time
+            trkpt.latitude = a.latitude + (index  * lat_step)
+            trkpt.longitude = a.longitude + (index * lon_step)
+            trkpt.altitude = a.altitude + (index * ele_step)
+            trackbook.database.update_trkpt(trkpt, commit=false)
+        }
+        trackbook.database.commit()
     }
 
     fun set_datetime(datepicker: DatePicker, timepicker: TimePicker, setdate: Date, _ending: Boolean)
