@@ -91,8 +91,8 @@
                 android:src="@drawable/ic_end_here_24dp"
                 android:visibility="gone"
                 app:backgroundTint="@color/default_transparent"
-                app:layout_constraintTop_toBottomOf="@+id/when_was_i_here_button"
-                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/when_was_i_here_button"
+                app:layout_constraintEnd_toStartOf="@+id/when_was_i_here_button"
                 app:srcCompat="@drawable/ic_end_here_24dp" />
 
             <ImageButton
@@ -116,9 +116,22 @@
                 android:tooltipText="Isolate track segment"
                 android:visibility="gone"
                 app:backgroundTint="@color/default_transparent"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/delete_selected_trkpt_button"
+                app:layout_constraintTop_toBottomOf="@+id/when_was_i_here_button"
+                app:layout_constraintEnd_toEndOf="@+id/when_was_i_here_button"
                 app:srcCompat="@drawable/ic_timeline_24dp" />
+
+            <ImageButton
+                android:id="@+id/interpolate_points_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="Interpolate between two points"
+                android:tooltipText="Interpolate between two points"
+                android:src="@drawable/ic_interpolate_24dp"
+                android:visibility="gone"
+                app:backgroundTint="@color/default_transparent"
+                app:layout_constraintTop_toTopOf="@+id/isolate_trkseg_button"
+                app:layout_constraintEnd_toStartOf="@+id/isolate_trkseg_button"
+                app:srcCompat="@drawable/ic_bug_report_24dp" />
 
             <ImageButton
                 android:id="@+id/delete_selected_trkpt_button"

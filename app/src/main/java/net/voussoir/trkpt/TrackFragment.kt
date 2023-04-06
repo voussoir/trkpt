@@ -86,6 +86,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     lateinit var use_trkpt_as_end_button: ImageButton
     lateinit var isolate_trkseg_button: ImageButton
     lateinit var when_was_i_here_button: ImageButton
+    lateinit var interpolate_points_button: ImageButton
+    var ready_to_interpolate: Boolean = false
     var track_query_start_time_previous: Int = 0
     var track_query_end_time_previous: Int = 0
     private lateinit var mapView: MapView
@@ -342,6 +344,20 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             render_track()
         }
 
+        interpolate_points_button = rootView.findViewById(R.id.interpolate_points_button)
+        interpolate_points_button.setOnClickListener {
+            Log.i("VOUSSOIR", "interpolate_points_button.")
+            if (ready_to_interpolate)
+            {
+                interpolate_points_button.setColorFilter(null)
+            }
+            else
+            {
+                interpolate_points_button.setColorFilter(resources.getColor(R.color.fuchsia))
+            }
+            ready_to_interpolate = !ready_to_interpolate
+        }
+
         save_track_button.setOnClickListener {
             val dialog = Dialog(activity as Context)
             dialog.setContentView(R.layout.dialog_rename_track)
@@ -433,7 +449,10 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             mapView.overlays.remove(selected_trkpt_marker)
             mapView.invalidate()
         }
+        ready_to_interpolate = false
+        interpolate_points_button.setColorFilter(null)
         delete_selected_trkpt_button.visibility = View.GONE
+        interpolate_points_button.visibility = View.GONE
         use_trkpt_as_start_button.visibility = View.GONE
         use_trkpt_as_end_button.visibility = View.GONE
         isolate_trkseg_button.visibility = View.GONE
@@ -527,6 +546,20 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 }
                 val trkpt = (points[point]) as Trkpt
                 Log.i("VOUSSOIR", "Clicked ${trkpt.device_id} ${trkpt.time}")
+                if (ready_to_interpolate)
+                {
+                    val mid_location = Location("interpolated")
+                    mid_location.latitude = (selected_trkpt!!.latitude + trkpt.latitude) / 2
+                    mid_location.longitude = (selected_trkpt!!.longitude + trkpt.longitude) / 2
+                    mid_location.altitude = (selected_trkpt!!.altitude + trkpt.altitude) / 2
+                    mid_location.time = (selected_trkpt!!.time + trkpt.time) / 2
+                    mid_location.accuracy = 0f
+                    val mid_trkpt = Trkpt(trkpt.device_id, mid_location)
+                    deselect_trkpt()
+                    trackbook.database.insert_trkpt(mid_trkpt, commit=true)
+                    handler.post(requery_and_render)
+                    return
+                }
                 selected_trkpt = trkpt
                 selected_trkpt_info.text = "${trkpt.time}\n${iso8601_local(trkpt.time)}\n${trkpt.latitude}\n${trkpt.longitude}\n${trkpt.accuracy}"
                 selected_trkpt_marker.position = trkpt
@@ -534,6 +567,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 {
                     mapView.overlays.add(selected_trkpt_marker)
                 }
+                interpolate_points_button.visibility = View.VISIBLE
                 delete_selected_trkpt_button.visibility = View.VISIBLE
                 use_trkpt_as_start_button.visibility = View.VISIBLE
                 use_trkpt_as_end_button.visibility = View.VISIBLE
