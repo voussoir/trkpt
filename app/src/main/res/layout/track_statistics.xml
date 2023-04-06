@@ -55,30 +55,6 @@
         app:srcCompat="@drawable/ic_save_to_storage_24dp" />
 
     <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/statistics_p_distance"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="@string/statistics_sheet_p_distance"
-        android:textAllCaps="false"
-        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-        android:textColor="@color/text_lightweight"
-        app:layout_constraintStart_toStartOf="@+id/statistics_track_name_headline"
-        app:layout_constraintTop_toBottomOf="@+id/statistics_track_name_headline" />
-
-    <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/statistics_data_distance"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-        android:textColor="@color/text_default"
-        app:layout_constraintBottom_toBottomOf="@+id/statistics_p_distance"
-        app:layout_constraintStart_toEndOf="@+id/statistics_p_distance"
-        app:layout_constraintTop_toTopOf="@+id/statistics_p_distance"
-        tools:text="@string/sample_text_default_data" />
-
-    <com.google.android.material.textview.MaterialTextView
         android:id="@+id/statistics_p_waypoints"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
@@ -86,8 +62,8 @@
         android:text="@string/statistics_sheet_p_waypoints"
         android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
         android:textColor="@color/text_lightweight"
-        app:layout_constraintStart_toStartOf="@+id/statistics_p_distance"
-        app:layout_constraintTop_toBottomOf="@+id/statistics_p_distance" />
+        app:layout_constraintStart_toStartOf="@+id/statistics_track_name_headline"
+        app:layout_constraintTop_toBottomOf="@+id/statistics_track_name_headline" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/statistics_data_waypoints"
@@ -102,6 +78,30 @@
         tools:text="@string/sample_text_default_data" />
 
     <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/statistics_p_distance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/statistics_sheet_p_distance"
+        android:textAllCaps="false"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        android:textColor="@color/text_lightweight"
+        app:layout_constraintStart_toStartOf="@+id/statistics_p_waypoints"
+        app:layout_constraintTop_toBottomOf="@+id/statistics_p_waypoints" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/statistics_data_distance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+        android:textColor="@color/text_default"
+        app:layout_constraintBottom_toBottomOf="@+id/statistics_p_distance"
+        app:layout_constraintStart_toEndOf="@+id/statistics_p_distance"
+        app:layout_constraintTop_toTopOf="@+id/statistics_p_distance"
+        tools:text="@string/sample_text_default_data" />
+
+    <com.google.android.material.textview.MaterialTextView
         android:id="@+id/statistics_p_duration"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -109,8 +109,8 @@
         android:text="@string/statistics_sheet_p_duration"
         android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
         android:textColor="@color/text_lightweight"
-        app:layout_constraintStart_toStartOf="@+id/statistics_p_waypoints"
-        app:layout_constraintTop_toBottomOf="@+id/statistics_p_waypoints" />
+        app:layout_constraintStart_toStartOf="@+id/statistics_p_distance"
+        app:layout_constraintTop_toBottomOf="@+id/statistics_p_distance" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/statistics_data_duration"
@@ -125,29 +125,6 @@
         tools:text="@string/sample_text_default_data" />
 
     <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/statistics_p_recording_paused"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="@string/statistics_sheet_p_recording_paused"
-        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-        android:textColor="@color/text_lightweight"
-        app:layout_constraintStart_toStartOf="@+id/statistics_p_duration"
-        app:layout_constraintTop_toBottomOf="@+id/statistics_p_duration" />
-
-    <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/statistics_data_recording_paused"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-        android:textColor="@color/text_default"
-        app:layout_constraintBottom_toBottomOf="@+id/statistics_p_recording_paused"
-        app:layout_constraintStart_toEndOf="@+id/statistics_p_recording_paused"
-        app:layout_constraintTop_toTopOf="@+id/statistics_p_recording_paused"
-        tools:text="@string/sample_text_default_data" />
-
-    <com.google.android.material.textview.MaterialTextView
         android:id="@+id/statistics_p_velocity"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -155,8 +132,8 @@
         android:text="@string/statistics_sheet_p_velocity"
         android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
         android:textColor="@color/text_lightweight"
-        app:layout_constraintStart_toStartOf="@+id/statistics_p_recording_paused"
-        app:layout_constraintTop_toBottomOf="@+id/statistics_p_recording_paused" />
+        app:layout_constraintStart_toStartOf="@+id/statistics_p_duration"
+        app:layout_constraintTop_toBottomOf="@+id/statistics_p_duration" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/statistics_data_velocity"
@@ -171,6 +148,29 @@
         tools:text="@string/sample_text_default_data" />
 
     <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/statistics_p_recording_paused"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/statistics_sheet_p_recording_paused"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        android:textColor="@color/text_lightweight"
+        app:layout_constraintStart_toStartOf="@+id/statistics_p_velocity"
+        app:layout_constraintTop_toBottomOf="@+id/statistics_p_velocity" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/statistics_data_recording_paused"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+        android:textColor="@color/text_default"
+        app:layout_constraintBottom_toBottomOf="@+id/statistics_p_recording_paused"
+        app:layout_constraintStart_toEndOf="@+id/statistics_p_recording_paused"
+        app:layout_constraintTop_toTopOf="@+id/statistics_p_recording_paused"
+        tools:text="@string/sample_text_default_data" />
+
+    <com.google.android.material.textview.MaterialTextView
         android:id="@+id/statistics_p_recording_start"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -178,8 +178,8 @@
         android:text="@string/statistics_sheet_p_recording_start"
         android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
         android:textColor="@color/text_lightweight"
-        app:layout_constraintStart_toStartOf="@+id/statistics_p_velocity"
-        app:layout_constraintTop_toBottomOf="@+id/statistics_p_velocity" />
+        app:layout_constraintStart_toStartOf="@+id/statistics_p_recording_paused"
+        app:layout_constraintTop_toBottomOf="@+id/statistics_p_recording_paused" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/statistics_data_recording_start"
