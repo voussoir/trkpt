@@ -390,7 +390,12 @@ class TrackerService: Service()
         if (trackingState == Keys.STATE_TRACKING_ACTIVE)
         {
             notification_builder.setContentTitle(this.getString(R.string.notification_title_trackbook_running))
-            if (location_interval == Keys.LOCATION_INTERVAL_FULL_POWER)
+            if (location_interval == Keys.LOCATION_INTERVAL_FULL_POWER && arrived_at_home > 0)
+            {
+                notification_builder.setContentTitle("${timestamp} (home)")
+                notification_builder.setSmallIcon(R.drawable.ic_satellite_24dp)
+            }
+            else if (location_interval == Keys.LOCATION_INTERVAL_FULL_POWER)
             {
                 notification_builder.setContentTitle("${timestamp} (recording)")
                 notification_builder.setSmallIcon(R.drawable.ic_satellite_24dp)
