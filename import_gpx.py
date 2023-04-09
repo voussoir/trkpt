@@ -31,7 +31,7 @@ def import_gpx_argparse(args):
             if trkpt.accuracy:
                 accuracy = trkpt.accuracy.text
             else:
-                accuracy = None
+                accuracy = 0
             if trkpt.ele:
                 ele = trkpt.ele.text
             else:
