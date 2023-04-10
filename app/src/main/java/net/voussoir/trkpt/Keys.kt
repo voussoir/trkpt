@@ -64,6 +64,7 @@ object Keys {
     const val PREF_SHOW_DEBUG: String = "prefShowDebug"
     const val PREF_DEVICE_ID: String = "prefDeviceID"
     const val PREF_DATABASE_DIRECTORY: String = "prefDatabaseDirectory"
+    const val PREF_MAX_ACCURACY: String = "prefMaxAccuracy"
 
     // states
     const val STATE_TRACKING_STOPPED: Int = 0
@@ -102,13 +103,13 @@ object Keys {
     const val DEFAULT_ALTITUDE: Double = 0.0
     const val DEFAULT_TIME: Long = 0L
     const val COMMIT_INTERVAL: Long = 30 * ONE_SECOND_IN_MILLISECONDS
-    const val DEFAULT_THRESHOLD_LOCATION_ACCURACY: Int = 30                     // 30 meters
     const val DEFAULT_THRESHOLD_LOCATION_AGE: Long = 5_000_000_000L             // 5s in nanoseconds
     const val DEFAULT_THRESHOLD_DISTANCE: Float = 15f                           // 15 meters
     const val DEFAULT_ZOOM_LEVEL: Double = 16.0
     const val DEFAULT_OMIT_RESTS: Boolean = true
     const val DEFAULT_ALLOW_SLEEP: Boolean = true
     const val DEFAULT_SHOW_DEBUG: Boolean = false
+    const val DEFAULT_MAX_ACCURACY: Float = 30f
 
     // notification
     const val TRACKER_SERVICE_NOTIFICATION_ID: Int = 1

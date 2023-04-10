@@ -106,6 +106,10 @@ object PreferencesHelper
         return sharedPreferences.getBoolean(Keys.PREF_SHOW_DEBUG, Keys.DEFAULT_SHOW_DEBUG)
     }
 
+    fun load_max_accuracy(): Float {
+        return sharedPreferences.getInt(Keys.PREF_MAX_ACCURACY, Keys.DEFAULT_MAX_ACCURACY.toInt() * 10) / 10f
+    }
+
     /* Loads the state of a map */
     fun loadCurrentBestLocation(): Location {
         val provider: String = sharedPreferences.getString(Keys.PREF_CURRENT_BEST_LOCATION_PROVIDER, LocationManager.NETWORK_PROVIDER) ?: LocationManager.NETWORK_PROVIDER

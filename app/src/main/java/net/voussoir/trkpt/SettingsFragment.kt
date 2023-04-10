@@ -32,13 +32,7 @@ import android.provider.Settings
 import android.util.Log
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.preference.EditTextPreference
-import androidx.preference.ListPreference
-import androidx.preference.Preference
-import androidx.preference.PreferenceCategory
-import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.SwitchPreferenceCompat
-import androidx.preference.contains
+import androidx.preference.*
 import get_path_from_uri
 import net.voussoir.trkpt.helpers.AppThemeHelper
 import net.voussoir.trkpt.helpers.LengthUnitHelper
@@ -138,6 +132,23 @@ class SettingsFragment : PreferenceFragmentCompat()
         prefAllowSleep.setDefaultValue(Keys.DEFAULT_ALLOW_SLEEP)
         preferenceCategoryGeneral.contains(prefAllowSleep)
         screen.addPreference(prefAllowSleep)
+
+        val prefMaxAccuracy = SeekBarPreference(activity as Context)
+        prefMaxAccuracy.title = getString(R.string.pref_max_accuracy_title)
+        prefMaxAccuracy.setIcon(R.drawable.ic_bullseye_24dp)
+        prefMaxAccuracy.key = Keys.PREF_MAX_ACCURACY
+        prefMaxAccuracy.summary = getString(R.string.pref_max_accuracy_summary) + "\n${PreferencesHelper.load_max_accuracy()} m"
+        prefMaxAccuracy.showSeekBarValue = true
+        prefMaxAccuracy.min = 0
+        prefMaxAccuracy.max = 500
+        prefMaxAccuracy.setDefaultValue((Keys.DEFAULT_MAX_ACCURACY * 10).toInt())
+        prefMaxAccuracy.setOnPreferenceChangeListener { preference, newValue ->
+            val floated = (newValue as Int) / 10f
+            prefMaxAccuracy.summary = getString(R.string.pref_max_accuracy_summary) + "\n${floated} m"
+            return@setOnPreferenceChangeListener true
+        }
+        preferenceCategoryGeneral.contains(prefMaxAccuracy)
+        screen.addPreference(prefMaxAccuracy)
 
         val prefShowDebug = SwitchPreferenceCompat(activity as Context)
         prefShowDebug.isSingleLineTitle = false

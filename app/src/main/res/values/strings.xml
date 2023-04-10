@@ -125,6 +125,8 @@
     <string name="pref_fork_notice_summary">Thank you y20k.</string>
     <string name="pref_copyright_notice_title">Map data</string>
     <string name="pref_copyright_notice_summary">© OpenStreetMap contributors.</string>
+    <string name="pref_max_accuracy_title">Filter inaccurate points</string>
+    <string name="pref_max_accuracy_summary">Points with accuracy worse than this will be hidden (but still saved). Small numbers are highly accurate.</string>
 
     <!-- Abbreviations -->
     <string name="abbreviation_hours">hrs</string>

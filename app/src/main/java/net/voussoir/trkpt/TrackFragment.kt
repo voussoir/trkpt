@@ -154,6 +154,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             device_id= this.requireArguments().getString(Keys.ARG_TRACK_DEVICE_ID, ""),
             start_time=requested_start_time,
             end_time=requested_end_time,
+            max_accuracy=PreferencesHelper.load_max_accuracy(),
         ))
         rootView = inflater.inflate(R.layout.fragment_track, container, false)
         mapView = rootView.findViewById(R.id.map)
@@ -285,8 +286,9 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 set_datetime(track_query_start_date, track_query_start_time, Date(selected.time), _ending=false)
                 track.load_trkpts(trackbook.database.select_trkpt_start_end(
                     track.device_id,
-                    selected.time,
-                    track.trkpts.last().time,
+                    start_time=selected.time,
+                    end_time=track.trkpts.last().time,
+                    max_accuracy=PreferencesHelper.load_max_accuracy(),
                 ))
                 deselect_trkpt()
                 render_track()
@@ -302,8 +304,9 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 set_datetime(track_query_end_date, track_query_end_time, Date(selected.time), _ending=true)
                 track.load_trkpts(trackbook.database.select_trkpt_start_end(
                     track.device_id,
-                    track.trkpts.first().time,
-                    selected.time,
+                    start_time=track.trkpts.first().time,
+                    end_time=selected.time,
+                    max_accuracy=PreferencesHelper.load_max_accuracy(),
                 ))
                 deselect_trkpt()
                 render_track()
@@ -321,8 +324,9 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 {
                     track.load_trkpts(trackbook.database.select_trkpt_start_end(
                         track.device_id,
-                        (polyline.actualPoints.first() as Trkpt).time,
-                        (polyline.actualPoints.last() as Trkpt).time,
+                        start_time=(polyline.actualPoints.first() as Trkpt).time,
+                        end_time=(polyline.actualPoints.last() as Trkpt).time,
+                        max_accuracy=PreferencesHelper.load_max_accuracy(),
                     ))
 
                     track.expand_to_trkseg_bounds()
@@ -342,6 +346,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 south=mapView.boundingBox.actualSouth,
                 east=mapView.boundingBox.lonEast,
                 west=mapView.boundingBox.lonWest,
+                max_accuracy=PreferencesHelper.load_max_accuracy(),
             ))
             set_datetimes_from_track()
             render_track()
@@ -776,6 +781,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 track.device_id,
                 start_time=get_datetime(track_query_start_date, track_query_start_time, seconds=0).time,
                 end_time=get_datetime(track_query_end_date, track_query_end_time, seconds=59).time,
+                max_accuracy=PreferencesHelper.load_max_accuracy(),
             ))
             Log.i("VOUSSOIR", "TrackFragment.requery_and_render: Reloaded ${track.trkpts.size} trkpts.")
             render_track()

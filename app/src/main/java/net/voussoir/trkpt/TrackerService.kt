@@ -28,8 +28,6 @@ import android.hardware.*
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
-import android.media.AudioManager
-import android.media.ToneGenerator
 import android.os.*
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -48,6 +46,7 @@ class TrackerService: Service()
     var trackingState: Int = Keys.STATE_TRACKING_STOPPED
     var useImperial: Boolean = false
     var omitRests: Boolean = true
+    var max_accuracy: Float = Keys.DEFAULT_MAX_ACCURACY
     var allow_sleep: Boolean = true
     var device_id: String = random_device_id()
     var currentBestLocation: Location = getDefaultLocation()
@@ -318,11 +317,6 @@ class TrackerService: Service()
                     Log.i("VOUSSOIR", "Omitting due to not recent enough.")
                     return
                 }
-                if (! isAccurateEnough(location, Keys.DEFAULT_THRESHOLD_LOCATION_ACCURACY))
-                {
-                    Log.i("VOUSSOIR", "Omitting due to not accurate enough.")
-                    return
-                }
                 if (recent_displacement_locations.isEmpty())
                 {
                     // pass
@@ -341,7 +335,10 @@ class TrackerService: Service()
                 val trkpt = Trkpt(device_id=device_id, location=location)
                 trackbook.database.insert_trkpt(trkpt, commit=false)
 
-                recent_trackpoints_for_mapview.add(trkpt)
+                if (trkpt.accuracy <= max_accuracy)
+                {
+                    recent_trackpoints_for_mapview.add(trkpt)
+                }
                 while (recent_trackpoints_for_mapview.size > RECENT_TRKPT_COUNT)
                 {
                     recent_trackpoints_for_mapview.removeFirst()
@@ -678,6 +675,10 @@ class TrackerService: Service()
             Keys.PREF_OMIT_RESTS ->
             {
                 omitRests = PreferencesHelper.loadOmitRests()
+            }
+            Keys.PREF_MAX_ACCURACY ->
+            {
+                max_accuracy = PreferencesHelper.load_max_accuracy()
             }
             Keys.PREF_ALLOW_SLEEP ->
             {

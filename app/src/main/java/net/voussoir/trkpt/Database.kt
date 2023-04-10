@@ -95,21 +95,31 @@ class Database(val trackbook: Trackbook)
         }
     }
 
-    fun select_trkpt_start_end(device_id: String, start_time: Long, end_time: Long, order: String="ASC"): Iterator<Trkpt>
+    fun select_trkpt_start_end(device_id: String, start_time: Long, end_time: Long, max_accuracy: Float=Keys.DEFAULT_MAX_ACCURACY, order: String="ASC"): Iterator<Trkpt>
     {
         Log.i("VOUSSOIR", "Track.trkpt_generator: Querying points between ${start_time} -- ${end_time}.")
         return _trkpt_generator(this.connection.rawQuery(
-            "SELECT device_id, lat, lon, time, provider, ele, accuracy, sat FROM trkpt WHERE device_id = ? AND time >= ? AND time <= ? ORDER BY time ${order}",
-            arrayOf(device_id, start_time.toString(), end_time.toString())
+            """
+            SELECT device_id, lat, lon, time, provider, ele, accuracy, sat
+            FROM trkpt
+            WHERE device_id = ? AND time >= ? AND time <= ? AND accuracy <= ?
+            ORDER BY time ${order}
+            """,
+            arrayOf(device_id, start_time.toString(), end_time.toString(), max_accuracy.toString())
         ))
     }
 
-    fun select_trkpt_bounding_box(device_id: String, north: Double, south: Double, east: Double, west: Double): Iterator<Trkpt>
+    fun select_trkpt_bounding_box(device_id: String, north: Double, south: Double, east: Double, west: Double, max_accuracy: Float=Keys.DEFAULT_MAX_ACCURACY): Iterator<Trkpt>
     {
         Log.i("VOUSSOIR", "Track.trkpt_generator: Querying points between $north, $south, $east, $west.")
         return _trkpt_generator(this.connection.rawQuery(
-            "SELECT device_id, lat, lon, time, provider, ele, accuracy, sat FROM trkpt WHERE device_id = ? AND lat >= ? AND lat <= ? AND lon >= ? AND lon <= ? ORDER BY time ASC",
-            arrayOf(device_id, south.toString(), north.toString(), west.toString(), east.toString())
+            """
+            SELECT device_id, lat, lon, time, provider, ele, accuracy, sat
+            FROM trkpt
+            WHERE device_id = ? AND lat >= ? AND lat <= ? AND lon >= ? AND lon <= ? AND accuracy <= ?
+            ORDER BY time ASC
+            """,
+            arrayOf(device_id, south.toString(), north.toString(), west.toString(), east.toString(), max_accuracy.toString())
         ))
     }
 
