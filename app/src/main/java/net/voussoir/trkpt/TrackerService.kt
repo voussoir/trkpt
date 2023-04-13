@@ -292,6 +292,7 @@ class TrackerService: Service()
                     {
                         Log.i("VOUSSOIR", "Arrived at home.")
                         arrived_at_home = System.currentTimeMillis()
+                        trackbook.database.commit()
                     }
                     else if (
                         allow_sleep &&
