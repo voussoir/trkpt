@@ -638,21 +638,34 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
 
     fun straighten_points(a: Trkpt, b: Trkpt)
     {
+        val al = a.toLocation()
+        val bl = b.toLocation()
         val subtrack = Track(track.database, track.device_id)
         subtrack.load_trkpts(trackbook.database.select_trkpt_start_end(
             track.device_id,
             start_time=min(a.time, b.time),
             end_time=max(a.time, b.time),
+            max_accuracy=PreferencesHelper.load_max_accuracy(),
         ))
-        val lat_step = (b.latitude - a.latitude) / (b.time - a.time)
-        val lon_step = (b.longitude - a.longitude) / (b.time - a.time)
-        val ele_step = (b.altitude - a.altitude) / (b.time - a.time)
+        val lat_span = b.latitude - a.latitude
+        val lon_span = b.longitude - a.longitude
+        val ele_span = b.altitude - a.altitude
         for (trkpt in subtrack.trkpts)
         {
-            val index = trkpt.time - a.time
-            trkpt.latitude = a.latitude + (index  * lat_step)
-            trkpt.longitude = a.longitude + (index * lon_step)
-            trkpt.altitude = a.altitude + (index * ele_step)
+            val new_location = Location("test")
+            val tl = trkpt.toLocation()
+            val dist_a = tl.distanceTo(al)
+            val dist_b = tl.distanceTo(bl)
+            val proportion = dist_a / (dist_a + dist_b)
+            new_location.latitude = a.latitude + (lat_span * proportion)
+            new_location.longitude = a.longitude + (lon_span * proportion)
+            if (trkpt.toLocation().distanceTo(new_location) > 30.0)
+            {
+                continue
+            }
+            trkpt.latitude = new_location.latitude
+            trkpt.longitude = new_location.longitude
+            trkpt.altitude = a.altitude + (ele_span * proportion)
             trackbook.database.update_trkpt(trkpt, commit=false)
         }
         trackbook.database.commit()
