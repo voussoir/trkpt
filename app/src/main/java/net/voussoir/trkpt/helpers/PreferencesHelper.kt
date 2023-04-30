@@ -75,7 +75,7 @@ object PreferencesHelper
     }
 
     fun loadTrackingState(): Int {
-        return sharedPreferences.getInt(Keys.PREF_TRACKING_STATE, Keys.STATE_TRACKING_STOPPED)
+        return sharedPreferences.getInt(Keys.PREF_TRACKING_STATE, Keys.STATE_STOP)
     }
 
     fun saveTrackingState(trackingState: Int) {

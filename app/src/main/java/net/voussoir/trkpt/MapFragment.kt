@@ -203,9 +203,9 @@ class MapFragment : Fragment()
             {
                 return@setOnClickListener
             }
-            if (tracker.trackingState == Keys.STATE_TRACKING_ACTIVE)
+            if (tracker.tracking_state != Keys.STATE_STOP && tracker.tracking_state != Keys.STATE_MAPVIEW)
             {
-                tracker.stopTracking()
+                tracker.state_mapview()
             }
             else
             {
@@ -276,10 +276,10 @@ class MapFragment : Fragment()
             return
         }
         saveBestLocationState(tracker.currentBestLocation)
-        if (bound && tracker.trackingState != Keys.STATE_TRACKING_ACTIVE)
+        if (bound && (tracker.tracking_state == Keys.STATE_MAPVIEW || tracker.tracking_state == Keys.STATE_STOP))
         {
-            tracker.removeGpsLocationListener()
-            tracker.removeNetworkLocationListener()
+            tracker.remove_gps_location_listener()
+            tracker.remove_network_location_listener()
             tracker.trackbook.database.commit()
         }
         handler.removeCallbacks(redraw_runnable)
@@ -350,7 +350,7 @@ class MapFragment : Fragment()
         }
         if (trackerService != null)
         {
-            trackerService!!.startTracking()
+            trackerService!!.state_full_recording()
         }
     }
 
@@ -413,19 +413,13 @@ class MapFragment : Fragment()
         val newMarker: Drawable
         val fillcolor: Int
         val description: String
-        if (tracker.listeners_enabled_at == 0L)
-        {
-            fillcolor = Color.argb(64, 0, 0, 0)
-            newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_skull_24dp)!!
-            description = "No location listeners are enabled"
-        }
-        else if (tracker.trackingState == Keys.STATE_TRACKING_ACTIVE && tracker.location_interval == Keys.LOCATION_INTERVAL_DEAD)
+        if (tracker.tracking_state == Keys.STATE_DEAD)
         {
             fillcolor = Color.argb(64, 0, 0, 0)
             newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_skull_24dp)!!
             description = "GPS is struggling; disabled until movement"
         }
-        else if (tracker.trackingState == Keys.STATE_TRACKING_ACTIVE && tracker.location_interval == Keys.LOCATION_INTERVAL_SLEEP)
+        else if (tracker.tracking_state == Keys.STATE_SLEEP)
         {
             fillcolor = Color.argb(64, 220, 61, 51)
             newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_sleep_24dp)!!
@@ -437,7 +431,7 @@ class MapFragment : Fragment()
             newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_black_24dp)!!
             description = "GPS tracking at full power"
         }
-        else if (tracker.trackingState == Keys.STATE_TRACKING_ACTIVE)
+        else if (tracker.tracking_state == Keys.STATE_FULL_RECORDING || tracker.tracking_state == Keys.STATE_ARRIVED_AT_HOME)
         {
             fillcolor = Color.argb(64, 220, 61, 51)
             newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_red_24dp)!!
@@ -591,13 +585,13 @@ class MapFragment : Fragment()
             mainButton.text = requireContext().getString(R.string.button_not_ready)
             mainButton.icon = null
         }
-        else if (tracker == null || tracker.trackingState == Keys.STATE_TRACKING_STOPPED)
+        else if (tracker == null || tracker.tracking_state == Keys.STATE_STOP || tracker.tracking_state == Keys.STATE_MAPVIEW)
         {
             mainButton.setIconResource(R.drawable.ic_fiber_manual_record_inactive_24dp)
             mainButton.text = requireContext().getString(R.string.button_start)
             mainButton.contentDescription = requireContext().getString(R.string.descr_button_start)
         }
-        else if (tracker.trackingState == Keys.STATE_TRACKING_ACTIVE)
+        else
         {
             mainButton.setIconResource(R.drawable.ic_fiber_manual_stop_24dp)
             mainButton.text = requireContext().getString(R.string.button_pause)
@@ -672,11 +666,13 @@ class MapFragment : Fragment()
         if (show_debug)
         {
             map_current_time.text = """
+                state: ${state_name()}
                   now: ${iso8601_local_noms(System.currentTimeMillis())}
              location: ${iso8601_local_noms(tracker.currentBestLocation.time)}
             listeners: ${iso8601_local_noms(tracker.listeners_enabled_at)}
                motion: ${iso8601_local_noms(tracker.last_significant_motion)}
              watchdog: ${iso8601_local_noms(tracker.last_watchdog)}
+                 home: ${iso8601_local_noms(tracker.arrived_at_home)}
                  died: ${iso8601_local_noms(tracker.gave_up_at)}
                 power: ${tracker.device_is_charging}
              wakelock: ${tracker.wakelock.isHeld}
@@ -688,6 +684,25 @@ class MapFragment : Fragment()
         }
 
         mapView.invalidate()
+    }
+
+    fun state_name(): String
+    {
+        val tracker = trackerService
+        if (tracker == null)
+        {
+            return "null"
+        }
+        return when (tracker.tracking_state)
+        {
+            Keys.STATE_STOP -> "stop"
+            Keys.STATE_FULL_RECORDING -> "recording"
+            Keys.STATE_ARRIVED_AT_HOME -> "home"
+            Keys.STATE_SLEEP -> "sleep"
+            Keys.STATE_DEAD -> "dead"
+            Keys.STATE_MAPVIEW -> "mapview"
+            else -> tracker.tracking_state.toString()
+        }
     }
 
     val redraw_runnable: Runnable = object : Runnable

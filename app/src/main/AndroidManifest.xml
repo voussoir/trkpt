@@ -53,18 +53,6 @@
             </intent-filter>
         </service>
 
-        <!-- TRACKING TOGGLE SERVICE SYSTEM QUICK SETTINGS -->
-        <service
-            android:name="net.voussoir.trkpt.TrackingToggleTileService"
-            android:label="@string/quick_settings_tile_title_default"
-            android:icon="@drawable/ic_notification_icon_small_24dp"
-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
-            android:exported="true">
-        <intent-filter>
-                <action android:name="android.service.quicksettings.action.QS_TILE" />
-            </intent-filter>
-        </service>
-
         <!-- FILE PROVIDER GPX -->
         <provider
             android:name="androidx.core.content.FileProvider"

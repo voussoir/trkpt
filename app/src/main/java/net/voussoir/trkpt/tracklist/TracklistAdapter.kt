@@ -30,6 +30,7 @@ import net.voussoir.trkpt.Keys
 import net.voussoir.trkpt.R
 import net.voussoir.trkpt.Database
 import net.voussoir.trkpt.Track
+import net.voussoir.trkpt.helpers.PreferencesHelper
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -53,9 +54,10 @@ class TracklistAdapter(val fragment: Fragment, val database: Database) : Recycle
         {
             return
         }
+        val max_accuracy = PreferencesHelper.load_max_accuracy()
         val cursor: Cursor = database.connection.rawQuery(
-            "SELECT distinct(date(time/1000, 'unixepoch', 'localtime')) as thedate, device_id FROM trkpt ORDER BY thedate DESC",
-            arrayOf()
+            "SELECT distinct(date(time/1000, 'unixepoch', 'localtime')) as thedate, device_id FROM trkpt WHERE accuracy <= ? ORDER BY thedate DESC",
+            arrayOf(max_accuracy.toString())
         )
         try
         {

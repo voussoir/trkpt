@@ -43,20 +43,20 @@ class TrackerService: Service()
     lateinit var trackbook: Trackbook
     val handler: Handler = Handler(Looper.getMainLooper())
 
-    var trackingState: Int = Keys.STATE_TRACKING_STOPPED
+    var tracking_state: Int = Keys.STATE_STOP
     var useImperial: Boolean = false
     var omitRests: Boolean = true
     var max_accuracy: Float = Keys.DEFAULT_MAX_ACCURACY
     var allow_sleep: Boolean = true
     var device_id: String = random_device_id()
     var currentBestLocation: Location = getDefaultLocation()
-    var lastCommit: Long = 0
+    var last_commit: Long = 0
+    var foreground_started: Long = 0
     var listeners_enabled_at: Long = 0
     var last_significant_motion: Long = 0
     var last_watchdog: Long = 0
     var gave_up_at: Long = 0
     var arrived_at_home: Long = 0
-    var location_interval: Long = 0
     val TIME_UNTIL_SLEEP: Long = 5 * Keys.ONE_MINUTE_IN_MILLISECONDS
     val TIME_UNTIL_DEAD: Long = 3 * Keys.ONE_MINUTE_IN_MILLISECONDS
     val WATCHDOG_INTERVAL: Long = 61 * Keys.ONE_SECOND_IN_MILLISECONDS
@@ -67,7 +67,7 @@ class TrackerService: Service()
     var bound: Boolean = false
     private val binder = TrackerServiceBinder(this)
 
-    private lateinit var notificationManager: NotificationManager
+    private lateinit var notification_manager: NotificationManager
     private lateinit var notification_builder: NotificationCompat.Builder
 
     private lateinit var locationManager: LocationManager
@@ -90,7 +90,7 @@ class TrackerService: Service()
 
     lateinit var wakelock: PowerManager.WakeLock
 
-    private fun addGpsLocationListener(interval: Long): Boolean
+    private fun add_gps_location_listener(interval: Long): Boolean
     {
         gpsLocationListenerRegistered = false
         gpsProviderActive = isGpsEnabled(locationManager)
@@ -118,7 +118,7 @@ class TrackerService: Service()
         return true
     }
 
-    private fun addNetworkLocationListener(interval: Long): Boolean
+    private fun add_network_location_listener(interval: Long): Boolean
     {
         networkLocationListenerRegistered = false
         networkProviderActive = isNetworkEnabled(locationManager)
@@ -146,7 +146,7 @@ class TrackerService: Service()
         return true
     }
 
-    fun removeGpsLocationListener()
+    fun remove_gps_location_listener()
     {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
         {
@@ -160,7 +160,7 @@ class TrackerService: Service()
         }
     }
 
-    fun removeNetworkLocationListener()
+    fun remove_network_location_listener()
     {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
         {
@@ -174,67 +174,171 @@ class TrackerService: Service()
         }
     }
 
+    fun load_tracking_state()
+    {
+        tracking_state = PreferencesHelper.loadTrackingState()
+        when (tracking_state)
+        {
+            Keys.STATE_STOP -> state_stop()
+            Keys.STATE_MAPVIEW -> state_mapview()
+            Keys.STATE_FULL_RECORDING -> state_full_recording()
+            Keys.STATE_ARRIVED_AT_HOME -> state_arrived_at_home()
+            Keys.STATE_SLEEP -> state_sleep()
+            Keys.STATE_DEAD -> state_dead()
+        }
+    }
+
+    fun state_stop()
+    {
+        // This state is activated when the user intentionally stops the recording, or exits the
+        // mapfragment without starting to record.
+        Log.i("VOUSSOIR", "TrackerService.state_stop")
+        tracking_state = Keys.STATE_STOP
+        PreferencesHelper.saveTrackingState(tracking_state)
+        reset_location_listeners(Keys.LOCATION_INTERVAL_STOP)
+        trackbook.database.commit()
+        recent_displacement_locations.clear()
+        arrived_at_home = 0
+        gave_up_at = 0
+        if (foreground_started > 0)
+        {
+            stopForeground(STOP_FOREGROUND_DETACH)
+            foreground_started = 0
+        }
+        stop_wakelock()
+        displayNotification()
+    }
+    fun state_full_recording()
+    {
+        // This state is the only one that will record points into the database, and tracks location
+        // at full power. A wakelock is used to resist Android's doze. This state should be active
+        // while out and about.
+        Log.i("VOUSSOIR", "TrackerService.state_full_power")
+        tracking_state = Keys.STATE_FULL_RECORDING
+        PreferencesHelper.saveTrackingState(tracking_state)
+        reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
+        arrived_at_home = 0
+        gave_up_at = 0
+        if (foreground_started == 0L)
+        {
+            startForeground(Keys.TRACKER_SERVICE_NOTIFICATION_ID, displayNotification())
+            foreground_started = System.currentTimeMillis()
+        }
+        if (gpsLocationListenerRegistered || networkLocationListenerRegistered)
+        {
+            start_wakelock()
+        }
+        else
+        {
+            state_dead()
+        }
+        displayNotification()
+    }
+    fun state_arrived_at_home()
+    {
+        // This state is activated when the user enters the radius of a homepoint. The GPS will
+        // remain at full power for a few minutes before we transition to sleep.
+        Log.i("VOUSSOIR", "TrackerService.state_arrived_at_home")
+        tracking_state = Keys.STATE_ARRIVED_AT_HOME
+        PreferencesHelper.saveTrackingState(tracking_state)
+        reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
+        trackbook.database.commit()
+        arrived_at_home = System.currentTimeMillis()
+        gave_up_at = 0
+        stop_wakelock()
+        displayNotification()
+    }
+    fun state_sleep()
+    {
+        // This state is activated when the user stays at a homepoint for several minutes. It will
+        // be woken up again by the acceleromters or by plugging / unplugging power.
+        Log.i("VOUSSOIR", "TrackerService.state_sleep")
+        tracking_state = Keys.STATE_SLEEP
+        PreferencesHelper.saveTrackingState(tracking_state)
+        reset_location_listeners(Keys.LOCATION_INTERVAL_SLEEP)
+        arrived_at_home = arrived_at_home
+        gave_up_at = 0
+        stop_wakelock()
+        displayNotification()
+    }
+    fun state_dead()
+    {
+        // This state is activated when the device is struggling to receive a GPS fix due to being
+        // indoors / underground. It will be woken up again by the accelerometers or by plugging /
+        // unplugging power.
+        Log.i("VOUSSOIR", "TrackerService.state_dead")
+        tracking_state = Keys.STATE_DEAD
+        PreferencesHelper.saveTrackingState(tracking_state)
+        reset_location_listeners(Keys.LOCATION_INTERVAL_STOP)
+        trackbook.database.commit()
+        recent_displacement_locations.clear()
+        arrived_at_home = 0
+        gave_up_at = System.currentTimeMillis()
+        stop_wakelock()
+        displayNotification()
+    }
+    fun state_mapview()
+    {
+        // This state should be activated when the user has the app open to the mapfragment, but is
+        // not recording. If the user closes the app while in this state, we can go to stop.
+        Log.i("VOUSSOIR", "TrackerService.state_mapview")
+        tracking_state = Keys.STATE_MAPVIEW
+        PreferencesHelper.saveTrackingState(tracking_state)
+        reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
+        arrived_at_home = 0
+        gave_up_at = 0
+        stop_wakelock()
+        displayNotification()
+        if (!gpsLocationListenerRegistered && !networkLocationListenerRegistered)
+        {
+            state_dead()
+        }
+    }
+
+    fun start_wakelock()
+    {
+        if (!wakelock.isHeld)
+        {
+            wakelock.acquire()
+        }
+    }
+
+    fun stop_wakelock()
+    {
+        if (wakelock.isHeld)
+        {
+            wakelock.release()
+        }
+    }
+
     fun reset_location_listeners(interval: Long)
     {
         Log.i("VOUSSOIR", "TrackerService.reset_location_listeners")
-        location_interval = interval
-        if (use_gps_location && interval != Keys.LOCATION_INTERVAL_DEAD && interval != Keys.LOCATION_INTERVAL_STOP)
+        if (use_gps_location && interval != Keys.LOCATION_INTERVAL_STOP)
         {
-            addGpsLocationListener(interval)
+            add_gps_location_listener(interval)
         }
         else if (gpsLocationListenerRegistered)
         {
-            removeGpsLocationListener()
+            remove_gps_location_listener()
         }
-        if (use_network_location && interval != Keys.LOCATION_INTERVAL_DEAD && interval != Keys.LOCATION_INTERVAL_STOP)
+        if (use_network_location && interval != Keys.LOCATION_INTERVAL_STOP)
         {
-            addNetworkLocationListener(interval)
+            add_network_location_listener(interval)
         }
         else if (networkLocationListenerRegistered)
         {
-            removeNetworkLocationListener()
-        }
-
-        if (interval != Keys.LOCATION_INTERVAL_DEAD)
-        {
-            gave_up_at = 0
+            remove_network_location_listener()
         }
 
         if (gpsLocationListenerRegistered || networkLocationListenerRegistered)
         {
             listeners_enabled_at = System.currentTimeMillis()
-            if (interval != Keys.LOCATION_INTERVAL_SLEEP)
-            {
-                arrived_at_home = 0
-            }
-        }
-        else if (interval == Keys.LOCATION_INTERVAL_STOP)
-        {
-            listeners_enabled_at = 0
         }
         else
         {
             listeners_enabled_at = 0
-            location_interval = Keys.LOCATION_INTERVAL_DEAD
         }
-
-        val should_wakelock = (
-            (gpsLocationListenerRegistered || networkLocationListenerRegistered) &&
-            trackingState == Keys.STATE_TRACKING_ACTIVE &&
-            interval == Keys.LOCATION_INTERVAL_FULL_POWER
-        )
-        if (should_wakelock)
-        {
-            if (! wakelock.isHeld)
-            {
-                wakelock.acquire()
-            }
-        }
-        else if (wakelock.isHeld)
-        {
-            wakelock.release()
-        }
-
         displayNotification()
     }
 
@@ -253,10 +357,11 @@ class TrackerService: Service()
 
                 currentBestLocation = location
 
-                if (trackingState != Keys.STATE_TRACKING_ACTIVE)
+                if (tracking_state == Keys.STATE_STOP || tracking_state == Keys.STATE_MAPVIEW)
                 {
                     return
                 }
+
                 if(! trackbook.database.ready)
                 {
                     Log.i("VOUSSOIR", "Omitting due to database not ready.")
@@ -283,34 +388,43 @@ class TrackerService: Service()
                         continue
                     }
                     Log.i("VOUSSOIR", "Omitting due to homepoint ${index} ${homepoint.name}.")
+
+                    // Move this homepoint to the front of the list so that on subsequent location
+                    // updates it hits on the first loop. I'm sure this is a trivial amount of
+                    // savings but oh well.
                     if (index > 0)
                     {
                         trackbook.homepoints.remove(homepoint)
                         trackbook.homepoints.addFirst(homepoint)
                     }
-                    if (arrived_at_home == 0L)
+                    if (tracking_state != Keys.STATE_ARRIVED_AT_HOME && tracking_state != Keys.STATE_SLEEP)
                     {
                         Log.i("VOUSSOIR", "Arrived at home.")
-                        arrived_at_home = System.currentTimeMillis()
-                        trackbook.database.commit()
+                        state_arrived_at_home()
                     }
                     else if (
                         allow_sleep &&
                         has_motion_sensor &&
-                        location_interval != Keys.LOCATION_INTERVAL_SLEEP &&
+                        tracking_state == Keys.STATE_ARRIVED_AT_HOME &&
                         (System.currentTimeMillis() - arrived_at_home) > TIME_UNTIL_SLEEP &&
                         (System.currentTimeMillis() - last_significant_motion) > TIME_UNTIL_SLEEP
                     )
                     {
                         Log.i("VOUSSOIR", "Staying at home, sleeping.")
-                        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_SLEEP)
+                        state_sleep()
                     }
                     return
                 }
-                if (arrived_at_home > 0)
+
+                // All of the homepoint checks failed so we have left home and it's time to wake up.
+                // In practice we expect that the accelerometers would have triggered this change
+                // already, but this acts as a backup in case you somehow leave home without too
+                // much movement (maybe you sat in the car for several minutes before finally
+                // driving away or something).
+                if (tracking_state == Keys.STATE_ARRIVED_AT_HOME || tracking_state == Keys.STATE_SLEEP)
                 {
                     Log.i("VOUSSOIR", "Leaving home.")
-                    reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
+                    state_full_recording()
                 }
 
                 if (! isRecentEnough(location))
@@ -351,10 +465,10 @@ class TrackerService: Service()
                     recent_displacement_locations.removeFirst()
                 }
 
-                if (location.time - lastCommit > Keys.COMMIT_INTERVAL)
+                if ((location.time - last_commit) > Keys.COMMIT_INTERVAL)
                 {
                     trackbook.database.commit()
-                    lastCommit  = location.time
+                    last_commit  = location.time
                 }
             }
             override fun onProviderEnabled(provider: String)
@@ -385,43 +499,34 @@ class TrackerService: Service()
         }
 
         val timestamp = iso8601_local_noms(currentBestLocation.time)
-        if (trackingState == Keys.STATE_TRACKING_ACTIVE)
+        if (tracking_state == Keys.STATE_FULL_RECORDING)
         {
-            notification_builder.setContentTitle(this.getString(R.string.notification_title_trackbook_running))
-            if (location_interval == Keys.LOCATION_INTERVAL_FULL_POWER && arrived_at_home > 0)
-            {
-                notification_builder.setContentTitle("${timestamp} (home)")
-                notification_builder.setSmallIcon(R.drawable.ic_satellite_24dp)
-            }
-            else if (location_interval == Keys.LOCATION_INTERVAL_FULL_POWER)
-            {
-                notification_builder.setContentTitle("${timestamp} (recording)")
-                notification_builder.setSmallIcon(R.drawable.ic_satellite_24dp)
-            }
-            else if (location_interval == Keys.LOCATION_INTERVAL_SLEEP)
-            {
-                notification_builder.setContentTitle("${timestamp} (sleeping)")
-                notification_builder.setSmallIcon(R.drawable.ic_sleep_24dp)
-            }
-            else if (location_interval == Keys.LOCATION_INTERVAL_DEAD)
-            {
-                notification_builder.setContentTitle("${timestamp} (dead)")
-                notification_builder.setSmallIcon(R.drawable.ic_skull_24dp)
-            }
-            else
-            {
-                notification_builder.setContentText(timestamp)
-                notification_builder.setSmallIcon(R.drawable.ic_fiber_manual_record_inactive_24dp)
-            }
+            notification_builder.setContentTitle("${timestamp} (recording)")
+            notification_builder.setSmallIcon(R.drawable.ic_satellite_24dp)
         }
-        else
+        else if (tracking_state == Keys.STATE_ARRIVED_AT_HOME)
+        {
+            notification_builder.setContentTitle("${timestamp} (home)")
+            notification_builder.setSmallIcon(R.drawable.ic_homepoint_24dp)
+        }
+        else if (tracking_state == Keys.STATE_SLEEP)
+        {
+            notification_builder.setContentTitle("${timestamp} (sleeping)")
+            notification_builder.setSmallIcon(R.drawable.ic_sleep_24dp)
+        }
+        else if (tracking_state == Keys.STATE_DEAD)
+        {
+            notification_builder.setContentTitle("${timestamp} (dead)")
+            notification_builder.setSmallIcon(R.drawable.ic_skull_24dp)
+        }
+        else if (tracking_state == Keys.STATE_STOP || tracking_state == Keys.STATE_MAPVIEW)
         {
             notification_builder.setContentTitle("${timestamp} (stopped)")
             notification_builder.setSmallIcon(R.drawable.ic_fiber_manual_stop_24dp)
         }
 
         val notification = notification_builder.build()
-        notificationManager.notify(Keys.TRACKER_SERVICE_NOTIFICATION_ID, notification)
+        notification_manager.notify(Keys.TRACKER_SERVICE_NOTIFICATION_ID, notification)
         return notification
     }
 
@@ -430,7 +535,7 @@ class TrackerService: Service()
 
     /* Checks if notification channel exists */
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun nowPlayingChannelExists() = notificationManager.getNotificationChannel(Keys.NOTIFICATION_CHANNEL_RECORDING) != null
+    private fun nowPlayingChannelExists() = notification_manager.getNotificationChannel(Keys.NOTIFICATION_CHANNEL_RECORDING) != null
 
     /* Create a notification channel */
     @RequiresApi(Build.VERSION_CODES.O)
@@ -441,18 +546,21 @@ class TrackerService: Service()
             this.getString(R.string.notification_channel_recording_name),
             NotificationManager.IMPORTANCE_LOW
         ).apply { description = this@TrackerService.getString(R.string.notification_channel_recording_description) }
-        notificationManager.createNotificationChannel(notificationChannel)
+        notification_manager.createNotificationChannel(notificationChannel)
     }
 
     /* Overrides onBind from Service */
     override fun onBind(p0: Intent?): IBinder
     {
         Log.i("VOUSSOIR", "TrackerService.onBind")
-        if (listeners_enabled_at == 0L && location_interval != Keys.LOCATION_INTERVAL_DEAD)
+        if (tracking_state == Keys.STATE_STOP)
         {
-            reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
+            state_mapview()
         }
-        displayNotification()
+        else
+        {
+            displayNotification()
+        }
         bound = true
         return binder
     }
@@ -461,11 +569,14 @@ class TrackerService: Service()
     override fun onRebind(intent: Intent?)
     {
         Log.i("VOUSSOIR", "TrackerService.onRebind")
-        if (listeners_enabled_at == 0L && location_interval != Keys.LOCATION_INTERVAL_DEAD)
+        if (tracking_state == Keys.STATE_STOP)
         {
-            reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
+            state_mapview()
         }
-        displayNotification()
+        else
+        {
+            displayNotification()
+        }
         bound = true
     }
 
@@ -475,10 +586,11 @@ class TrackerService: Service()
         super.onUnbind(intent)
         Log.i("VOUSSOIR", "TrackerService.onUnbind")
         bound = false
-        // stop receiving location updates - if not tracking
-        if (trackingState != Keys.STATE_TRACKING_ACTIVE)
+
+        // the user was only perusing the map and did not start recording, so we'll just stop.
+        if (tracking_state == Keys.STATE_MAPVIEW)
         {
-            reset_location_listeners(interval=Keys.LOCATION_INTERVAL_STOP)
+            state_stop()
         }
         // ensures onRebind is called
         return true
@@ -498,9 +610,10 @@ class TrackerService: Service()
         device_id = PreferencesHelper.load_device_id()
         useImperial = PreferencesHelper.loadUseImperialUnits()
         omitRests = PreferencesHelper.loadOmitRests()
+        max_accuracy = PreferencesHelper.load_max_accuracy()
         allow_sleep = PreferencesHelper.loadAllowSleep()
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notification_manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notification_builder = NotificationCompat.Builder(this, Keys.NOTIFICATION_CHANNEL_RECORDING)
         val showActionPendingIntent: PendingIntent? = TaskStackBuilder.create(this).run {
             addNextIntentWithParentStack(Intent(this@TrackerService, MainActivity::class.java))
@@ -512,7 +625,6 @@ class TrackerService: Service()
         networkProviderActive = isNetworkEnabled(locationManager)
         gpsLocationListener = createLocationListener()
         networkLocationListener = createLocationListener()
-        trackingState = PreferencesHelper.loadTrackingState()
         currentBestLocation = getLastKnownLocation(this)
         PreferencesHelper.registerPreferenceChangeListener(sharedPreferenceChangeListener)
 
@@ -526,10 +638,10 @@ class TrackerService: Service()
                 override fun onTrigger(event: TriggerEvent?) {
                     Log.i("VOUSSOIR", "Significant motion")
                     last_significant_motion = System.currentTimeMillis()
-                    if (trackingState == Keys.STATE_TRACKING_ACTIVE && location_interval != Keys.LOCATION_INTERVAL_FULL_POWER)
+                    if (tracking_state == Keys.STATE_SLEEP || tracking_state == Keys.STATE_DEAD)
                     {
                         vibrator.vibrate(100)
-                        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
+                        state_full_recording()
                     }
                     sensor_manager.requestTriggerSensor(this, significant_motion_sensor)
                 }
@@ -546,11 +658,10 @@ class TrackerService: Service()
                 override fun onSensorChanged(event: SensorEvent?) {
                     Log.i("VOUSSOIR", "Step counter changed")
                     last_significant_motion = System.currentTimeMillis()
-                    if (trackingState == Keys.STATE_TRACKING_ACTIVE && location_interval != Keys.LOCATION_INTERVAL_FULL_POWER)
+                    if (tracking_state == Keys.STATE_SLEEP || tracking_state == Keys.STATE_DEAD)
                     {
-                        // beeper.startTone(ToneGenerator.TONE_PROP_ACK, 150)
                         vibrator.vibrate(100)
-                        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
+                        state_full_recording()
                     }
                 }
 
@@ -574,9 +685,9 @@ class TrackerService: Service()
                 {
                     device_is_charging = false
                 }
-                if (trackingState == Keys.STATE_TRACKING_ACTIVE)
+                if (tracking_state == Keys.STATE_SLEEP || tracking_state == Keys.STATE_DEAD)
                 {
-                    reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
+                    state_full_recording()
                 }
             }
         }
@@ -588,6 +699,7 @@ class TrackerService: Service()
         val powermanager = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakelock = powermanager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "trkpt::wakelock")
 
+        load_tracking_state()
         handler.post(background_watchdog)
     }
 
@@ -599,19 +711,19 @@ class TrackerService: Service()
         // SERVICE RESTART (via START_STICKY)
         if (intent == null)
         {
-            if (trackingState == Keys.STATE_TRACKING_ACTIVE)
+            if (tracking_state != Keys.STATE_STOP && tracking_state != Keys.STATE_MAPVIEW)
             {
                 Log.w("VOUSSOIR", "Trackbook has been killed by the operating system. Trying to resume recording.")
-                startTracking()
+                state_full_recording()
             }
         }
         else if (intent.action == Keys.ACTION_STOP)
         {
-            stopTracking()
+            state_stop()
         }
         else if (intent.action == Keys.ACTION_START)
         {
-            startTracking()
+            state_full_recording()
         }
 
         // START_STICKY is used for services that are explicitly started and stopped as needed
@@ -623,37 +735,10 @@ class TrackerService: Service()
     {
         Log.i("VOUSSOIR", "TrackerService.onDestroy.")
         super.onDestroy()
-        if (trackingState == Keys.STATE_TRACKING_ACTIVE)
-        {
-            stopTracking()
-        }
-        stopForeground(STOP_FOREGROUND_REMOVE)
+        state_stop()
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
-        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_DEAD)
         handler.removeCallbacks(background_watchdog)
         unregisterReceiver(charging_broadcast_receiver)
-    }
-
-    fun startTracking()
-    {
-        Log.i("VOUSSOIR", "TrackerService.startTracking")
-        trackingState = Keys.STATE_TRACKING_ACTIVE
-        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
-        PreferencesHelper.saveTrackingState(trackingState)
-        recent_displacement_locations.clear()
-        startForeground(Keys.TRACKER_SERVICE_NOTIFICATION_ID, displayNotification())
-    }
-
-    fun stopTracking()
-    {
-        Log.i("VOUSSOIR", "TrackerService.stopTracking")
-        trackbook.database.commit()
-        trackingState = Keys.STATE_TRACKING_STOPPED
-        reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
-        PreferencesHelper.saveTrackingState(trackingState)
-        recent_displacement_locations.clear()
-        displayNotification()
-        stopForeground(STOP_FOREGROUND_DETACH)
     }
 
     private val sharedPreferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
@@ -662,12 +747,12 @@ class TrackerService: Service()
             Keys.PREF_LOCATION_GPS ->
             {
                 use_gps_location = PreferencesHelper.load_location_gps()
-                reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
+                state_full_recording()
             }
             Keys.PREF_LOCATION_NETWORK ->
             {
                 use_network_location = PreferencesHelper.load_location_network()
-                reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
+                state_full_recording()
             }
             Keys.PREF_USE_IMPERIAL_UNITS ->
             {
@@ -684,9 +769,9 @@ class TrackerService: Service()
             Keys.PREF_ALLOW_SLEEP ->
             {
                 allow_sleep = PreferencesHelper.loadAllowSleep()
-                if (! allow_sleep && trackingState == Keys.STATE_TRACKING_ACTIVE && location_interval != Keys.LOCATION_INTERVAL_FULL_POWER)
+                if (! allow_sleep && (tracking_state == Keys.STATE_SLEEP || tracking_state == Keys.STATE_DEAD))
                 {
-                    reset_location_listeners(interval=Keys.LOCATION_INTERVAL_FULL_POWER)
+                    state_full_recording()
                 }
             }
             Keys.PREF_DEVICE_ID ->
@@ -723,21 +808,19 @@ class TrackerService: Service()
                 has_motion_sensor &&
                 !device_is_charging &&
                 // We only go to dead during active tracking because if you are looking at the
-                // device in non-tracking mode you are probably waiting for your signal to recover.
-                trackingState == Keys.STATE_TRACKING_ACTIVE &&
+                // device in mapview state you are probably waiting for your signal to recover.
                 // We only go to dead from full power because in the sleep state, the wakelock is
                 // turned off and the device may go into doze. During doze, the device stops
                 // updating the location listeners anyway, so there is no benefit in going to dead.
                 // When the user interacts with the device and it leaves doze, it's better to come
                 // from sleep state than dead state.
-                location_interval == Keys.LOCATION_INTERVAL_FULL_POWER &&
+                tracking_state == Keys.STATE_FULL_RECORDING &&
                 (now - listeners_enabled_at) > TIME_UNTIL_DEAD &&
                 (now - currentBestLocation.time) > TIME_UNTIL_DEAD &&
                 (now - last_significant_motion) > TIME_UNTIL_DEAD
             )
             {
-                reset_location_listeners(interval=Keys.LOCATION_INTERVAL_DEAD)
-                gave_up_at = now
+                state_dead()
             }
         }
     }

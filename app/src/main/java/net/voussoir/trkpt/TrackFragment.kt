@@ -173,8 +173,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         mapView.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
         if (track.trkpts.size > 0)
         {
-            val first = track.trkpts.first()
-            controller.setCenter(GeoPoint(first.latitude, first.longitude))
+            val last = track.trkpts.last()
+            controller.setCenter(GeoPoint(last.latitude, last.longitude))
         }
         controller.setZoom(Keys.DEFAULT_ZOOM_LEVEL)
 

@@ -21,7 +21,7 @@ The goal of this fork is to make 24/7 recording easier. I want to be able to run
 
 trkpt has three states of power management. The states transition like this:
 
-1. **FULL POWER**: receives location updates as fast as Android provides them. A wakelock is used to prevent doze.
+1. **FULL POWER**: receives location updates as fast as Android provides them. A wakelock is used to resist doze (though I think some devices will doze anyway because they do not respect the user).
 
     Stay near homepoint for a few minutes → Sleep
 
