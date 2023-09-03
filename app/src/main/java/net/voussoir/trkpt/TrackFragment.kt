@@ -470,6 +470,22 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         super.onResume()
     }
 
+    fun select_trkpt(trkpt: Trkpt)
+    {
+        selected_trkpt = trkpt
+        selected_trkpt_info.text = "${trkpt.time}\n${iso8601_local(trkpt.time)}\n${trkpt.latitude}\n${trkpt.longitude}\n${trkpt.accuracy}"
+        selected_trkpt_marker.position = trkpt
+        if (selected_trkpt_marker !in mapView.overlays)
+        {
+            mapView.overlays.add(selected_trkpt_marker)
+        }
+        interpolate_points_button.visibility = View.VISIBLE
+        straighten_points_button.visibility = View.VISIBLE
+        delete_selected_trkpt_button.visibility = View.VISIBLE
+        use_trkpt_as_start_button.visibility = View.VISIBLE
+        use_trkpt_as_end_button.visibility = View.VISIBLE
+        isolate_trkseg_button.visibility = View.VISIBLE
+    }
     fun deselect_trkpt()
     {
         if (track_points_overlay != null)
@@ -602,19 +618,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                     handler.post(requery_and_render)
                     return
                 }
-                selected_trkpt = trkpt
-                selected_trkpt_info.text = "${trkpt.time}\n${iso8601_local(trkpt.time)}\n${trkpt.latitude}\n${trkpt.longitude}\n${trkpt.accuracy}"
-                selected_trkpt_marker.position = trkpt
-                if (selected_trkpt_marker !in mapView.overlays)
-                {
-                    mapView.overlays.add(selected_trkpt_marker)
-                }
-                interpolate_points_button.visibility = View.VISIBLE
-                straighten_points_button.visibility = View.VISIBLE
-                delete_selected_trkpt_button.visibility = View.VISIBLE
-                use_trkpt_as_start_button.visibility = View.VISIBLE
-                use_trkpt_as_end_button.visibility = View.VISIBLE
-                isolate_trkseg_button.visibility = View.VISIBLE
+                select_trkpt(trkpt)
                 return
             }
         })
