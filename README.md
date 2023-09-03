@@ -21,7 +21,7 @@ The goal of this fork is to make 24/7 recording easier. I want to be able to run
 
 trkpt has three states of power management. The states transition like this:
 
-1. **FULL POWER**: receives location updates as fast as Android provides them. A wakelock is used to resist doze (though I think some devices will doze anyway because they do not respect the user).
+1. **FULL POWER**: receives location updates as fast as Android provides them.
 
     Stay near homepoint for a few minutes → Sleep
 
@@ -44,6 +44,14 @@ trkpt has three states of power management. The states transition like this:
 Although saving battery power is important, capturing trackpoints is the #1 priority. I'd rather have too many wakeups than too few.
 
 If your device doesn't support the motion sensors used here, then trkpt will always run at full power. It will not sleep or kill the GPS. Maybe we can find another solution to improve battery performance for devices in this scenario.
+
+## Doze
+
+[Doze](https://developer.android.com/training/monitoring-device-state/doze-standby) is an Android feature that saves battery power by slowing down and turning off services. When the device dozes, trkpt will stop receiving new location fixes and your track will be incomplete. Even though trkpt runs as a foreground service with a persistent notification, and requests a wakelock, and you can exempt it from battery optimization, it is still vulnerable to doze because Android implementers don't respect the user's decisionmaking capabilities.
+
+Android exits doze during significant motion, so it does not doze while walking. However, in my experience, it will doze while driving a car, which leads to missed points on the journey.
+
+Android never enters doze while the device is charging, so plugging it in to your car's power or an external battery is the best way to guarantee a complete track. When it comes to power banks, be aware that many models will turn themselves off once the device is fully charged and stops drawing current, and then your device may doze! An "always-on" power bank would be recommended to guarantee a complete track.
 
 ## Mirrors
 
