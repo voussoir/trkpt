@@ -486,6 +486,30 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         use_trkpt_as_end_button.visibility = View.VISIBLE
         isolate_trkseg_button.visibility = View.VISIBLE
     }
+
+    fun select_trkpt_by_timestamp(timestamp: Long)
+    {
+        for (trkpt in track.trkpts)
+        {
+            if (trkpt.time == timestamp)
+            {
+                select_trkpt(trkpt)
+                break
+            }
+        }
+        if (selected_trkpt == null)
+        {
+            return
+        }
+        for ((index, trkpt) in track_geopoints.withIndex())
+        {
+            if (trkpt.longitude == selected_trkpt!!.longitude && trkpt.latitude == selected_trkpt!!.latitude)
+            {
+                track_points_overlay!!.selectedPoint = index
+            }
+        }
+    }
+
     fun deselect_trkpt()
     {
         if (track_points_overlay != null)
@@ -595,7 +619,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                     deselect_trkpt()
                     return
                 }
-                val trkpt = (points[point]) as Trkpt
+                var trkpt = (points[point]) as Trkpt
                 Log.i("VOUSSOIR", "Clicked ${trkpt.device_id} ${trkpt.time}")
                 if (ready_to_interpolate)
                 {
@@ -608,7 +632,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                     val mid_trkpt = Trkpt(trkpt.device_id, mid_location)
                     deselect_trkpt()
                     trackbook.database.insert_trkpt(mid_trkpt, commit=true)
-                    handler.post(requery_and_render)
+                    requery_and_render.run()
+                    select_trkpt_by_timestamp(mid_trkpt.time)
                     return
                 }
                 else if (ready_to_straighten && selected_trkpt != null)
