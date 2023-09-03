@@ -47,6 +47,7 @@ class TrackerService: Service()
     var useImperial: Boolean = false
     var omitRests: Boolean = true
     var max_accuracy: Float = Keys.DEFAULT_MAX_ACCURACY
+    var show_debug: Boolean = false
     var allow_sleep: Boolean = true
     var device_id: String = random_device_id()
     var currentBestLocation: Location = getDefaultLocation()
@@ -611,6 +612,7 @@ class TrackerService: Service()
         useImperial = PreferencesHelper.loadUseImperialUnits()
         omitRests = PreferencesHelper.loadOmitRests()
         max_accuracy = PreferencesHelper.load_max_accuracy()
+        show_debug = PreferencesHelper.loadShowDebug()
         allow_sleep = PreferencesHelper.loadAllowSleep()
         locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         notification_manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -640,7 +642,10 @@ class TrackerService: Service()
                     last_significant_motion = System.currentTimeMillis()
                     if (tracking_state == Keys.STATE_SLEEP || tracking_state == Keys.STATE_DEAD)
                     {
-                        vibrator.vibrate(100)
+                        if (show_debug)
+                        {
+                            vibrator.vibrate(100)
+                        }
                         state_full_recording()
                     }
                     sensor_manager.requestTriggerSensor(this, significant_motion_sensor)
@@ -660,7 +665,10 @@ class TrackerService: Service()
                     last_significant_motion = System.currentTimeMillis()
                     if (tracking_state == Keys.STATE_SLEEP || tracking_state == Keys.STATE_DEAD)
                     {
-                        vibrator.vibrate(100)
+                        if (show_debug)
+                        {
+                            vibrator.vibrate(100)
+                        }
                         state_full_recording()
                     }
                 }
@@ -765,6 +773,10 @@ class TrackerService: Service()
             Keys.PREF_MAX_ACCURACY ->
             {
                 max_accuracy = PreferencesHelper.load_max_accuracy()
+            }
+            Keys.PREF_SHOW_DEBUG ->
+            {
+                show_debug = PreferencesHelper.loadShowDebug()
             }
             Keys.PREF_ALLOW_SLEEP ->
             {

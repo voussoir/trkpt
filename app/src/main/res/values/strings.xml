@@ -115,7 +115,7 @@
     <string name="pref_theme_selection_summary">Current theme:</string>
     <string name="pref_theme_selection_title">App theme</string>
     <string name="pref_show_debug_title">Show debug info</string>
-    <string name="pref_show_debug_summary_on">Debug info shown on map screen.</string>
+    <string name="pref_show_debug_summary_on">Debug info shown on map screen. Device will vibrate when woken by motion sensors.</string>
     <string name="pref_show_debug_summary_off">Debug info hidden.</string>
     <string name="pref_disable_battery_optimization_title">Disable battery optimization</string>
     <string name="pref_disable_battery_optimization_summary">If your device kills the app, you can give this a try.</string>
