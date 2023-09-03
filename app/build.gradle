@@ -10,8 +10,8 @@ android {
         applicationId 'net.voussoir.trkpt'
         minSdkVersion 25
         targetSdk 32
-        versionCode 55
-        versionName '1.1.0'
+        versionCode 56
+        versionName '1.2.0'
         resConfigs "en", "da", "de", "fr", "hr", "id", "it", "ja", "nb-rNO", "nl", "pl", "pt-rBR", "ru", "sv", "tr", "zh-rCN"
     }
 
