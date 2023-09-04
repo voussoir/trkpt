@@ -665,6 +665,7 @@ class MapFragment : Fragment()
 
         if (show_debug)
         {
+            val accuracy_text: String = "%.2f".format(tracker.currentBestLocation.accuracy)
             map_current_time.text = """
                 state: ${state_name()}
                 clock: ${iso8601_local_noms(System.currentTimeMillis())}
@@ -676,6 +677,7 @@ class MapFragment : Fragment()
                  died: ${iso8601_local_noms(tracker.gave_up_at)}
                 power: ${tracker.device_is_charging}
              wakelock: ${tracker.wakelock.isHeld}
+             accuracy: ${accuracy_text} m
             """.trimIndent()
         }
         else
