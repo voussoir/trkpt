@@ -667,7 +667,7 @@ class MapFragment : Fragment()
         {
             map_current_time.text = """
                 state: ${state_name()}
-                  now: ${iso8601_local_noms(System.currentTimeMillis())}
+                clock: ${iso8601_local_noms(System.currentTimeMillis())}
              location: ${iso8601_local_noms(tracker.currentBestLocation.time)}
             listeners: ${iso8601_local_noms(tracker.listeners_enabled_at)}
                motion: ${iso8601_local_noms(tracker.last_significant_motion)}
