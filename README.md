@@ -55,6 +55,8 @@ Android never enters doze while the device is charging, so plugging it in to you
 
 ## Mirrors
 
+https://git.voussoir.net/voussoir/trkpt
+
 https://github.com/voussoir/trkpt
 
 https://gitlab.com/voussoir/trkpt
