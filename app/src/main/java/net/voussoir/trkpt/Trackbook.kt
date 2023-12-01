@@ -68,19 +68,22 @@ class Trackbook : Application()
     {
         Log.i("VOUSSOIR", "Trackbook.load_database")
         val folder = PreferencesHelper.load_database_folder()
-        this.database.commit()
         if (this.database.ready)
         {
+            Log.i("VOUSSOIR", "Trackbook.load_database: closing and re-opening.")
+            this.database.commit()
             this.database.close()
         }
         if (folder == "")
         {
+            Log.i("VOUSSOIR", "Trackbook.load_database: folder came up blank.")
             this.database.ready = false
             return
         }
         if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
         {
-            this.database.connect(File(folder + "/trkpt_${PreferencesHelper.load_device_id()}.db"))
+            val device_id = PreferencesHelper.load_device_id()
+            this.database.connect(File(folder + "/trkpt_${device_id}.db"))
             this.load_homepoints()
         }
         else

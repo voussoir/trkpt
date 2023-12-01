@@ -449,7 +449,7 @@ class TrackerService: Service()
                 }
 
                 val trkpt = Trkpt(device_id=device_id, location=location)
-                trackbook.database.insert_trkpt(trkpt, commit=false)
+                trackbook.database.insert_trkpt(trkpt)
 
                 if (trkpt.accuracy <= max_accuracy)
                 {

@@ -271,7 +271,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 Log.i("VOUSSOIR", selected.rendered_by_polyline?.actualPoints?.size.toString())
                 selected.rendered_by_polyline?.setPoints(ArrayList(selected.rendered_by_polyline?.actualPoints))
                 Log.i("VOUSSOIR", selected.rendered_by_polyline?.actualPoints?.size.toString())
-                trackbook.database.delete_trkpt(selected.device_id, selected.time, commit=true)
+                trackbook.database.delete_trkpt(selected.device_id, selected.time)
+                trackbook.database.commit()
                 deselect_trkpt()
                 mapView.invalidate()
             }
@@ -454,7 +455,10 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             }
             override fun onMarkerDragEnd(marker: Marker?)
             {
-                selected_trkpt?.let { trackbook.database.update_trkpt(it, commit=true) }
+                selected_trkpt?.let {
+                    trackbook.database.update_trkpt(it)
+                    trackbook.database.commit()
+                }
             }
         })
 
@@ -631,7 +635,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                     mid_location.accuracy = 0f
                     val mid_trkpt = Trkpt(trkpt.device_id, mid_location)
                     deselect_trkpt()
-                    trackbook.database.insert_trkpt(mid_trkpt, commit=true)
+                    trackbook.database.insert_trkpt(mid_trkpt)
+                    trackbook.database.commit()
                     requery_and_render.run()
                     select_trkpt_by_timestamp(mid_trkpt.time)
                     return
@@ -695,7 +700,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             trkpt.latitude = new_location.latitude
             trkpt.longitude = new_location.longitude
             trkpt.altitude = a.altitude + (ele_span * proportion)
-            trackbook.database.update_trkpt(trkpt, commit=false)
+            trackbook.database.update_trkpt(trkpt)
         }
         trackbook.database.commit()
     }
@@ -862,8 +867,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 track.device_id,
                 track.trkpts.first().time,
                 track.trkpts.last().time,
-                commit=true,
             )
+            trackbook.database.commit()
             handler.removeCallbacks(requery_and_render)
             handler.postDelayed(requery_and_render, RERENDER_DELAY)
         }

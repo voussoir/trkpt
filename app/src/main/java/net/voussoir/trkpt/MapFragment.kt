@@ -168,8 +168,8 @@ class MapFragment : Fragment()
                         latitude=point.latitude,
                         longitude=point.longitude,
                         radius=radius,
-                        commit=true,
                     )
+                    trackbook.database.commit()
                     trackbook.load_homepoints()
                     create_homepoint_overlays()
                     dialog.dismiss()
@@ -548,14 +548,16 @@ class MapFragment : Fragment()
                         val save_button: Button = dialog.findViewById(R.id.homepoint_save_button)
                         delete_button.text = "Delete"
                         delete_button.setOnClickListener {
-                            trackbook.database.delete_homepoint(homepoint.id, commit=true)
+                            trackbook.database.delete_homepoint(homepoint.id)
+                            trackbook.database.commit()
                             trackbook.load_homepoints()
                             create_homepoint_overlays()
                             dialog.dismiss()
                         }
                         save_button.setOnClickListener {
                             val radius = radius_input.text.toString().toDoubleOrNull() ?: 25.0
-                            trackbook.database.update_homepoint(homepoint.id, name=name_input.text.toString(), radius=radius, commit=true)
+                            trackbook.database.update_homepoint(homepoint.id, name=name_input.text.toString(), radius=radius)
+                            trackbook.database.commit()
                             trackbook.load_homepoints()
                             create_homepoint_overlays()
                             dialog.dismiss()
