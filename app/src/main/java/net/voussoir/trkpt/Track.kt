@@ -97,8 +97,9 @@ data class Track (
             xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd"
         >
         """.trimIndent())
+        val name_escaped = this.name.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         write("\t<metadata>")
-        write("\t\t<name>${this.name}</name>")
+        write("\t\t<name>${name_escaped}</name>")
         write("\t\t<application>${BuildConfig.APPLICATION_ID} ${BuildConfig.VERSION_NAME}</application>")
         write("\t\t<device>${this.device_id}</device>")
         write("\t</metadata>")
