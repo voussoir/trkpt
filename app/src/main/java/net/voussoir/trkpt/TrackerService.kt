@@ -57,6 +57,7 @@ class TrackerService: Service()
     var last_significant_motion: Long = 0
     var last_watchdog: Long = 0
     var dead_at: Long = 0
+    var dead_reason: String = ""
     var arrived_at_home: Long = 0
     val TIME_UNTIL_SLEEP: Long = 5 * Keys.ONE_MINUTE_IN_MILLISECONDS
     val TIME_UNTIL_DEAD: Long = 3 * Keys.ONE_MINUTE_IN_MILLISECONDS
@@ -185,7 +186,7 @@ class TrackerService: Service()
             Keys.STATE_FULL_RECORDING -> state_full_recording()
             Keys.STATE_ARRIVED_AT_HOME -> state_arrived_at_home()
             Keys.STATE_SLEEP -> state_sleep()
-            Keys.STATE_DEAD -> state_dead()
+            Keys.STATE_DEAD -> state_dead(dead_reason="Loaded previous state")
         }
     }
 
@@ -201,6 +202,7 @@ class TrackerService: Service()
         recent_displacement_locations.clear()
         arrived_at_home = 0
         dead_at = 0
+        dead_reason = ""
         if (foreground_started > 0)
         {
             stopForeground(STOP_FOREGROUND_DETACH)
@@ -217,7 +219,7 @@ class TrackerService: Service()
         Log.i("VOUSSOIR", "TrackerService.state_full_power")
         if (! trackbook.database.ready)
         {
-            state_dead()
+            state_dead("Database not ready")
         }
         trackbook.load_database()
         tracking_state = Keys.STATE_FULL_RECORDING
@@ -225,6 +227,7 @@ class TrackerService: Service()
         reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
         arrived_at_home = 0
         dead_at = 0
+        dead_reason = ""
         if (foreground_started == 0L)
         {
             startForeground(Keys.TRACKER_SERVICE_NOTIFICATION_ID, displayNotification())
@@ -236,7 +239,7 @@ class TrackerService: Service()
         }
         else
         {
-            state_dead()
+            state_dead("No listeners enabled")
         }
         displayNotification()
     }
@@ -251,6 +254,7 @@ class TrackerService: Service()
         trackbook.database.commit()
         arrived_at_home = System.currentTimeMillis()
         dead_at = 0
+        dead_reason = ""
         stop_wakelock()
         displayNotification()
     }
@@ -264,10 +268,11 @@ class TrackerService: Service()
         reset_location_listeners(Keys.LOCATION_INTERVAL_SLEEP)
         arrived_at_home = arrived_at_home
         dead_at = 0
+        dead_reason = ""
         stop_wakelock()
         displayNotification()
     }
-    fun state_dead()
+    fun state_dead(dead_reason: String)
     {
         // This state is activated when the device is struggling to receive a GPS fix due to being
         // indoors / underground. It will be woken up again by the accelerometers or by plugging /
@@ -280,6 +285,7 @@ class TrackerService: Service()
         recent_displacement_locations.clear()
         arrived_at_home = 0
         dead_at = System.currentTimeMillis()
+        this.dead_reason = dead_reason
         stop_wakelock()
         displayNotification()
     }
@@ -293,11 +299,12 @@ class TrackerService: Service()
         reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
         arrived_at_home = 0
         dead_at = 0
+        dead_reason = ""
         stop_wakelock()
         displayNotification()
         if (!gpsLocationListenerRegistered && !networkLocationListenerRegistered)
         {
-            state_dead()
+            state_dead(dead_reason="No listeners enabled")
         }
     }
 
@@ -371,7 +378,7 @@ class TrackerService: Service()
                 if(! trackbook.database.ready)
                 {
                     Log.i("VOUSSOIR", "TrackerService.onLocationChanged: database is not ready!!.")
-                    state_dead()
+                    state_dead(dead_reason="Database not ready")
                     return
                 }
 
@@ -509,26 +516,31 @@ class TrackerService: Service()
         if (tracking_state == Keys.STATE_FULL_RECORDING)
         {
             notification_builder.setContentTitle("${timestamp} (recording)")
+            notification_builder.setContentText(null)
             notification_builder.setSmallIcon(R.drawable.ic_satellite_24dp)
         }
         else if (tracking_state == Keys.STATE_ARRIVED_AT_HOME)
         {
             notification_builder.setContentTitle("${timestamp} (home)")
+            notification_builder.setContentText(null)
             notification_builder.setSmallIcon(R.drawable.ic_homepoint_24dp)
         }
         else if (tracking_state == Keys.STATE_SLEEP)
         {
             notification_builder.setContentTitle("${timestamp} (sleeping)")
+            notification_builder.setContentText(null)
             notification_builder.setSmallIcon(R.drawable.ic_sleep_24dp)
         }
         else if (tracking_state == Keys.STATE_DEAD)
         {
             notification_builder.setContentTitle("${timestamp} (dead)")
+            notification_builder.setContentText(dead_reason)
             notification_builder.setSmallIcon(R.drawable.ic_skull_24dp)
         }
         else if (tracking_state == Keys.STATE_STOP || tracking_state == Keys.STATE_MAPVIEW)
         {
             notification_builder.setContentTitle("${timestamp} (stopped)")
+            notification_builder.setContentText(null)
             notification_builder.setSmallIcon(R.drawable.ic_fiber_manual_stop_24dp)
         }
 
@@ -838,7 +850,7 @@ class TrackerService: Service()
                 (now - last_significant_motion) > TIME_UNTIL_DEAD
             )
             {
-                state_dead()
+                state_dead(dead_reason="No GPS reception")
             }
         }
     }
