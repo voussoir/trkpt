@@ -215,6 +215,10 @@ class TrackerService: Service()
         // at full power. A wakelock is used to resist Android's doze. This state should be active
         // while out and about.
         Log.i("VOUSSOIR", "TrackerService.state_full_power")
+        if (! trackbook.database.ready)
+        {
+            state_dead()
+        }
         tracking_state = Keys.STATE_FULL_RECORDING
         PreferencesHelper.saveTrackingState(tracking_state)
         reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
@@ -365,7 +369,8 @@ class TrackerService: Service()
 
                 if(! trackbook.database.ready)
                 {
-                    Log.i("VOUSSOIR", "Omitting due to database not ready.")
+                    Log.i("VOUSSOIR", "TrackerService.onLocationChanged: database is not ready!!.")
+                    state_dead()
                     return
                 }
 
