@@ -677,7 +677,7 @@ class MapFragment : Fragment()
                motion: ${iso8601_local_noms(tracker.last_significant_motion)}
              watchdog: ${iso8601_local_noms(tracker.last_watchdog)}
                  home: ${iso8601_local_noms(tracker.arrived_at_home)}
-                 died: ${iso8601_local_noms(tracker.gave_up_at)}
+                 died: ${iso8601_local_noms(tracker.dead_at)}
                 power: ${tracker.device_is_charging}
              wakelock: ${tracker.wakelock.isHeld}
              accuracy: ${accuracy_text} m

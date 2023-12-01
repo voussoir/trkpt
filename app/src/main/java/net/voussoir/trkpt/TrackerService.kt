@@ -56,7 +56,7 @@ class TrackerService: Service()
     var listeners_enabled_at: Long = 0
     var last_significant_motion: Long = 0
     var last_watchdog: Long = 0
-    var gave_up_at: Long = 0
+    var dead_at: Long = 0
     var arrived_at_home: Long = 0
     val TIME_UNTIL_SLEEP: Long = 5 * Keys.ONE_MINUTE_IN_MILLISECONDS
     val TIME_UNTIL_DEAD: Long = 3 * Keys.ONE_MINUTE_IN_MILLISECONDS
@@ -200,7 +200,7 @@ class TrackerService: Service()
         trackbook.database.commit()
         recent_displacement_locations.clear()
         arrived_at_home = 0
-        gave_up_at = 0
+        dead_at = 0
         if (foreground_started > 0)
         {
             stopForeground(STOP_FOREGROUND_DETACH)
@@ -224,7 +224,7 @@ class TrackerService: Service()
         PreferencesHelper.saveTrackingState(tracking_state)
         reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
         arrived_at_home = 0
-        gave_up_at = 0
+        dead_at = 0
         if (foreground_started == 0L)
         {
             startForeground(Keys.TRACKER_SERVICE_NOTIFICATION_ID, displayNotification())
@@ -250,7 +250,7 @@ class TrackerService: Service()
         reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
         trackbook.database.commit()
         arrived_at_home = System.currentTimeMillis()
-        gave_up_at = 0
+        dead_at = 0
         stop_wakelock()
         displayNotification()
     }
@@ -263,7 +263,7 @@ class TrackerService: Service()
         PreferencesHelper.saveTrackingState(tracking_state)
         reset_location_listeners(Keys.LOCATION_INTERVAL_SLEEP)
         arrived_at_home = arrived_at_home
-        gave_up_at = 0
+        dead_at = 0
         stop_wakelock()
         displayNotification()
     }
@@ -279,7 +279,7 @@ class TrackerService: Service()
         trackbook.database.commit()
         recent_displacement_locations.clear()
         arrived_at_home = 0
-        gave_up_at = System.currentTimeMillis()
+        dead_at = System.currentTimeMillis()
         stop_wakelock()
         displayNotification()
     }
@@ -292,7 +292,7 @@ class TrackerService: Service()
         PreferencesHelper.saveTrackingState(tracking_state)
         reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
         arrived_at_home = 0
-        gave_up_at = 0
+        dead_at = 0
         stop_wakelock()
         displayNotification()
         if (!gpsLocationListenerRegistered && !networkLocationListenerRegistered)
