@@ -219,6 +219,7 @@ class TrackerService: Service()
         {
             state_dead()
         }
+        trackbook.load_database()
         tracking_state = Keys.STATE_FULL_RECORDING
         PreferencesHelper.saveTrackingState(tracking_state)
         reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
