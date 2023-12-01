@@ -9,6 +9,7 @@ import java.io.File
 class Database(val trackbook: Trackbook)
 {
     var ready: Boolean = false
+    var ready_at: Long = 0
     lateinit var file: File
     lateinit var connection: SQLiteDatabase
 
@@ -16,6 +17,7 @@ class Database(val trackbook: Trackbook)
     {
         this.connection.close()
         this.ready = false
+        this.ready_at = 0
         this.trackbook.call_database_changed_listeners()
     }
 
@@ -26,6 +28,7 @@ class Database(val trackbook: Trackbook)
         this.connection = openOrCreateDatabase(file, null)
         this.initialize_tables()
         this.ready = true
+        this.ready_at = System.currentTimeMillis()
         Log.i("VOUSSOIR", "Database.open: Calling all listeners")
     }
 

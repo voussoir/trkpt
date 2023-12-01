@@ -670,6 +670,7 @@ class MapFragment : Fragment()
                 state: ${state_name()}
                 clock: ${iso8601_local_noms(System.currentTimeMillis())}
              location: ${iso8601_local_noms(tracker.currentBestLocation.time)}
+             database: ${iso8601_local_noms(trackbook.database.ready_at)}
             listeners: ${iso8601_local_noms(tracker.listeners_enabled_at)}
                motion: ${iso8601_local_noms(tracker.last_significant_motion)}
              watchdog: ${iso8601_local_noms(tracker.last_watchdog)}
