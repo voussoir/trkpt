@@ -15,6 +15,7 @@ class Database(val trackbook: Trackbook)
 
     fun close()
     {
+        Log.i("VOUSSOIR", "Database.close")
         this.connection.close()
         this.ready = false
         this.ready_at = 0
@@ -23,7 +24,7 @@ class Database(val trackbook: Trackbook)
 
     fun connect(file: File)
     {
-        Log.i("VOUSSOIR", "Connecting to database " + file.absolutePath)
+        Log.i("VOUSSOIR", "Database.connect: " + file.absolutePath)
         this.file = file
         this.connection = openOrCreateDatabase(file, null)
         this.initialize_tables()
@@ -196,6 +197,7 @@ class Database(val trackbook: Trackbook)
 
     private fun initialize_tables()
     {
+        Log.i("VOUSSOIR", "Database.initialize_tables")
         begin_transaction()
         this.connection.execSQL("CREATE TABLE IF NOT EXISTS meta(name TEXT PRIMARY KEY, value TEXT)")
         this.connection.execSQL("CREATE TABLE IF NOT EXISTS trkpt(device_id INTEGER NOT NULL, time INTEGER NOT NULL, lat REAL NOT NULL, lon REAL NOT NULL, provider TEXT, accuracy REAL, ele INTEGER, sat INTEGER, PRIMARY KEY(device_id, time))")
