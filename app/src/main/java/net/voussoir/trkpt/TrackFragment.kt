@@ -323,8 +323,9 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 val polyline = selected.rendered_by_polyline
                 if (polyline != null)
                 {
+                    track.device_id = selected.device_id
                     track.load_trkpts(trackbook.database.select_trkpt_start_end(
-                        track.device_id,
+                        selected.device_id,
                         start_time=(polyline.actualPoints.first() as Trkpt).time,
                         end_time=(polyline.actualPoints.last() as Trkpt).time,
                         max_accuracy=PreferencesHelper.load_max_accuracy(),
@@ -342,7 +343,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         when_was_i_here_button.setOnClickListener {
             Log.i("VOUSSOIR", "when_was_i_here_button.")
             track.load_trkpts(trackbook.database.select_trkpt_bounding_box(
-                device_id=track.device_id,
+                device_id=null,
                 north=mapView.boundingBox.actualNorth,
                 south=mapView.boundingBox.actualSouth,
                 east=mapView.boundingBox.lonEast,

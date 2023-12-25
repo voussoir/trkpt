@@ -32,7 +32,7 @@ import java.util.*
 
 data class Track (
     val database: Database,
-    val device_id: String,
+    var device_id: String,
     var name: String = "",
     var _start_time: Long = 0L,
     var _end_time: Long = 0L,

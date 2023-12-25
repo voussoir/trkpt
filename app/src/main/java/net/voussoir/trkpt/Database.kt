@@ -101,18 +101,33 @@ class Database(val trackbook: Trackbook)
         ))
     }
 
-    fun select_trkpt_bounding_box(device_id: String, north: Double, south: Double, east: Double, west: Double, max_accuracy: Float=Keys.DEFAULT_MAX_ACCURACY): Iterator<Trkpt>
+    fun select_trkpt_bounding_box(device_id: String?, north: Double, south: Double, east: Double, west: Double, max_accuracy: Float=Keys.DEFAULT_MAX_ACCURACY): Iterator<Trkpt>
     {
         Log.i("VOUSSOIR", "Track.trkpt_generator: Querying points between $north, $south, $east, $west.")
-        return _trkpt_generator(this.connection.rawQuery(
-            """
+        if (device_id == null)
+        {
+            return _trkpt_generator(this.connection.rawQuery(
+                """
+            SELECT device_id, lat, lon, time, provider, ele, accuracy, sat
+            FROM trkpt
+            WHERE lat >= ? AND lat <= ? AND lon >= ? AND lon <= ? AND accuracy <= ?
+            ORDER BY time ASC
+            """,
+                arrayOf(south.toString(), north.toString(), west.toString(), east.toString(), max_accuracy.toString())
+            ))
+        }
+        else
+        {
+            return _trkpt_generator(this.connection.rawQuery(
+                """
             SELECT device_id, lat, lon, time, provider, ele, accuracy, sat
             FROM trkpt
             WHERE device_id = ? AND lat >= ? AND lat <= ? AND lon >= ? AND lon <= ? AND accuracy <= ?
             ORDER BY time ASC
             """,
-            arrayOf(device_id, south.toString(), north.toString(), west.toString(), east.toString(), max_accuracy.toString())
-        ))
+                arrayOf(device_id, south.toString(), north.toString(), west.toString(), east.toString(), max_accuracy.toString())
+            ))
+        }
     }
 
     fun _trkpt_generator(cursor: Cursor) = iterator<Trkpt>
