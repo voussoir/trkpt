@@ -64,7 +64,6 @@ class MapFragment : Fragment()
     private lateinit var database_changed_listener: DatabaseChangedListener
     var show_debug: Boolean = false
 
-    var thismapfragment: MapFragment? = null
     lateinit var rootView: View
     private lateinit var mapView: MapView
     lateinit var mainButton: ExtendedFloatingActionButton
@@ -82,7 +81,6 @@ class MapFragment : Fragment()
     {
         Log.i("VOUSSOIR", "MapFragment.onCreate")
         super.onCreate(savedInstanceState)
-        thismapfragment = this
         this.trackbook = (requireContext().applicationContext as Trackbook)
         database_changed_listener = object: DatabaseChangedListener
         {
