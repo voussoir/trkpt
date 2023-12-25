@@ -237,11 +237,6 @@ class MapFragment : Fragment()
     {
         Log.i("VOUSSOIR", "MapFragment.onStart")
         super.onStart()
-        // request location permission if denied
-        if (ContextCompat.checkSelfPermission(activity as Context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED)
-        {
-            requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
         activity?.bindService(Intent(activity, TrackerService::class.java), tracker_service_connection, Context.BIND_AUTO_CREATE)
         handler.post(redraw_runnable)
     }
@@ -311,23 +306,6 @@ class MapFragment : Fragment()
         super.onDestroy()
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         handler.removeCallbacks(redraw_runnable)
-    }
-
-    private val requestLocationPermissionLauncher = registerForActivityResult(RequestPermission()) { isGranted: Boolean ->
-        if (isGranted)
-        {
-            // permission was granted - re-bind service
-            activity?.unbindService(tracker_service_connection)
-            activity?.bindService(Intent(activity, TrackerService::class.java),  tracker_service_connection,  Context.BIND_AUTO_CREATE)
-            Log.i("VOUSSOIR", "Request result: Location permission has been granted.")
-        }
-        else
-        {
-            // permission denied - unbind service
-            activity?.unbindService(tracker_service_connection)
-        }
-        val gpsProviderActive = if (tracker_service == null) false else tracker_service!!.gpsProviderActive
-        val networkProviderActive = if (tracker_service == null) false else tracker_service!!.networkProviderActive
     }
 
     private fun startTracking()

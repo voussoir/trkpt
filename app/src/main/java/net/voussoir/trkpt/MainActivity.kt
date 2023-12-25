@@ -47,6 +47,7 @@ class MainActivity: AppCompatActivity()
     /* Overrides onCreate from AppCompatActivity */
     override fun onCreate(savedInstanceState: Bundle?)
     {
+        Log.i("VOUSSOIR", "MainActivity.onCreate")
         trackbook = (applicationContext as Trackbook)
         super.onCreate(savedInstanceState)
         request_permissions(this)
@@ -125,6 +126,7 @@ class MainActivity: AppCompatActivity()
     /* Overrides onDestroy from AppCompatActivity */
     override fun onDestroy()
     {
+        Log.i("VOUSSOIR", "MainActivity.onDestroy")
         super.onDestroy()
         // unregister listener for changes in shared preferences
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
