@@ -39,7 +39,6 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.snackbar.Snackbar
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -77,7 +76,6 @@ class MapFragment : Fragment()
     private var current_track_overlay: Polyline? = null
     private var current_position_overlays = ArrayList<Overlay>()
     private var homepoints_overlays = ArrayList<Overlay>()
-    private lateinit var locationErrorBar: Snackbar
 
     /* Overrides onCreate from Fragment */
     override fun onCreate(savedInstanceState: Bundle?)
@@ -116,7 +114,6 @@ class MapFragment : Fragment()
         zoom_out_button = rootView.findViewById(R.id.zoom_out_button)
         map_current_time = rootView.findViewById(R.id.map_current_time)
         mainButton = rootView.findViewById(R.id.main_button)
-        locationErrorBar = Snackbar.make(mapView, String(), Snackbar.LENGTH_INDEFINITE)
 
         mapView.setOnLongClickListener{
             Log.i("VOUSSOIR", "mapview longpress")
@@ -332,7 +329,6 @@ class MapFragment : Fragment()
         }
         val gpsProviderActive = if (trackerService == null) false else trackerService!!.gpsProviderActive
         val networkProviderActive = if (trackerService == null) false else trackerService!!.networkProviderActive
-        toggleLocationErrorBar(gpsProviderActive, networkProviderActive)
     }
 
     private fun startTracking()
@@ -598,26 +594,6 @@ class MapFragment : Fragment()
             mainButton.setIconResource(R.drawable.ic_fiber_manual_stop_24dp)
             mainButton.text = requireContext().getString(R.string.button_pause)
             mainButton.contentDescription = requireContext().getString(R.string.descr_button_pause)
-        }
-    }
-
-    fun toggleLocationErrorBar(gpsProviderActive: Boolean, networkProviderActive: Boolean)
-    {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED)
-        {
-            // CASE: Location permission not granted
-            locationErrorBar.setText(R.string.snackbar_message_location_permission_denied)
-            if (!locationErrorBar.isShown) locationErrorBar.show()
-        }
-        else if (!gpsProviderActive && !networkProviderActive)
-        {
-            // CASE: Location setting is off
-            locationErrorBar.setText(R.string.snackbar_message_location_offline)
-            if (!locationErrorBar.isShown) locationErrorBar.show()
-        }
-        else
-        {
-            if (locationErrorBar.isShown) locationErrorBar.dismiss()
         }
     }
 
