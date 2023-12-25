@@ -21,12 +21,18 @@
 package net.voussoir.trkpt
 
 import YesNoDialog
+import android.Manifest
 import android.app.Activity
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.drawable.Drawable
 import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -55,10 +61,7 @@ import org.osmdroid.events.ZoomEvent
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.MapEventsOverlay
-import org.osmdroid.views.overlay.Marker
-import org.osmdroid.views.overlay.Polyline
-import org.osmdroid.views.overlay.TilesOverlay
+import org.osmdroid.views.overlay.*
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlay
 import org.osmdroid.views.overlay.simplefastpoint.SimpleFastPointOverlayOptions
 import org.osmdroid.views.overlay.simplefastpoint.SimplePointTheme
@@ -93,6 +96,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     var ready_to_straighten: Boolean = false
     var track_query_start_time_previous: Int = 0
     var track_query_end_time_previous: Int = 0
+
     private lateinit var mapView: MapView
     private lateinit var controller: IMapController
     private lateinit var statisticsSheetBehavior: BottomSheetBehavior<View>
@@ -115,6 +119,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     private lateinit var track_segment_overlays: ArrayDeque<Polyline>
     private var track_geopoints: MutableList<IGeoPoint> = mutableListOf()
     private var track_points_overlay: SimpleFastPointOverlay? = null
+    private var current_position_overlays = ArrayList<Overlay>()
     // private lateinit var trkpt_infowindow: InfoWindow
     private var useImperialUnits: Boolean = false
     private val handler: Handler = Handler(Looper.getMainLooper())
@@ -122,6 +127,10 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
 
     var selected_trkpt: Trkpt? = null
     lateinit var selected_trkpt_marker: Marker
+
+    private lateinit var locationManager: LocationManager
+    private lateinit var gpsLocationListener: LocationListener
+    private var gpslistenerregistered = false
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
@@ -177,6 +186,20 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             controller.setCenter(GeoPoint(last.latitude, last.longitude))
         }
         controller.setZoom(Keys.DEFAULT_ZOOM_LEVEL)
+
+        val has_permission: Boolean = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (has_permission)
+        {
+            locationManager = requireContext().getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            gpsLocationListener = createLocationListener()
+            locationManager.requestLocationUpdates(
+                LocationManager.GPS_PROVIDER,
+                0,
+                0f,
+                gpsLocationListener,
+            )
+            gpslistenerregistered = true
+        }
 
         // trkpt_infowindow = MarkerInfoWindow(R.layout.trkpt_infowindow, mapView)
 
@@ -469,10 +492,76 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         return rootView
     }
 
+    override fun onDestroyView()
+    {
+        super.onDestroyView()
+        if (gpslistenerregistered)
+        {
+            locationManager.removeUpdates(gpsLocationListener)
+            gpslistenerregistered = false
+        }
+    }
+
+    fun clear_current_position_overlays()
+    {
+        for (ov in current_position_overlays)
+        {
+            if (ov in mapView.overlays)
+            {
+                mapView.overlays.remove(ov)
+            }
+        }
+        current_position_overlays.clear()
+    }
+
+    fun create_current_position_overlays(location: Location)
+    {
+        clear_current_position_overlays()
+
+        val newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_blue_24dp)!!
+        val fillcolor = Color.argb(64, 60, 152, 219)
+
+        val current_location_radius = Polygon()
+        current_location_radius.points = Polygon.pointsAsCircle(
+            GeoPoint(location.latitude, location.longitude),
+            location.accuracy.toDouble()
+        )
+        current_location_radius.fillPaint.color = fillcolor
+        current_location_radius.outlinePaint.color = Color.argb(0, 0, 0, 0)
+        current_position_overlays.add(current_location_radius)
+
+        val overlayItems: java.util.ArrayList<OverlayItem> = java.util.ArrayList<OverlayItem>()
+        val overlayItem: OverlayItem = createOverlayItem(
+            location.latitude,
+            location.longitude,
+            title="Current location",
+            description="Current location",
+        )
+        overlayItem.setMarker(newMarker)
+        overlayItems.add(overlayItem)
+        current_position_overlays.add(createOverlay(requireContext(), overlayItems))
+
+        for (ov in current_position_overlays)
+        {
+            mapView.overlays.add(ov)
+        }
+    }
+
     /* Overrides onResume from Fragment */
     override fun onResume()
     {
         super.onResume()
+    }
+
+    private fun createLocationListener(): LocationListener
+    {
+        return object : LocationListener
+        {
+            override fun onLocationChanged(location: Location)
+            {
+                create_current_position_overlays(location)
+            }
+        }
     }
 
     fun select_trkpt(trkpt: Trkpt)
@@ -657,6 +746,11 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         for (pl in track_segment_overlays)
         {
             create_start_end_markers(requireContext(), mapView, pl.actualPoints.first() as Trkpt, pl.actualPoints.last() as Trkpt)
+        }
+
+        for (ov in current_position_overlays)
+        {
+            mapView.overlays.add(ov)
         }
     }
 
