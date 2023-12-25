@@ -56,13 +56,15 @@ class MapFragment : Fragment()
 {
     private lateinit var trackbook: Trackbook
 
-    private var bound: Boolean = false
+    private var tracker_service_bound: Boolean = false
+    private var tracker_service: TrackerService? = null
+
     val handler: Handler = Handler(Looper.getMainLooper())
 
     var continuous_auto_center: Boolean = true
-    private var trackerService: TrackerService? = null
-    private lateinit var database_changed_listener: DatabaseChangedListener
     var show_debug: Boolean = false
+
+    private lateinit var database_changed_listener: DatabaseChangedListener
 
     lateinit var rootView: View
     private lateinit var mapView: MapView
@@ -193,7 +195,7 @@ class MapFragment : Fragment()
         }
 
         mainButton.setOnClickListener {
-            val tracker = trackerService
+            val tracker = tracker_service
             if (tracker == null)
             {
                 return@setOnClickListener
@@ -209,7 +211,7 @@ class MapFragment : Fragment()
             handler.postDelayed(redraw_runnable, 0)
         }
         currentLocationButton.setOnClickListener {
-            val tracker = trackerService
+            val tracker = tracker_service
             if (tracker == null)
             {
                 return@setOnClickListener
@@ -240,8 +242,7 @@ class MapFragment : Fragment()
         {
             requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
-        // bind to TrackerService
-        activity?.bindService(Intent(activity, TrackerService::class.java), connection, Context.BIND_AUTO_CREATE)
+        activity?.bindService(Intent(activity, TrackerService::class.java), tracker_service_connection, Context.BIND_AUTO_CREATE)
         handler.post(redraw_runnable)
     }
 
@@ -265,13 +266,13 @@ class MapFragment : Fragment()
         super.onPause()
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        val tracker = trackerService
+        val tracker = tracker_service
         if (tracker == null)
         {
             return
         }
         saveBestLocationState(tracker.currentBestLocation)
-        if (bound && (tracker.tracking_state == Keys.STATE_MAPVIEW || tracker.tracking_state == Keys.STATE_STOP))
+        if (tracker_service_bound && (tracker.tracking_state == Keys.STATE_MAPVIEW || tracker.tracking_state == Keys.STATE_STOP))
         {
             tracker.remove_gps_location_listener()
             tracker.remove_network_location_listener()
@@ -285,9 +286,9 @@ class MapFragment : Fragment()
     {
         super.onStop()
         // unbind from TrackerService
-        if (bound)
+        if (tracker_service_bound)
         {
-            activity?.unbindService(connection)
+            activity?.unbindService(tracker_service_connection)
             handleServiceUnbind()
         }
         handler.removeCallbacks(redraw_runnable)
@@ -316,17 +317,17 @@ class MapFragment : Fragment()
         if (isGranted)
         {
             // permission was granted - re-bind service
-            activity?.unbindService(connection)
-            activity?.bindService(Intent(activity, TrackerService::class.java),  connection,  Context.BIND_AUTO_CREATE)
+            activity?.unbindService(tracker_service_connection)
+            activity?.bindService(Intent(activity, TrackerService::class.java),  tracker_service_connection,  Context.BIND_AUTO_CREATE)
             Log.i("VOUSSOIR", "Request result: Location permission has been granted.")
         }
         else
         {
             // permission denied - unbind service
-            activity?.unbindService(connection)
+            activity?.unbindService(tracker_service_connection)
         }
-        val gpsProviderActive = if (trackerService == null) false else trackerService!!.gpsProviderActive
-        val networkProviderActive = if (trackerService == null) false else trackerService!!.networkProviderActive
+        val gpsProviderActive = if (tracker_service == null) false else tracker_service!!.gpsProviderActive
+        val networkProviderActive = if (tracker_service == null) false else tracker_service!!.networkProviderActive
     }
 
     private fun startTracking()
@@ -342,9 +343,9 @@ class MapFragment : Fragment()
         {
             activity?.startService(intent)
         }
-        if (trackerService != null)
+        if (tracker_service != null)
         {
-            trackerService!!.state_full_recording()
+            tracker_service!!.state_full_recording()
         }
     }
 
@@ -352,7 +353,7 @@ class MapFragment : Fragment()
     /* Handles state when service is being unbound */
     private fun handleServiceUnbind()
     {
-        bound = false
+        tracker_service_bound = false
         // unregister listener for changes in shared preferences
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
     }
@@ -391,12 +392,11 @@ class MapFragment : Fragment()
         current_position_overlays.clear()
     }
 
-    /* Mark current position on map */
     fun create_current_position_overlays()
     {
         clear_current_position_overlays()
 
-        val tracker = trackerService
+        val tracker = tracker_service
         if (tracker == null)
         {
             return
@@ -573,7 +573,7 @@ class MapFragment : Fragment()
 
     fun update_main_button()
     {
-        val tracker = trackerService
+        val tracker = tracker_service
         mainButton.isEnabled = trackbook.database.ready
         currentLocationButton.isVisible = true
         if (! trackbook.database.ready)
@@ -595,7 +595,7 @@ class MapFragment : Fragment()
         }
     }
 
-    private val connection = object : ServiceConnection {
+    private val tracker_service_connection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, service: IBinder)
         {
             // get reference to tracker service]
@@ -604,8 +604,8 @@ class MapFragment : Fragment()
             {
                 return
             }
-            bound = true
-            trackerService = serviceref
+            tracker_service_bound = true
+            tracker_service = serviceref
             // get state of tracking and update button if necessary
             redraw()
             // register listener for changes in shared preferences
@@ -622,7 +622,7 @@ class MapFragment : Fragment()
     {
         // Log.i("VOUSSOIR", "MapFragment.redraw")
         update_main_button()
-        val tracker = trackerService
+        val tracker = tracker_service
         if (tracker == null)
         {
             return
@@ -667,7 +667,7 @@ class MapFragment : Fragment()
 
     fun state_name(): String
     {
-        val tracker = trackerService
+        val tracker = tracker_service
         if (tracker == null)
         {
             return "null"
