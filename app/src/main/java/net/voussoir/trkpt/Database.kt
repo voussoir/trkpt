@@ -56,11 +56,11 @@ class Database(val trackbook: Trackbook)
         this.connection.endTransaction()
     }
 
-    fun delete_trkpt(device_id: String, time: Long)
+    fun delete_trkpt(trkpt: Trkpt)
     {
         Log.i("VOUSSOIR", "Database.delete_trkpt")
         begin_transaction()
-        connection.delete("trkpt", "device_id = ? AND time = ?", arrayOf(device_id, time.toString()))
+        connection.delete("trkpt", "device_id = ? AND time = ?", arrayOf(trkpt.device_id, trkpt.time.toString()))
     }
 
     fun delete_trkpt_start_end(device_id: String, start_time: Long, end_time: Long)

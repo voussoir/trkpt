@@ -79,6 +79,10 @@ object Keys {
     const val STATE_THEME_LIGHT_MODE: String = "stateLightMode"
     const val STATE_THEME_DARK_MODE: String = "stateDarkMode"
 
+    // Track view
+    const val SELECTION_MODE_STARTSTOP = 1
+    const val SELECTION_MODE_SPATIAL = 2
+
     // dialog types
     const val DIALOG_DELETE_TRACK: Int = 1
 

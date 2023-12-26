@@ -29,7 +29,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.drawable.Drawable
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -96,6 +95,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     var ready_to_straighten: Boolean = false
     var track_query_start_time_previous: Int = 0
     var track_query_end_time_previous: Int = 0
+    var selection_mode: Int = Keys.SELECTION_MODE_STARTSTOP
 
     private lateinit var mapView: MapView
     private lateinit var controller: IMapController
@@ -165,6 +165,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             end_time=requested_end_time,
             max_accuracy=PreferencesHelper.load_max_accuracy(),
         ))
+        selection_mode = Keys.SELECTION_MODE_STARTSTOP
+
         rootView = inflater.inflate(R.layout.fragment_track, container, false)
         mapView = rootView.findViewById(R.id.map)
         save_track_button = rootView.findViewById(R.id.save_button)
@@ -294,7 +296,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 Log.i("VOUSSOIR", selected.rendered_by_polyline?.actualPoints?.size.toString())
                 selected.rendered_by_polyline?.setPoints(ArrayList(selected.rendered_by_polyline?.actualPoints))
                 Log.i("VOUSSOIR", selected.rendered_by_polyline?.actualPoints?.size.toString())
-                trackbook.database.delete_trkpt(selected.device_id, selected.time)
+                trackbook.database.delete_trkpt(selected)
                 trackbook.database.commit()
                 deselect_trkpt()
                 mapView.invalidate()
@@ -314,6 +316,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                     end_time=track.trkpts.last().time,
                     max_accuracy=PreferencesHelper.load_max_accuracy(),
                 ))
+                selection_mode = Keys.SELECTION_MODE_STARTSTOP
                 deselect_trkpt()
                 render_track()
             }
@@ -332,6 +335,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                     end_time=selected.time,
                     max_accuracy=PreferencesHelper.load_max_accuracy(),
                 ))
+                selection_mode = Keys.SELECTION_MODE_STARTSTOP
                 deselect_trkpt()
                 render_track()
             }
@@ -353,6 +357,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                         end_time=(polyline.actualPoints.last() as Trkpt).time,
                         max_accuracy=PreferencesHelper.load_max_accuracy(),
                     ))
+                    selection_mode = Keys.SELECTION_MODE_STARTSTOP
 
                     track.expand_to_trkseg_bounds()
 
@@ -373,6 +378,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 west=mapView.boundingBox.lonWest,
                 max_accuracy=PreferencesHelper.load_max_accuracy(),
             ))
+            selection_mode = Keys.SELECTION_MODE_SPATIAL
             set_datetimes_from_track()
             render_track()
         }
@@ -925,6 +931,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 end_time=get_datetime(track_query_end_date, track_query_end_time, seconds=59).time,
                 max_accuracy=PreferencesHelper.load_max_accuracy(),
             ))
+            selection_mode = Keys.SELECTION_MODE_STARTSTOP
             Log.i("VOUSSOIR", "TrackFragment.requery_and_render: Reloaded ${track.trkpts.size} trkpts.")
             render_track()
         }
@@ -958,14 +965,31 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     {
         if (type == Keys.DIALOG_DELETE_TRACK && dialogResult && track.trkpts.isNotEmpty())
         {
-            trackbook.database.delete_trkpt_start_end(
-                track.device_id,
-                track.trkpts.first().time,
-                track.trkpts.last().time,
-            )
-            trackbook.database.commit()
-            handler.removeCallbacks(requery_and_render)
-            handler.postDelayed(requery_and_render, RERENDER_DELAY)
+            if (selection_mode == Keys.SELECTION_MODE_STARTSTOP)
+            {
+                trackbook.database.delete_trkpt_start_end(
+                    track.device_id,
+                    track.trkpts.first().time,
+                    track.trkpts.last().time,
+                )
+                trackbook.database.commit()
+                handler.removeCallbacks(requery_and_render)
+                handler.postDelayed(requery_and_render, RERENDER_DELAY)
+            }
+            else if (selection_mode == Keys.SELECTION_MODE_SPATIAL)
+            {
+                // If the user clicked the "when was I here" button to select an area of points, and
+                // then presses the Track delete button, we don't want to delete all points between
+                // the earliest start and latest stop -- we just want to delete the points that are
+                // shown on screen.
+                for (trkpt in track.trkpts)
+                {
+                    trackbook.database.delete_trkpt(trkpt)
+                }
+                trackbook.database.commit()
+                handler.removeCallbacks(requery_and_render)
+                handler.postDelayed(requery_and_render, RERENDER_DELAY)
+            }
         }
     }
 
