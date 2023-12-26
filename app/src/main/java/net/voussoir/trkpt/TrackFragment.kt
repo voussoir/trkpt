@@ -74,7 +74,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
 
     lateinit var rootView: View
     lateinit var save_track_button: ImageButton
-    lateinit var deleteButton: ImageButton
+    lateinit var delete_whole_track_button: ImageButton
     lateinit var zoom_in_button: FloatingActionButton
     lateinit var zoom_out_button: FloatingActionButton
     lateinit var trackNameView: MaterialTextView
@@ -168,7 +168,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         rootView = inflater.inflate(R.layout.fragment_track, container, false)
         mapView = rootView.findViewById(R.id.map)
         save_track_button = rootView.findViewById(R.id.save_button)
-        deleteButton = rootView.findViewById(R.id.delete_button)
+        delete_whole_track_button = rootView.findViewById(R.id.delete_button)
         zoom_in_button = rootView.findViewById(R.id.zoom_in_button)
         zoom_out_button = rootView.findViewById(R.id.zoom_out_button)
         trackNameView = rootView.findViewById(R.id.statistics_track_name_headline)
@@ -438,7 +438,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             dialog.show()
         }
 
-        deleteButton.setOnClickListener {
+        delete_whole_track_button.setOnClickListener {
             val dialogMessage = "${getString(R.string.dialog_yes_no_message_delete_recording)}\n\n${track.trkpts.size} trackpoints"
             YesNoDialog(this@TrackFragment as YesNoDialog.YesNoDialogListener).show(
                 context = activity as Context,
