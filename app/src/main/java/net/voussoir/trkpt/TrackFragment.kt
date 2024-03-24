@@ -29,6 +29,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.drawable.Drawable
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -120,6 +121,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     private var track_geopoints: MutableList<IGeoPoint> = mutableListOf()
     private var track_points_overlay: SimpleFastPointOverlay? = null
     private var current_position_overlays = ArrayList<Overlay>()
+    private var homepoints_overlays = ArrayList<Overlay>()
     // private lateinit var trkpt_infowindow: InfoWindow
     private var useImperialUnits: Boolean = false
     private val handler: Handler = Handler(Looper.getMainLooper())
@@ -553,6 +555,54 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         }
     }
 
+    fun clear_homepoint_overlays()
+    {
+        for (ov in homepoints_overlays)
+        {
+            if (ov in mapView.overlays)
+            {
+                mapView.overlays.remove(ov)
+            }
+        }
+        homepoints_overlays.clear()
+    }
+
+    fun create_homepoint_overlays()
+    {
+        Log.i("VOUSSOIR", "MapFragmentLayoutHolder.createHomepointOverlays")
+
+        val context = requireContext()
+        val newMarker: Drawable = ContextCompat.getDrawable(context, R.drawable.ic_homepoint_24dp)!!
+
+        clear_homepoint_overlays()
+
+        for (homepoint in trackbook.homepoints)
+        {
+            val p = Polygon()
+            p.points = Polygon.pointsAsCircle(GeoPoint(homepoint.location.latitude, homepoint.location.longitude), homepoint.location.accuracy.toDouble())
+            p.fillPaint.color = Color.argb(64, 255, 193, 7)
+            p.outlinePaint.color = Color.argb(0, 0, 0, 0)
+            homepoints_overlays.add(p)
+
+            val overlayItems: java.util.ArrayList<OverlayItem> = java.util.ArrayList<OverlayItem>()
+            val overlayItem: OverlayItem = createOverlayItem(
+                homepoint.location.latitude,
+                homepoint.location.longitude,
+                title=homepoint.name,
+                description=homepoint.name,
+            )
+            overlayItem.setMarker(newMarker)
+            overlayItems.add(overlayItem)
+            val homepoint_overlay = createOverlay(context, overlayItems)
+            homepoints_overlays.add(homepoint_overlay)
+        }
+
+        for (ov in homepoints_overlays)
+        {
+            mapView.overlays.add(ov)
+        }
+    }
+
     /* Overrides onResume from Fragment */
     override fun onResume()
     {
@@ -662,6 +712,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         deselect_trkpt()
 
         setupStatisticsViews()
+
+        create_homepoint_overlays()
 
         if (track.trkpts.isEmpty())
         {
