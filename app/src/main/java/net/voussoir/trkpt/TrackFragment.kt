@@ -731,9 +731,15 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
 
         var pl = new_track_segment_overlay()
         var previous_time: Long = 0
+        var previous_device: String = "";
         for (trkpt in track.trkpts)
         {
-            if (previous_time > 0 && (trkpt.time - previous_time) > Keys.STOP_OVER_THRESHOLD)
+            val need_new_polyline = (
+                (previous_time > 0 && (trkpt.time - previous_time) > Keys.STOP_OVER_THRESHOLD)
+                ||
+                (previous_device != "" && trkpt.device_id != previous_device)
+            )
+            if (need_new_polyline)
             {
                 pl = new_track_segment_overlay()
             }

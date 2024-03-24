@@ -111,7 +111,7 @@ class Database(val trackbook: Trackbook)
             SELECT device_id, lat, lon, time, provider, ele, accuracy, sat
             FROM trkpt
             WHERE lat >= ? AND lat <= ? AND lon >= ? AND lon <= ? AND accuracy <= ?
-            ORDER BY time ASC
+            ORDER BY device_id ASC, time ASC
             """,
                 arrayOf(south.toString(), north.toString(), west.toString(), east.toString(), max_accuracy.toString())
             ))
