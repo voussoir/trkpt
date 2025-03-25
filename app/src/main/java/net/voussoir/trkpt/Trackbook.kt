@@ -88,6 +88,7 @@ class Trackbook : Application()
         }
         else
         {
+            Log.i("VOUSSOIR", "Trackbook.load_database: lacking WRITE_EXTERNAL_STORAGE permission.")
             this.database.ready = false
         }
         this.call_database_changed_listeners()

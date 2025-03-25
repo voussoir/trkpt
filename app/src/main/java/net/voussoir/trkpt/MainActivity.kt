@@ -106,6 +106,7 @@ class MainActivity: AppCompatActivity()
         Log.i("VOUSSOIR", "MainActivity requests permissions.")
         val permissions_wanted = arrayOf(
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.MANAGE_EXTERNAL_STORAGE,
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACTIVITY_RECOGNITION,
@@ -151,6 +152,7 @@ class MainActivity: AppCompatActivity()
 
             Keys.PREF_DATABASE_DIRECTORY ->
             {
+                Log.i("VOUSSOIR", "MainActivity: database_directory has changed.")
                 trackbook.load_database()
             }
         }

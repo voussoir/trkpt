@@ -88,7 +88,7 @@ class MapFragment : Fragment()
         {
             override fun database_changed()
             {
-                Log.i("VOUSSOIR", "MapFragment database_ready_changed to ${trackbook.database.ready}")
+                Log.i("VOUSSOIR", "MapFragment database_ready changed to ${trackbook.database.ready}")
                 if (trackbook.database.ready)
                 {
                     create_homepoint_overlays()

@@ -807,6 +807,8 @@ class TrackerService: Service()
             Keys.PREF_DEVICE_ID ->
             {
                 device_id = PreferencesHelper.load_device_id()
+                trackbook.database.commit()
+                trackbook.load_database()
             }
         }
     }

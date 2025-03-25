@@ -48,6 +48,7 @@ object PreferencesHelper
         val v = sharedPreferences.getString(Keys.PREF_DEVICE_ID, fallback).toString()
         if (v == fallback)
         {
+            Log.i("VOUSSOIR", "PreferencesHelper.load_device_id: Saving random fallback ${v}.")
             sharedPreferences.edit { putString(Keys.PREF_DEVICE_ID, fallback) }
         }
         Log.i("VOUSSOIR", "PreferencesHelper.load_device_id: Got ${v}.")
