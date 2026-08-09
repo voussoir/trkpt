@@ -179,10 +179,7 @@ class RecordFragment : Fragment()
 
         trackbook.load_homepoints()
         create_homepoint_overlays()
-        if (database_changed_listener !in trackbook.database_changed_listeners)
-        {
-            trackbook.database_changed_listeners.add(database_changed_listener)
-        }
+        trackbook.add_database_changed_listener(database_changed_listener)
 
         centerMap(getLastKnownLocation(requireContext()))
 
@@ -290,12 +287,9 @@ class RecordFragment : Fragment()
 
     override fun onDestroyView()
     {
-        Log.i("VOUSSOIR", "MapFragment.onDestroy")
+        Log.i("VOUSSOIR", "MapFragment.onDestroyView")
         super.onDestroyView()
-        if (database_changed_listener in trackbook.database_changed_listeners)
-        {
-            trackbook.database_changed_listeners.remove(database_changed_listener)
-        }
+        trackbook.remove_database_changed_listener(database_changed_listener)
         handler.removeCallbacks(redraw_runnable)
     }
 

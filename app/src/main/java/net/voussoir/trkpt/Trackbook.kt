@@ -43,6 +43,20 @@ class Trackbook : Application()
     val homepoints: ArrayDeque<Homepoint> = ArrayDeque()
     val database_changed_listeners = ArrayList<DatabaseChangedListener>()
 
+    fun add_database_changed_listener(listener: DatabaseChangedListener)
+    {
+        if (listener !in database_changed_listeners)
+        {
+            database_changed_listeners.add(listener)
+        }
+    }
+    fun remove_database_changed_listener(listener: DatabaseChangedListener)
+    {
+        if (listener in database_changed_listeners)
+        {
+            database_changed_listeners.remove(listener)
+        }
+    }
     fun call_database_changed_listeners()
     {
         for (listener in this.database_changed_listeners)
