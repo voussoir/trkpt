@@ -75,5 +75,5 @@ dependencies {
     // OpenStreetMap
     implementation 'org.osmdroid:osmdroid-android:6.1.14'
 
-    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.10'
+//    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.10'
 }
