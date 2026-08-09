@@ -18,7 +18,7 @@
  * Modified by voussoir for trkpt, forked from Trackbook.
  */
 
-package net.voussoir.trkpt
+package net.voussoir.trkpt.fragments
 
 import YesNoDialog
 import android.Manifest
@@ -51,6 +51,7 @@ import androidx.fragment.app.Fragment
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textview.MaterialTextView
+import net.voussoir.trkpt.*
 import net.voussoir.trkpt.helpers.*
 import org.osmdroid.api.IGeoPoint
 import org.osmdroid.api.IMapController
@@ -468,7 +469,9 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
 
         selected_trkpt_marker = Marker(mapView, requireContext())
         selected_trkpt_marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-        selected_trkpt_marker.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_fuchsia_24dp)!!
+        selected_trkpt_marker.icon = ContextCompat.getDrawable(requireContext(),
+            R.drawable.ic_marker_location_fuchsia_24dp
+        )!!
         selected_trkpt_marker.isDraggable = true
         selected_trkpt_marker.infoWindow = null
         selected_trkpt_marker.setOnMarkerDragListener(object : Marker.OnMarkerDragListener {
@@ -526,7 +529,9 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     {
         clear_current_position_overlays()
 
-        val newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_blue_24dp)!!
+        val newMarker = ContextCompat.getDrawable(requireContext(),
+            R.drawable.ic_marker_location_blue_24dp
+        )!!
         val fillcolor = Color.argb(64, 60, 152, 219)
 
         val current_location_radius = Polygon()

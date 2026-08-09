@@ -8,7 +8,7 @@
     <!-- MAP -->
     <fragment
         android:id="@+id/map_fragment"
-        android:name="net.voussoir.trkpt.MapFragment"
+        android:name="net.voussoir.trkpt.fragments.MapFragment"
         android:label="Map"
         tools:layout="@layout/fragment_map">
         <action
@@ -22,13 +22,13 @@
     <!-- SETTINGS -->
     <fragment
         android:id="@+id/settings_fragment"
-        android:name="net.voussoir.trkpt.SettingsFragment"
+        android:name="net.voussoir.trkpt.fragments.SettingsFragment"
         android:label="Settings"/>
 
     <!-- TRACKS (LIST OF TRACKS) -->
     <fragment
         android:id="@+id/tracklist_fragment"
-        android:name="net.voussoir.trkpt.TracklistFragment"
+        android:name="net.voussoir.trkpt.fragments.TracklistFragment"
         android:label="Tracks"
         tools:layout="@layout/fragment_tracklist">
         <action
@@ -40,7 +40,7 @@
     <!-- TRACK -->
     <fragment
         android:id="@+id/fragment_track"
-        android:name="net.voussoir.trkpt.TrackFragment"
+        android:name="net.voussoir.trkpt.fragments.TrackFragment"
         android:label="Track"
         tools:layout="@layout/fragment_track" >
         <argument

@@ -18,7 +18,7 @@
  * Modified by voussoir for trkpt, forked from Trackbook.
  */
 
-package net.voussoir.trkpt
+package net.voussoir.trkpt.fragments
 
 import android.app.Activity
 import android.content.Context
@@ -34,6 +34,9 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.preference.*
 import get_path_from_uri
+import net.voussoir.trkpt.BuildConfig
+import net.voussoir.trkpt.Keys
+import net.voussoir.trkpt.R
 import net.voussoir.trkpt.helpers.AppThemeHelper
 import net.voussoir.trkpt.helpers.LengthUnitHelper
 import net.voussoir.trkpt.helpers.PreferencesHelper
@@ -98,8 +101,14 @@ class SettingsFragment : PreferenceFragmentCompat()
         preferenceThemeSelection.setIcon(R.drawable.ic_smartphone_24dp)
         preferenceThemeSelection.key = Keys.PREF_THEME_SELECTION
         preferenceThemeSelection.summary = "${getString(R.string.pref_theme_selection_summary)} ${AppThemeHelper.getCurrentTheme(activity as Context)}"
-        preferenceThemeSelection.entries = arrayOf(getString(R.string.pref_theme_selection_mode_device_default), getString(R.string.pref_theme_selection_mode_light), getString(R.string.pref_theme_selection_mode_dark))
-        preferenceThemeSelection.entryValues = arrayOf(Keys.STATE_THEME_FOLLOW_SYSTEM, Keys.STATE_THEME_LIGHT_MODE, Keys.STATE_THEME_DARK_MODE)
+        preferenceThemeSelection.entries = arrayOf(getString(R.string.pref_theme_selection_mode_device_default), getString(
+            R.string.pref_theme_selection_mode_light
+        ), getString(R.string.pref_theme_selection_mode_dark))
+        preferenceThemeSelection.entryValues = arrayOf(
+            Keys.STATE_THEME_FOLLOW_SYSTEM,
+            Keys.STATE_THEME_LIGHT_MODE,
+            Keys.STATE_THEME_DARK_MODE
+        )
         preferenceThemeSelection.setOnPreferenceChangeListener { preference, newValue ->
             if (preference is ListPreference) {
                 val index: Int = preference.entryValues.indexOf(newValue)

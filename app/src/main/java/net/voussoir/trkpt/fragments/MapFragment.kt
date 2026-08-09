@@ -17,12 +17,10 @@
  * Modified by voussoir for trkpt, forked from Trackbook.
  */
 
-package net.voussoir.trkpt
+package net.voussoir.trkpt.fragments
 
-import android.Manifest
 import android.app.Dialog
 import android.content.*
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.location.Location
@@ -33,12 +31,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.*
-import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import net.voussoir.trkpt.*
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -400,19 +398,25 @@ class MapFragment : Fragment()
         else if (locationIsOld)
         {
             fillcolor = Color.argb(64, 0, 0, 0)
-            newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_black_24dp)!!
+            newMarker = ContextCompat.getDrawable(requireContext(),
+                R.drawable.ic_marker_location_black_24dp
+            )!!
             description = "GPS tracking at full power"
         }
         else if (tracker.tracking_state == Keys.STATE_FULL_RECORDING || tracker.tracking_state == Keys.STATE_ARRIVED_AT_HOME)
         {
             fillcolor = Color.argb(64, 220, 61, 51)
-            newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_red_24dp)!!
+            newMarker = ContextCompat.getDrawable(requireContext(),
+                R.drawable.ic_marker_location_red_24dp
+            )!!
             description = "GPS tracking at full power"
         }
         else
         {
             fillcolor = Color.argb(64, 60, 152, 219)
-            newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_marker_location_blue_24dp)!!
+            newMarker = ContextCompat.getDrawable(requireContext(),
+                R.drawable.ic_marker_location_blue_24dp
+            )!!
             description = "GPS tracking at full power"
         }
 

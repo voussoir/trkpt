@@ -18,7 +18,7 @@
  * Modified by voussoir for trkpt, forked from Trackbook.
  */
 
-package net.voussoir.trkpt
+package net.voussoir.trkpt.fragments
 
 import YesNoDialog
 import android.content.Context
@@ -33,8 +33,10 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.coroutines.*
-import kotlinx.coroutines.Dispatchers.Main
+import net.voussoir.trkpt.Keys
+import net.voussoir.trkpt.R
+import net.voussoir.trkpt.Track
+import net.voussoir.trkpt.Trackbook
 import net.voussoir.trkpt.tracklist.TracklistAdapter
 
 /*
