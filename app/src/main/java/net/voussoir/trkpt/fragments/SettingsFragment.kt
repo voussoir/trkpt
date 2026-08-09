@@ -227,19 +227,29 @@ class SettingsFragment : PreferenceFragmentCompat()
 
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1)
         {
-            if (!context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(context.packageName))
+            val battery_optimization_button = Preference(context)
+            if (! context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(context.packageName))
             {
-                val battery_optimization_button = Preference(context)
                 battery_optimization_button.title = getString(R.string.pref_disable_battery_optimization_title)
-                battery_optimization_button.summary = getString(R.string.pref_disable_battery_optimization_summary)
+                battery_optimization_button.summary = getString(R.string.pref_disable_battery_optimization_summary_off)
                 battery_optimization_button.setOnPreferenceClickListener {
-                    val i: Intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).setData(Uri.parse("package:${context.packageName}"))
-                    context.startActivity(i)
+                    val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).setData(Uri.parse("package:${context.packageName}"))
+                    context.startActivity(intent)
                     return@setOnPreferenceClickListener true
                 }
-                preferenceCategoryGeneral.contains(battery_optimization_button)
-                screen.addPreference(battery_optimization_button)
             }
+            else
+            {
+                battery_optimization_button.title = getString(R.string.pref_disable_battery_optimization_title)
+                battery_optimization_button.summary = getString(R.string.pref_disable_battery_optimization_summary_on)
+                battery_optimization_button.setOnPreferenceClickListener {
+                    val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                    context.startActivity(intent)
+                    return@setOnPreferenceClickListener true
+                }
+            }
+            preferenceCategoryGeneral.contains(battery_optimization_button)
+            screen.addPreference(battery_optimization_button)
         }
 
         val preferenceCategoryAbout = PreferenceCategory(context)

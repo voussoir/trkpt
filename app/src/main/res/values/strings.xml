@@ -118,7 +118,8 @@
     <string name="pref_show_debug_summary_on">Debug info shown on map screen. Device will vibrate when woken by motion sensors.</string>
     <string name="pref_show_debug_summary_off">Debug info hidden.</string>
     <string name="pref_disable_battery_optimization_title">Disable battery optimization</string>
-    <string name="pref_disable_battery_optimization_summary">If your device kills the app, you can give this a try.</string>
+    <string name="pref_disable_battery_optimization_summary_on">You have already disabled battery optimization.</string>
+    <string name="pref_disable_battery_optimization_summary_off">You have not disabled battery optimization. If your device kills the app, you can give this a try.</string>
     <string name="pref_source_code_title">Source code</string>
     <string name="pref_source_code_summary">Available on github, gitlab, and codeberg.</string>
     <string name="pref_fork_notice_title">trkpt is a fork of Trackbook</string>
