@@ -2,7 +2,7 @@ package net.voussoir.trkpt
 import android.location.Location
 import java.util.*
 
-class Homepoint(val id: Long, val latitude: Double, val longitude: Double, val radius: Double, val name: String)
+data class Homepoint(val id: Long, val latitude: Double, val longitude: Double, val radius: Double, val name: String)
 {
     val location: Location = this.to_location()
 
