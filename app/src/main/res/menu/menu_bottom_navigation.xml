@@ -2,17 +2,17 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
-        android:id="@+id/map_fragment"
+        android:id="@+id/fragment_record"
         android:icon="@drawable/ic_compass_needle_black_24dp"
         android:title="@string/tab_record" />
 
     <item
-        android:id="@+id/tracklist_fragment"
+        android:id="@+id/fragment_history"
         android:icon="@drawable/ic_notebook_black_24dp"
         android:title="@string/tab_history" />
 
     <item
-        android:id="@+id/settings_fragment"
+        android:id="@+id/fragment_settings"
         android:icon="@drawable/ic_settings_black_24dp"
         android:title="@string/tab_settings" />
 

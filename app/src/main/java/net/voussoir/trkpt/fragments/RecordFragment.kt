@@ -50,7 +50,7 @@ import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.TilesOverlay
 import net.voussoir.trkpt.helpers.*
 
-class MapFragment : Fragment()
+class RecordFragment : Fragment()
 {
     private lateinit var trackbook: Trackbook
 
@@ -105,7 +105,7 @@ class MapFragment : Fragment()
     {
         Log.i("VOUSSOIR", "MapFragment.onCreateView")
 
-        rootView = inflater.inflate(R.layout.fragment_map, container, false)
+        rootView = inflater.inflate(R.layout.fragment_record, container, false)
         mapView = rootView.findViewById(R.id.map)
         currentLocationButton = rootView.findViewById(R.id.location_button)
         zoom_in_button = rootView.findViewById(R.id.zoom_in_button)
@@ -456,6 +456,7 @@ class MapFragment : Fragment()
     {
         clear_track_overlay()
         val pl = Polyline(mapView)
+        Log.i("VOUSSOIR", "create_track_overlay made this for you: " + pl.toString())
         pl.outlinePaint.strokeWidth = Keys.POLYLINE_THICKNESS
         pl.outlinePaint.color = requireContext().getColor(R.color.fuchsia)
         pl.infoWindow = null
@@ -603,7 +604,6 @@ class MapFragment : Fragment()
 
     fun redraw()
     {
-        // Log.i("VOUSSOIR", "MapFragment.redraw")
         update_main_button()
         val tracker = tracker_service
         if (tracker == null)
@@ -615,6 +615,7 @@ class MapFragment : Fragment()
         {
             create_track_overlay()
         }
+
         current_track_overlay!!.setPoints(tracker.recent_trackpoints_for_mapview)
 
         if (continuous_auto_center)

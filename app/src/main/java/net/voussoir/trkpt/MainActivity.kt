@@ -88,7 +88,7 @@ class MainActivity: AppCompatActivity()
                     runOnUiThread {
                         run {
                             // mark menu item "Tracks" as checked
-                            bottomNavigationView.menu.findItem(R.id.tracklist_fragment).isChecked = true
+                            bottomNavigationView.menu.findItem(R.id.fragment_history).isChecked = true
                         }
                     }
                 }
