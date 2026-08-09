@@ -113,10 +113,6 @@ class MapFragment : Fragment()
         map_current_time = rootView.findViewById(R.id.map_current_time)
         mainButton = rootView.findViewById(R.id.main_button)
 
-        mapView.setOnLongClickListener{
-            Log.i("VOUSSOIR", "mapview longpress")
-            true
-        }
         mapView.isLongClickable = true
         mapView.isTilesScaledToDpi = true
         mapView.isVerticalMapRepetitionEnabled = false
@@ -140,6 +136,11 @@ class MapFragment : Fragment()
             override fun longPressHelper(point: GeoPoint): Boolean
             {
                 Log.i("VOUSSOIR", "MapFragment MapEventsReceiver.longPressHelper")
+                if(! trackbook.database.ready)
+                {
+                    Log.i("VOUSSOIR", "MapFragment.longpress: Database is not ready to add a homepoint.")
+                    return false;
+                }
                 val dialog = Dialog(activity as Context)
                 dialog.setContentView(R.layout.dialog_homepoint)
                 dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
