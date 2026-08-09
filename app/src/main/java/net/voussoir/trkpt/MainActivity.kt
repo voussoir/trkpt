@@ -77,10 +77,12 @@ class MainActivity: AppCompatActivity()
         // bottomNavigationView.setOnItemReselectedListener { null }
         bottomNavigationView.setupWithNavController(navController = navHostFragment.navController)
 
-        // listen for navigation changes
         navHostFragment.navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id)
             {
+                // Without this, opening a TrackFragment causes the History tab to become inactive.
+                // Of course we want the History tab to be active when looking at either a
+                // TracklistFragment or TrackFragment.
                 R.id.fragment_track ->
                 {
                     runOnUiThread {
@@ -89,10 +91,6 @@ class MainActivity: AppCompatActivity()
                             bottomNavigationView.menu.findItem(R.id.tracklist_fragment).isChecked = true
                         }
                     }
-                }
-                else ->
-                {
-                    // do nothing
                 }
             }
         }
