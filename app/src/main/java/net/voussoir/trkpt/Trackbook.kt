@@ -77,7 +77,7 @@ class Trackbook : Application()
         if (folder == "")
         {
             Log.i("VOUSSOIR", "Trackbook.load_database: folder came up blank.")
-            this.database.ready = false
+            this.database.ready_at = 0
             return
         }
         if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
@@ -89,7 +89,7 @@ class Trackbook : Application()
         else
         {
             Log.i("VOUSSOIR", "Trackbook.load_database: lacking WRITE_EXTERNAL_STORAGE permission.")
-            this.database.ready = false
+            this.database.ready_at = 0
         }
         this.call_database_changed_listeners()
     }
