@@ -24,8 +24,12 @@ import android.util.Log
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import net.voussoir.trkpt.Keys
-import net.voussoir.trkpt.extensions.getDouble
-import net.voussoir.trkpt.extensions.putDouble
+
+/* Puts a Double value in SharedPreferences */
+fun SharedPreferences.Editor.putDouble(key: String, double: Double) = putLong(key, java.lang.Double.doubleToRawLongBits(double))
+
+/* gets a Double value from SharedPreferences */
+fun SharedPreferences.getDouble(key: String, default: Double) = java.lang.Double.longBitsToDouble(getLong(key, java.lang.Double.doubleToRawLongBits(default)))
 
 /*
  * PreferencesHelper object
