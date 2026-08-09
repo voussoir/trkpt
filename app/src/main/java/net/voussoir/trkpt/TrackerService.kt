@@ -361,6 +361,8 @@ class TrackerService: Service()
         {
             override fun onLocationChanged(location: Location)
             {
+                // The early returns from this function mean the point will be discarded.
+                // The very bottom of this function actually adds the point to the track.
                 Log.i("VOUSSOIR", "Processing point ${location.time} ${location.latitude}, ${location.longitude}.")
 
                 if (location.time <= currentBestLocation.time)
@@ -401,7 +403,6 @@ class TrackerService: Service()
                     {
                         continue
                     }
-                    Log.i("VOUSSOIR", "Omitting due to homepoint ${index} ${homepoint.name}.")
 
                     // Move this homepoint to the front of the list so that on subsequent location
                     // updates it hits on the first loop. I'm sure this is a trivial amount of
@@ -427,6 +428,7 @@ class TrackerService: Service()
                         Log.i("VOUSSOIR", "Staying at home, sleeping.")
                         state_sleep()
                     }
+                    Log.i("VOUSSOIR", "Omitting due to homepoint ${index} ${homepoint.name}.")
                     return
                 }
 
