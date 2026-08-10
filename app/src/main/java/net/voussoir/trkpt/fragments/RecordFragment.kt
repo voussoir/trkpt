@@ -54,15 +54,13 @@ class RecordFragment : Fragment()
 {
     private lateinit var trackbook: Trackbook
 
-    private var tracker_service_bound: Boolean = false
-    private var tracker_service: TrackerService? = null
-
     val handler: Handler = Handler(Looper.getMainLooper())
+
+    val main_activity: MainActivity
+        get() = requireActivity() as MainActivity
 
     var continuous_auto_center: Boolean = true
     var show_debug: Boolean = false
-
-    private lateinit var database_changed_listener: DatabaseChangedListener
 
     lateinit var rootView: View
     private lateinit var mapView: MapView
@@ -82,22 +80,6 @@ class RecordFragment : Fragment()
         Log.i("VOUSSOIR", "MapFragment.onCreate")
         super.onCreate(savedInstanceState)
         this.trackbook = (requireContext().applicationContext as Trackbook)
-        database_changed_listener = object: DatabaseChangedListener
-        {
-            override fun database_changed()
-            {
-                Log.i("VOUSSOIR", "MapFragment database_ready changed to ${trackbook.database.ready}")
-                if (trackbook.database.ready)
-                {
-                    create_homepoint_overlays()
-                }
-                else
-                {
-                    clear_homepoint_overlays()
-                }
-                update_main_button()
-            }
-        }
     }
 
     /* Overrides onStop from Fragment */
@@ -191,28 +173,27 @@ class RecordFragment : Fragment()
         }
 
         mainButton.setOnClickListener {
-            val tracker = tracker_service
-            if (tracker == null)
+            if (main_activity.tracker_service == null)
             {
                 return@setOnClickListener
             }
-            if (tracker.tracking_state != Keys.STATE_STOP && tracker.tracking_state != Keys.STATE_MAPVIEW)
+            val tracker = main_activity.tracker_service!!
+            if (! tracker.tracking_state_recordable)
             {
-                tracker.state_mapview()
+                tracker.state_full_recording()
             }
             else
             {
-                startTracking()
+                tracker.state_mapview()
             }
             handler.postDelayed(redraw_runnable, 0)
         }
         currentLocationButton.setOnClickListener {
-            val tracker = tracker_service
-            if (tracker == null)
+            if (main_activity.tracker_service == null)
             {
                 return@setOnClickListener
             }
-            centerMap(tracker.currentBestLocation)
+            centerMap(main_activity.tracker_service!!.currentBestLocation)
         }
         zoom_in_button.setOnClickListener {
             mapView.controller.setZoom(mapView.zoomLevelDouble + 0.5)
@@ -224,6 +205,8 @@ class RecordFragment : Fragment()
         show_debug = PreferencesHelper.loadShowDebug()
 
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        PreferencesHelper.registerPreferenceChangeListener(sharedPreferenceChangeListener)
+
         handler.post(redraw_runnable)
         return rootView
     }
@@ -233,8 +216,8 @@ class RecordFragment : Fragment()
     {
         Log.i("VOUSSOIR", "MapFragment.onStart")
         super.onStart()
-        activity?.bindService(Intent(activity, TrackerService::class.java), tracker_service_connection, Context.BIND_AUTO_CREATE)
         handler.post(redraw_runnable)
+        requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     /* Overrides onResume from Fragment */
@@ -244,10 +227,10 @@ class RecordFragment : Fragment()
         super.onResume()
         handler.post(redraw_runnable)
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        // if (bound) {
-        //     trackerService.addGpsLocationListener()
-        //     trackerService.addNetworkLocationListener()
-        // }
+        if (main_activity.tracker_service?.tracking_state == Keys.STATE_STOP)
+        {
+            main_activity.tracker_service?.state_mapview()
+        }
     }
 
     /* Overrides onPause from Fragment */
@@ -255,34 +238,20 @@ class RecordFragment : Fragment()
     {
         Log.i("VOUSSOIR", "MapFragment.onPause")
         super.onPause()
-        requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
-        val tracker = tracker_service
-        if (tracker == null)
-        {
-            return
-        }
-        saveBestLocationState(tracker.currentBestLocation)
-        if (tracker_service_bound && (tracker.tracking_state == Keys.STATE_MAPVIEW || tracker.tracking_state == Keys.STATE_STOP))
-        {
-            tracker.remove_gps_location_listener()
-            tracker.remove_network_location_listener()
-            tracker.trackbook.database.commit()
-        }
         handler.removeCallbacks(redraw_runnable)
+        requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        if (main_activity.tracker_service?.tracking_state == Keys.STATE_MAPVIEW)
+        {
+            main_activity.tracker_service?.state_stop()
+        }
     }
 
     /* Overrides onStop from Fragment */
     override fun onStop()
     {
         super.onStop()
-        // unbind from TrackerService
-        if (tracker_service_bound)
-        {
-            activity?.unbindService(tracker_service_connection)
-            handleServiceUnbind()
-        }
         handler.removeCallbacks(redraw_runnable)
+        requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
     override fun onDestroyView()
@@ -301,32 +270,20 @@ class RecordFragment : Fragment()
         handler.removeCallbacks(redraw_runnable)
     }
 
-    private fun startTracking()
-    {
-        // start service via intent so that it keeps running after unbind
-        val intent = Intent(activity, TrackerService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+    private val database_changed_listener = object: DatabaseChangedListener {
+        override fun database_changed()
         {
-            // ... start service in foreground to prevent it being killed on Oreo
-            activity?.startForegroundService(intent)
+            Log.i("VOUSSOIR", "MapFragment: database_ready changed to ${trackbook.database.ready}")
+            if (trackbook.database.ready)
+            {
+                create_homepoint_overlays()
+            }
+            else
+            {
+                clear_homepoint_overlays()
+            }
+            update_main_button()
         }
-        else
-        {
-            activity?.startService(intent)
-        }
-        if (tracker_service != null)
-        {
-            tracker_service!!.state_full_recording()
-        }
-    }
-
-
-    /* Handles state when service is being unbound */
-    private fun handleServiceUnbind()
-    {
-        tracker_service_bound = false
-        // unregister listener for changes in shared preferences
-        PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
     }
 
     private val sharedPreferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
@@ -334,7 +291,6 @@ class RecordFragment : Fragment()
         {
             show_debug = sharedPreferences.getBoolean(Keys.PREF_SHOW_DEBUG, Keys.DEFAULT_SHOW_DEBUG)
         }
-        redraw()
     }
 
     fun centerMap(location: Location)
@@ -367,32 +323,32 @@ class RecordFragment : Fragment()
     {
         clear_current_position_overlays()
 
-        val tracker = tracker_service
-        if (tracker == null)
+        if (main_activity.tracker_service == null)
         {
             return
         }
+        val tracker = main_activity.tracker_service!!
 
         val locationIsOld: Boolean = !(isRecentEnough(tracker.currentBestLocation))
 
         val newMarker: Drawable
-        val fillcolor: Int
+        val radiuscolor: Int
         val description: String
         if (tracker.tracking_state == Keys.STATE_DEAD)
         {
-            fillcolor = Color.argb(64, 0, 0, 0)
+            radiuscolor = Color.argb(64, 0, 0, 0)
             newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_skull_24dp)!!
             description = "GPS is struggling; disabled until movement"
         }
         else if (tracker.tracking_state == Keys.STATE_SLEEP)
         {
-            fillcolor = Color.argb(64, 220, 61, 51)
+            radiuscolor = Color.argb(64, 220, 61, 51)
             newMarker = ContextCompat.getDrawable(requireContext(), R.drawable.ic_sleep_24dp)!!
             description = "GPS sleeping until movement"
         }
         else if (locationIsOld)
         {
-            fillcolor = Color.argb(64, 0, 0, 0)
+            radiuscolor = Color.argb(64, 0, 0, 0)
             newMarker = ContextCompat.getDrawable(requireContext(),
                 R.drawable.ic_marker_location_black_24dp
             )!!
@@ -400,7 +356,7 @@ class RecordFragment : Fragment()
         }
         else if (tracker.tracking_state == Keys.STATE_FULL_RECORDING || tracker.tracking_state == Keys.STATE_ARRIVED_AT_HOME)
         {
-            fillcolor = Color.argb(64, 220, 61, 51)
+            radiuscolor = Color.argb(64, 220, 61, 51)
             newMarker = ContextCompat.getDrawable(requireContext(),
                 R.drawable.ic_marker_location_red_24dp
             )!!
@@ -408,7 +364,7 @@ class RecordFragment : Fragment()
         }
         else
         {
-            fillcolor = Color.argb(64, 60, 152, 219)
+            radiuscolor = Color.argb(64, 60, 152, 219)
             newMarker = ContextCompat.getDrawable(requireContext(),
                 R.drawable.ic_marker_location_blue_24dp
             )!!
@@ -420,7 +376,7 @@ class RecordFragment : Fragment()
             GeoPoint(tracker.currentBestLocation.latitude, tracker.currentBestLocation.longitude),
             tracker.currentBestLocation.accuracy.toDouble()
         )
-        current_location_radius.fillPaint.color = fillcolor
+        current_location_radius.fillPaint.color = radiuscolor
         current_location_radius.outlinePaint.color = Color.argb(0, 0, 0, 0)
         current_position_overlays.add(current_location_radius)
 
@@ -551,66 +507,59 @@ class RecordFragment : Fragment()
 
     fun update_main_button()
     {
-        val tracker = tracker_service
-        mainButton.isEnabled = trackbook.database.ready
         currentLocationButton.isVisible = true
         if (! trackbook.database.ready)
         {
-            mainButton.text = requireContext().getString(R.string.button_not_ready)
+            mainButton.isEnabled = false
+            mainButton.text = requireContext().getString(R.string.button_not_ready_database)
             mainButton.icon = null
         }
-        else if (tracker == null || tracker.tracking_state == Keys.STATE_STOP || tracker.tracking_state == Keys.STATE_MAPVIEW)
+        else if (main_activity.tracker_service == null)
         {
-            mainButton.setIconResource(R.drawable.ic_fiber_manual_record_inactive_24dp)
-            mainButton.text = requireContext().getString(R.string.button_start)
-            mainButton.contentDescription = requireContext().getString(R.string.descr_button_start)
+            mainButton.isEnabled = false
+            mainButton.text = requireContext().getString(R.string.button_not_ready_tracker)
+            mainButton.icon = null
         }
-        else
+        else if (! main_activity.tracker_service!!.anyLocationListenerRegistered)
         {
-            mainButton.setIconResource(R.drawable.ic_fiber_manual_stop_24dp)
+            mainButton.isEnabled = false
+            mainButton.text = requireContext().getString(R.string.button_not_ready_listeners)
+            mainButton.icon = null
+        }
+        else if (main_activity.tracker_service!!.tracking_state_recordable)
+        {
+            mainButton.isEnabled = true
+            mainButton.setIconResource(R.drawable.ic_mainbutton_stopped)
             mainButton.text = requireContext().getString(R.string.button_pause)
             mainButton.contentDescription = requireContext().getString(R.string.descr_button_pause)
         }
-    }
+        else
+        {
+            mainButton.isEnabled = true
+            mainButton.setIconResource(R.drawable.ic_mainbutton_recording)
+            mainButton.text = requireContext().getString(R.string.button_start)
+            mainButton.contentDescription = requireContext().getString(R.string.descr_button_start)
+        }
 
-    private val tracker_service_connection = object : ServiceConnection {
-        override fun onServiceConnected(className: ComponentName, service: IBinder)
-        {
-            // get reference to tracker service]
-            val serviceref = (service as TrackerServiceBinder).service.get()
-            if (serviceref == null)
-            {
-                return
-            }
-            tracker_service_bound = true
-            tracker_service = serviceref
-            // get state of tracking and update button if necessary
-            redraw()
-            // register listener for changes in shared preferences
-            PreferencesHelper.registerPreferenceChangeListener(sharedPreferenceChangeListener)
-        }
-        override fun onServiceDisconnected(arg0: ComponentName)
-        {
-            // service has crashed, or was killed by the system
-            handleServiceUnbind()
-        }
     }
 
     fun redraw()
     {
         update_main_button()
-        val tracker = tracker_service
-        if (tracker == null)
+        if (main_activity.tracker_service == null)
         {
             return
         }
+        val tracker = main_activity.tracker_service!!
         create_current_position_overlays()
         if (current_track_overlay == null)
         {
             create_track_overlay()
         }
-
-        current_track_overlay!!.setPoints(tracker.recent_trackpoints_for_mapview)
+        else
+        {
+            current_track_overlay!!.setPoints(tracker.recent_trackpoints_for_mapview)
+        }
 
         if (continuous_auto_center)
         {
@@ -645,11 +594,11 @@ class RecordFragment : Fragment()
 
     fun state_name(): String
     {
-        val tracker = tracker_service
-        if (tracker == null)
+        if (main_activity.tracker_service == null)
         {
             return "null"
         }
+        val tracker = main_activity.tracker_service!!
         return when (tracker.tracking_state)
         {
             Keys.STATE_STOP -> "stop"

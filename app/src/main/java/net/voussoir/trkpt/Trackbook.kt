@@ -26,6 +26,7 @@ import android.content.pm.PackageManager
 import android.database.Cursor
 import android.util.Log
 import com.google.android.material.color.DynamicColors
+import kotlinx.coroutines.sync.Mutex
 import net.voussoir.trkpt.helpers.AppThemeHelper
 import net.voussoir.trkpt.helpers.PreferencesHelper
 import net.voussoir.trkpt.helpers.PreferencesHelper.initPreferences
@@ -40,6 +41,7 @@ interface DatabaseChangedListener
 class Trackbook : Application()
 {
     val database = Database(this)
+    val database_mutex = Mutex()
     val homepoints: ArrayDeque<Homepoint> = ArrayDeque()
     val database_changed_listeners = ArrayList<DatabaseChangedListener>()
 
@@ -81,17 +83,23 @@ class Trackbook : Application()
     fun load_database()
     {
         Log.i("VOUSSOIR", "Trackbook.load_database")
-        val folder = PreferencesHelper.load_database_folder()
+        if (! database_mutex.tryLock())
+        {
+            Log.i("VOUSSOIR", "Trackbook.load_database: mutex already locked")
+            return
+        }
         if (this.database.ready)
         {
             Log.i("VOUSSOIR", "Trackbook.load_database: closing and re-opening.")
             this.database.commit()
             this.database.close()
         }
+        val folder = PreferencesHelper.load_database_folder()
         if (folder == "")
         {
             Log.i("VOUSSOIR", "Trackbook.load_database: folder came up blank.")
             this.database.ready_at = 0
+            database_mutex.unlock()
             return
         }
         if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
@@ -106,6 +114,7 @@ class Trackbook : Application()
             this.database.ready_at = 0
         }
         this.call_database_changed_listeners()
+        database_mutex.unlock()
     }
 
     fun load_homepoints()

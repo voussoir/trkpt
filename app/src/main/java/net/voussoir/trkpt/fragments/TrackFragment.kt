@@ -206,8 +206,6 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             gpslistenerregistered = true
         }
 
-        // trkpt_infowindow = MarkerInfoWindow(R.layout.trkpt_infowindow, mapView)
-
         statisticsSheet = rootView.findViewById(R.id.statistics_sheet)
         statisticsView = rootView.findViewById(R.id.statistics_view)
         distanceView = rootView.findViewById(R.id.statistics_data_distance)
@@ -426,7 +424,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
 
         save_track_button.setOnClickListener {
             val dialog = Dialog(activity as Context)
-            dialog.setContentView(R.layout.dialog_rename_track)
+            dialog.setContentView(R.layout.dialog_save_gpx)
             dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
             dialog.setTitle("Track name")
 

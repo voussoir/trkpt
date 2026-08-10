@@ -23,7 +23,9 @@
     <string name="button_pause">Stop</string>
     <string name="button_save">Save</string>
     <string name="button_start">Record</string>
-    <string name="button_not_ready">Database not set up.</string>
+    <string name="button_not_ready_database">Database not set up.</string>
+    <string name="button_not_ready_tracker">Tracker not ready.</string>
+    <string name="button_not_ready_listeners">GPS/Network not set.</string>
     <!-- Dialogs -->
     <string name="dialog_delete_current_recording_message">Discard current recording?</string>
     <string name="dialog_delete_current_recording_button_discard">Discard</string>

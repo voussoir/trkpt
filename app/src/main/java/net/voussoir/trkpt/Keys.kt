@@ -35,8 +35,8 @@ object Keys {
     const val DATABASE_VERSION: Int = 1
 
     // intent actions
-    const val ACTION_START: String = "net.voussoir.trkpt.action.START"
-    const val ACTION_STOP: String = "net.voussoir.trkpt.action.STOP"
+    const val ACTION_START_SERVICE: String = "net.voussoir.trkpt.action.START_SERVICE"
+    const val ACTION_STOP_SERVICE: String = "net.voussoir.trkpt.action.STOP_SERVICE"
 
     // args
     const val ARG_TRACK_TITLE: String = "ArgTrackTitle"

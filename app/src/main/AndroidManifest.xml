@@ -35,6 +35,7 @@
         <!-- MAIN ACTIVITY -->
         <activity
             android:name="net.voussoir.trkpt.MainActivity"
+            android:launchMode="singleInstance"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

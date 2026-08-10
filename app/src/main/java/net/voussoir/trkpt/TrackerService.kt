@@ -44,6 +44,17 @@ class TrackerService: Service()
     val handler: Handler = Handler(Looper.getMainLooper())
 
     var tracking_state: Int = Keys.STATE_STOP
+    // These are the states where the user's desire is for the recorder to be active. The app should
+    // never transition from one of these states to the STOP or MAPVIEW states except by the user
+    // clicking the stop button. This computed property simplifies conditional checks throughout the
+    // app.
+    val tracking_state_recordable: Boolean
+        get() = (
+            tracking_state == Keys.STATE_FULL_RECORDING ||
+            tracking_state == Keys.STATE_ARRIVED_AT_HOME ||
+            tracking_state == Keys.STATE_SLEEP ||
+            tracking_state == Keys.STATE_DEAD
+        )
     var useImperial: Boolean = false
     var omitRests: Boolean = true
     var max_accuracy: Float = Keys.DEFAULT_MAX_ACCURACY
@@ -52,7 +63,6 @@ class TrackerService: Service()
     var device_id: String = random_device_id()
     var currentBestLocation: Location = getDefaultLocation()
     var last_commit: Long = 0
-    var foreground_started: Long = 0
     var listeners_enabled_at: Long = 0
     var last_significant_motion: Long = 0
     var last_watchdog: Long = 0
@@ -66,21 +76,22 @@ class TrackerService: Service()
     private val DISPLACEMENT_LOCATION_COUNT = 5
     lateinit var recent_displacement_locations: Deque<Location>
     lateinit var recent_trackpoints_for_mapview: MutableList<GeoPoint>
-    var bound: Boolean = false
     private val binder = TrackerServiceBinder(this)
 
     private lateinit var notification_manager: NotificationManager
     private lateinit var notification_builder: NotificationCompat.Builder
 
-    private lateinit var locationManager: LocationManager
+    private lateinit var location_manager: LocationManager
     private lateinit var gpsLocationListener: LocationListener
     private lateinit var networkLocationListener: LocationListener
+
     var use_gps_location: Boolean = false
     var use_network_location: Boolean = false
-    var gpsProviderActive: Boolean = false
-    var networkProviderActive: Boolean = false
+
     var gpsLocationListenerRegistered: Boolean = false
     var networkLocationListenerRegistered: Boolean = false
+    val anyLocationListenerRegistered: Boolean
+        get() = gpsLocationListenerRegistered || networkLocationListenerRegistered
 
     private lateinit var sensor_manager: SensorManager
     private var significant_motion_sensor: Sensor? = null
@@ -95,21 +106,20 @@ class TrackerService: Service()
     private fun add_gps_location_listener(interval: Long): Boolean
     {
         gpsLocationListenerRegistered = false
-        gpsProviderActive = isGpsEnabled(locationManager)
-        if (! gpsProviderActive)
+        if (! isGpsEnabled(location_manager))
         {
             Log.w("VOUSSOIR", "Device GPS is not enabled.")
             return false
         }
 
-        val has_permission: Boolean = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        if (! has_permission)
+        val has_location_permission: Boolean = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (! has_location_permission)
         {
             Log.w("VOUSSOIR", "Location permission is not granted.")
             return false
         }
 
-        locationManager.requestLocationUpdates(
+        location_manager.requestLocationUpdates(
             LocationManager.GPS_PROVIDER,
             interval,
             0f,
@@ -123,21 +133,20 @@ class TrackerService: Service()
     private fun add_network_location_listener(interval: Long): Boolean
     {
         networkLocationListenerRegistered = false
-        networkProviderActive = isNetworkEnabled(locationManager)
-        if (!networkProviderActive)
+        if (! isNetworkEnabled(location_manager))
         {
             Log.w("VOUSSOIR", "Unable to add Network location listener.")
             return false
         }
 
-        val has_permission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        if (! has_permission)
+        val has_location_permission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (! has_location_permission)
         {
             Log.w("VOUSSOIR", "Unable to add Network location listener. Location permission is not granted.")
             return false
         }
 
-        locationManager.requestLocationUpdates(
+        location_manager.requestLocationUpdates(
             LocationManager.NETWORK_PROVIDER,
             interval,
             0f,
@@ -152,7 +161,7 @@ class TrackerService: Service()
     {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
         {
-            locationManager.removeUpdates(gpsLocationListener)
+            location_manager.removeUpdates(gpsLocationListener)
             gpsLocationListenerRegistered = false
             Log.i("VOUSSOIR", "Removed GPS location listener.")
         }
@@ -166,7 +175,7 @@ class TrackerService: Service()
     {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
         {
-            locationManager.removeUpdates(networkLocationListener)
+            location_manager.removeUpdates(networkLocationListener)
             networkLocationListenerRegistered = false
             Log.i("VOUSSOIR", "Removed Network location listener.")
         }
@@ -179,6 +188,7 @@ class TrackerService: Service()
     fun load_tracking_state()
     {
         tracking_state = PreferencesHelper.loadTrackingState()
+        Log.i("VOUSSOIR", "TrackerService.load_tracking_state ${tracking_state}" )
         when (tracking_state)
         {
             Keys.STATE_STOP -> state_stop()
@@ -192,8 +202,8 @@ class TrackerService: Service()
 
     fun state_stop()
     {
-        // This state is activated when the user intentionally stops the recording, or exits the
-        // mapfragment without starting to record.
+        // This state is activated when the user intentionally stops the recording, or leaves the
+        // RecordFragment without pressing the record button.
         Log.i("VOUSSOIR", "TrackerService.state_stop")
         tracking_state = Keys.STATE_STOP
         PreferencesHelper.saveTrackingState(tracking_state)
@@ -203,44 +213,44 @@ class TrackerService: Service()
         arrived_at_home = 0
         dead_at = 0
         dead_reason = ""
-        if (foreground_started > 0)
-        {
-            stopForeground(STOP_FOREGROUND_DETACH)
-            foreground_started = 0
-        }
         stop_wakelock()
         displayNotification()
     }
     fun state_full_recording()
     {
-        // This state is the only one that will record points into the database, and tracks location
-        // at full power. A wakelock is used to resist Android's doze. This state should be active
-        // while out and about.
-        Log.i("VOUSSOIR", "TrackerService.state_full_power")
+        // This state is the only one that will record points into the database.
+        // Location is tracked at full power. A wakelock is used to resist Android's doze.
+        // This state should be active while out and about.
+        val try_id = random_int()
+        Log.i("VOUSSOIR", "TrackerService.trying state_full_power ${try_id}")
+
+        // Reloading the database can help if the file handle has become invalid while the app was
+        // in a different state. For example, when at home and the database is being synced with
+        // Syncthing. In my case, I had edited the database on my computer which synced back to the
+        // phone, but when I left the house the next day, points did not record.
+        // So reloading the database whenever switching to full power is a harmless security net.
+        // However, I add a 10 second check because this call will close the current database
+        // connection, triggering our database_changed_listener which would set us to dead, then
+        // load the new database connection, triggering this call in an infinite loop.
+        if (System.currentTimeMillis() - trackbook.database.ready_at > 10 * Keys.ONE_SECOND_IN_MILLISECONDS)
+        {
+            trackbook.load_database()
+        }
+
         if (! trackbook.database.ready)
         {
             state_dead("Database not ready")
+            return
         }
-        trackbook.load_database()
+
+        Log.i("VOUSSOIR", "TrackerService.state_full_power ${try_id}")
         tracking_state = Keys.STATE_FULL_RECORDING
         PreferencesHelper.saveTrackingState(tracking_state)
         reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
         arrived_at_home = 0
         dead_at = 0
         dead_reason = ""
-        if (foreground_started == 0L)
-        {
-            startForeground(Keys.TRACKER_SERVICE_NOTIFICATION_ID, displayNotification())
-            foreground_started = System.currentTimeMillis()
-        }
-        if (gpsLocationListenerRegistered || networkLocationListenerRegistered)
-        {
-            start_wakelock()
-        }
-        else
-        {
-            state_dead("No listeners enabled")
-        }
+        start_wakelock()
         displayNotification()
     }
     fun state_arrived_at_home()
@@ -302,10 +312,6 @@ class TrackerService: Service()
         dead_reason = ""
         stop_wakelock()
         displayNotification()
-        if (!gpsLocationListenerRegistered && !networkLocationListenerRegistered)
-        {
-            state_dead(dead_reason="No listeners enabled")
-        }
     }
 
     fun start_wakelock()
@@ -344,7 +350,7 @@ class TrackerService: Service()
             remove_network_location_listener()
         }
 
-        if (gpsLocationListenerRegistered || networkLocationListenerRegistered)
+        if (anyLocationListenerRegistered)
         {
             listeners_enabled_at = System.currentTimeMillis()
         }
@@ -372,7 +378,7 @@ class TrackerService: Service()
 
                 currentBestLocation = location
 
-                if (tracking_state == Keys.STATE_STOP || tracking_state == Keys.STATE_MAPVIEW)
+                if (!tracking_state_recordable)
                 {
                     return
                 }
@@ -428,7 +434,7 @@ class TrackerService: Service()
                         Log.i("VOUSSOIR", "Staying at home, sleeping.")
                         state_sleep()
                     }
-                    Log.i("VOUSSOIR", "Omitting due to homepoint ${index} ${homepoint.name}.")
+                    Log.i("VOUSSOIR", "Omitting due to homepoint ${homepoint.id} ${homepoint.name}.")
                     return
                 }
 
@@ -490,23 +496,15 @@ class TrackerService: Service()
             override fun onProviderEnabled(provider: String)
             {
                 Log.v("VOUSSOIR", "onProviderEnabled $provider")
-                when (provider) {
-                    LocationManager.GPS_PROVIDER -> gpsProviderActive = isGpsEnabled(locationManager)
-                    LocationManager.NETWORK_PROVIDER -> networkProviderActive = isNetworkEnabled(locationManager)
-                }
             }
             override fun onProviderDisabled(provider: String)
             {
                 Log.v("VOUSSOIR", "onProviderDisabled $provider")
-                when (provider) {
-                    LocationManager.GPS_PROVIDER -> gpsProviderActive = isGpsEnabled(locationManager)
-                    LocationManager.NETWORK_PROVIDER -> networkProviderActive = isNetworkEnabled(locationManager)
-                }
             }
         }
     }
 
-    private fun displayNotification(): Notification
+    fun displayNotification(): Notification
     {
         notification_builder.setWhen(System.currentTimeMillis())
         if (shouldCreateNotificationChannel())
@@ -539,11 +537,11 @@ class TrackerService: Service()
             notification_builder.setContentText(dead_reason)
             notification_builder.setSmallIcon(R.drawable.ic_skull_24dp)
         }
-        else if (tracking_state == Keys.STATE_STOP || tracking_state == Keys.STATE_MAPVIEW)
+        else
         {
             notification_builder.setContentTitle("${timestamp} (stopped)")
             notification_builder.setContentText(null)
-            notification_builder.setSmallIcon(R.drawable.ic_fiber_manual_stop_24dp)
+            notification_builder.setSmallIcon(R.drawable.ic_notification_action_stop_24dp)
         }
 
         val notification = notification_builder.build()
@@ -578,11 +576,7 @@ class TrackerService: Service()
         {
             state_mapview()
         }
-        else
-        {
-            displayNotification()
-        }
-        bound = true
+        displayNotification()
         return binder
     }
 
@@ -598,7 +592,6 @@ class TrackerService: Service()
         {
             displayNotification()
         }
-        bound = true
     }
 
     /* Overrides onUnbind from Service */
@@ -606,10 +599,9 @@ class TrackerService: Service()
     {
         super.onUnbind(intent)
         Log.i("VOUSSOIR", "TrackerService.onUnbind")
-        bound = false
 
         // the user was only perusing the map and did not start recording, so we'll just stop.
-        if (tracking_state == Keys.STATE_MAPVIEW)
+        if (! tracking_state_recordable)
         {
             state_stop()
         }
@@ -634,20 +626,28 @@ class TrackerService: Service()
         max_accuracy = PreferencesHelper.load_max_accuracy()
         show_debug = PreferencesHelper.loadShowDebug()
         allow_sleep = PreferencesHelper.loadAllowSleep()
-        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        location_manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         notification_manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notification_builder = NotificationCompat.Builder(this, Keys.NOTIFICATION_CHANNEL_RECORDING)
-        val showActionPendingIntent: PendingIntent? = TaskStackBuilder.create(this).run {
-            addNextIntentWithParentStack(Intent(this@TrackerService, MainActivity::class.java))
-            getPendingIntent(10, PendingIntent.FLAG_IMMUTABLE)
+        val notification_intent = Intent(this@TrackerService, MainActivity::class.java).apply {
+            // Resumes the existing activity instead of killing it and starting a new one.
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-        notification_builder.setContentIntent(showActionPendingIntent)
+        val notification_pendingintent = PendingIntent.getActivity(
+            this@TrackerService,
+            0, // Request code
+            notification_intent,
+            // IMMUTABLE is standard; UPDATE_CURRENT updates any extras if sent again
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        notification_builder.setContentIntent(notification_pendingintent)
         notification_builder.setSmallIcon(R.drawable.ic_notification_icon_small_24dp)
-        gpsProviderActive = isGpsEnabled(locationManager)
-        networkProviderActive = isNetworkEnabled(locationManager)
         gpsLocationListener = createLocationListener()
         networkLocationListener = createLocationListener()
         currentBestLocation = getLastKnownLocation(this)
+
+        trackbook.add_database_changed_listener(database_changed_listener)
+
         PreferencesHelper.registerPreferenceChangeListener(sharedPreferenceChangeListener)
 
         val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
@@ -734,28 +734,56 @@ class TrackerService: Service()
     /* Overrides onStartCommand from Service */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
     {
-        Log.i("VOUSSOIR", "TrackerService.onStartCommand")
+        Log.i("VOUSSOIR", "TrackerService.onStartCommand " + intent?.action)
 
         // SERVICE RESTART (via START_STICKY)
         if (intent == null)
         {
-            if (tracking_state != Keys.STATE_STOP && tracking_state != Keys.STATE_MAPVIEW)
+            if (tracking_state_recordable)
             {
                 Log.w("VOUSSOIR", "Trackbook has been killed by the operating system. Trying to resume recording.")
                 state_full_recording()
             }
+            return START_STICKY
         }
-        else if (intent.action == Keys.ACTION_STOP)
+        else if (intent.action == Keys.ACTION_START_SERVICE)
         {
-            state_stop()
+            // START_STICKY is used for services that are explicitly started and stopped as needed
+            return START_STICKY
         }
-        else if (intent.action == Keys.ACTION_START)
+        else if (intent.action == Keys.ACTION_STOP_SERVICE)
         {
-            state_full_recording()
+            if (gentle_stop())
+            {
+                return START_NOT_STICKY
+            }
+            else
+            {
+                return START_STICKY
+            }
         }
+        return START_NOT_STICKY
+    }
 
-        // START_STICKY is used for services that are explicitly started and stopped as needed
-        return START_STICKY
+    fun gentle_stop(): Boolean
+    {
+        if (tracking_state_recordable)
+        {
+            return false
+        }
+        Log.i("VOUSSOIR", "TrackerService.gentle_stop: stopSelf")
+        displayNotification()
+        stopForeground(Service.STOP_FOREGROUND_DETACH)
+        stopSelf()
+        return true
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?)
+    {
+        // This method is called when the user swipes away the app from recents.
+        Log.i("VOUSSOIR", "TrackerService.onTaskRemoved.")
+        super.onTaskRemoved(rootIntent)
+        gentle_stop()
     }
 
     /* Overrides onDestroy from Service */
@@ -763,10 +791,25 @@ class TrackerService: Service()
     {
         Log.i("VOUSSOIR", "TrackerService.onDestroy.")
         super.onDestroy()
-        state_stop()
+        trackbook.remove_database_changed_listener(database_changed_listener)
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
         handler.removeCallbacks(background_watchdog)
         unregisterReceiver(charging_broadcast_receiver)
+    }
+
+    private val database_changed_listener = object: DatabaseChangedListener {
+        override fun database_changed()
+        {
+            Log.i("VOUSSOIR", "TrackerService.database_changed_listener: database_ready changed to ${trackbook.database.ready}")
+            if (trackbook.database.ready && tracking_state_recordable)
+            {
+                state_full_recording()
+            }
+            else if (tracking_state_recordable)
+            {
+                state_dead("Database not ready")
+            }
+        }
     }
 
     private val sharedPreferenceChangeListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
@@ -775,12 +818,12 @@ class TrackerService: Service()
             Keys.PREF_LOCATION_GPS ->
             {
                 use_gps_location = PreferencesHelper.load_location_gps()
-                state_full_recording()
+                load_tracking_state()
             }
             Keys.PREF_LOCATION_NETWORK ->
             {
                 use_network_location = PreferencesHelper.load_location_network()
-                state_full_recording()
+                load_tracking_state()
             }
             Keys.PREF_USE_IMPERIAL_UNITS ->
             {

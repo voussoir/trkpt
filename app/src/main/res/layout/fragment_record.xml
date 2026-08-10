@@ -35,7 +35,7 @@
             android:text="@string/button_start"
             android:textColor="@color/recording_management_buttons_icon"
             app:backgroundTint="@color/recording_management_buttons_background"
-            app:icon="@drawable/ic_fiber_manual_record_inactive_24dp"
+            app:icon="@drawable/ic_mainbutton_recording"
             app:iconTint="@color/recording_management_buttons_icon"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"

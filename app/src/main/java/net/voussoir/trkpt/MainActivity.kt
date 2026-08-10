@@ -22,10 +22,13 @@ package net.voussoir.trkpt
 
 import android.Manifest
 import android.app.Activity
-import android.content.SharedPreferences
+import android.app.PendingIntent
+import android.app.Service
+import android.content.*
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import android.os.StrictMode
 import android.os.StrictMode.VmPolicy
 import android.util.Log
@@ -41,6 +44,8 @@ import net.voussoir.trkpt.helpers.PreferencesHelper
 class MainActivity: AppCompatActivity()
 {
     lateinit var trackbook: Trackbook
+    var tracker_service: TrackerService? = null
+
     private lateinit var navHostFragment: NavHostFragment
     private lateinit var bottomNavigationView: BottomNavigationView
 
@@ -97,11 +102,27 @@ class MainActivity: AppCompatActivity()
 
         // register listener for changes in shared preferences
         PreferencesHelper.registerPreferenceChangeListener(sharedPreferenceChangeListener)
+
+        start_tracker_service()
+    }
+
+    fun start_tracker_service()
+    {
+        Log.i("VOUSSOIR", "MainActivity.start_tracker_service")
+        if (tracker_service == null)
+        {
+            val intent = Intent(this.applicationContext, TrackerService::class.java).apply {
+                action = Keys.ACTION_START_SERVICE
+            }
+            bindService(Intent(this.applicationContext, TrackerService::class.java), tracker_service_connection, Context.BIND_AUTO_CREATE)
+            ContextCompat.startForegroundService(this, intent)
+            tracker_service?.displayNotification()
+        }
     }
 
     private fun request_permissions(activity: Activity)
     {
-        Log.i("VOUSSOIR", "MainActivity requests permissions.")
+        Log.i("VOUSSOIR", "MainActivity.request_permissions")
         val permissions_wanted = arrayOf(
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
             Manifest.permission.MANAGE_EXTERNAL_STORAGE,
@@ -114,12 +135,12 @@ class MainActivity: AppCompatActivity()
         {
             if (ContextCompat.checkSelfPermission(applicationContext, permission) != PackageManager.PERMISSION_GRANTED)
             {
-                Log.i("VOUSSOIR", "We need " + permission)
+                Log.i("VOUSSOIR", "MainActivity.request_permissions: We need " + permission)
                 permissions_needed.add(permission)
             }
         }
         val result = requestPermissions(permissions_wanted, 1)
-        Log.i("VOUSSOIR", "Permissions result " + result)
+        Log.i("VOUSSOIR", "MainActivity.request_permissions: result " + result)
     }
 
     /* Overrides onDestroy from AppCompatActivity */
@@ -127,8 +148,12 @@ class MainActivity: AppCompatActivity()
     {
         Log.i("VOUSSOIR", "MainActivity.onDestroy")
         super.onDestroy()
-        // unregister listener for changes in shared preferences
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
+        val stopIntent = Intent(this, TrackerService::class.java).apply {
+            action = Keys.ACTION_STOP_SERVICE
+        }
+        startService(stopIntent)
+        unbindService(tracker_service_connection)
     }
 
     /*
@@ -153,6 +178,27 @@ class MainActivity: AppCompatActivity()
                 Log.i("VOUSSOIR", "MainActivity: database_directory has changed.")
                 trackbook.load_database()
             }
+        }
+    }
+
+    private val tracker_service_connection = object : ServiceConnection {
+        override fun onServiceConnected(className: ComponentName, service: IBinder)
+        {
+            Log.i("VOUSSOIR", "MainActivity.onServiceConnected")
+            val serviceref = (service as TrackerServiceBinder).service.get()
+            if (serviceref == null)
+            {
+                return
+            }
+            tracker_service = serviceref
+            tracker_service!!.startForeground(Keys.TRACKER_SERVICE_NOTIFICATION_ID, tracker_service!!.displayNotification())
+            tracker_service!!.displayNotification()
+        }
+        override fun onServiceDisconnected(arg0: ComponentName)
+        {
+            // service has crashed, or was killed by the system
+            Log.i("VOUSSOIR", "MainActivity.onServiceDisconnected")
+            tracker_service = null
         }
     }
 
