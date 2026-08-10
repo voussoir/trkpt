@@ -577,6 +577,8 @@ class RecordFragment : Fragment()
             listeners: ${iso8601_local_noms(tracker.listeners_enabled_at)}
                motion: ${iso8601_local_noms(tracker.last_significant_motion)}
              watchdog: ${iso8601_local_noms(tracker.last_watchdog)}
+                alarm: ${iso8601_local_noms(tracker.last_alarm)}
+           next alarm: ${iso8601_local_noms(tracker.next_alarm)}
                  home: ${iso8601_local_noms(tracker.arrived_at_home)}
                  died: ${iso8601_local_noms(tracker.dead_at)}
                 power: ${tracker.device_is_charging}

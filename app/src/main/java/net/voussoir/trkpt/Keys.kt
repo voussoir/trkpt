@@ -37,6 +37,7 @@ object Keys {
     // intent actions
     const val ACTION_START_SERVICE: String = "net.voussoir.trkpt.action.START_SERVICE"
     const val ACTION_STOP_SERVICE: String = "net.voussoir.trkpt.action.STOP_SERVICE"
+    const val ACTION_HEARTBEAT_SERVICE: String = "net.voussoir.trkpt.action.HEARTBEAT_SERVICE"
 
     // args
     const val ARG_TRACK_TITLE: String = "ArgTrackTitle"
@@ -120,6 +121,7 @@ object Keys {
     // notification
     const val TRACKER_SERVICE_NOTIFICATION_ID: Int = 1
     const val NOTIFICATION_CHANNEL_RECORDING: String = "notificationChannelIdRecordingChannel"
+    const val TRACKER_SERVICE_HEARTBEAT_ALARM_ID: Int = 1
 
     const val POLYLINE_THICKNESS = 4F
 }
