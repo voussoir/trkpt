@@ -21,6 +21,7 @@
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
@@ -50,9 +51,9 @@
             android:foregroundServiceType="location"
             android:exported="false">
             <intent-filter>
-                <action android:name="net.voussoir.trkpt.action.START" />
-                <action android:name="net.voussoir.trkpt.action.STOP" />
-                <action android:name="net.voussoir.trkpt.action.DISMISS" />
+                <action android:name="net.voussoir.trkpt.action.START_SERVICE" />
+                <action android:name="net.voussoir.trkpt.action.STOP_SERVICE" />
+                <action android:name="net.voussoir.trkpt.action.HEARTBEAT_SERVICE" />
             </intent-filter>
         </service>
 

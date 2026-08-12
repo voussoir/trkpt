@@ -31,8 +31,10 @@ import android.location.LocationManager
 import android.os.*
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.core.app.AlarmManagerCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.core.location.LocationManagerCompat
 import net.voussoir.trkpt.helpers.*
 import org.osmdroid.util.GeoPoint
 import java.lang.ref.WeakReference
@@ -254,7 +256,7 @@ class TrackerService: Service()
         arrived_at_home = 0
         dead_at = 0
         dead_reason = ""
-        start_wakelock()
+        //start_wakelock()
         displayNotification()
     }
     fun state_arrived_at_home()
@@ -318,11 +320,11 @@ class TrackerService: Service()
         displayNotification()
     }
 
-    fun start_wakelock()
+    fun start_wakelock(timeout: Long)
     {
         if (!wakelock.isHeld)
         {
-            wakelock.acquire()
+            wakelock.acquire(timeout)
         }
     }
 
@@ -731,13 +733,13 @@ class TrackerService: Service()
         val powermanager = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakelock = powermanager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "trkpt::wakelock")
 
-//        alarm_manager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-//        val heartbeat_filter = IntentFilter(Keys.ACTION_HEARTBEAT_SERVICE)
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-//            registerReceiver(heartbeat_alarm_receiver, heartbeat_filter, Context.RECEIVER_NOT_EXPORTED)
-//        } else {
-//            registerReceiver(heartbeat_alarm_receiver, heartbeat_filter)
-//        }
+        alarm_manager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val heartbeat_filter = IntentFilter(Keys.ACTION_HEARTBEAT_SERVICE)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(heartbeat_alarm_receiver, heartbeat_filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(heartbeat_alarm_receiver, heartbeat_filter)
+        }
 
         load_tracking_state()
         handler.post(background_watchdog)
@@ -756,13 +758,13 @@ class TrackerService: Service()
                 Log.w("VOUSSOIR", "Trackbook has been killed by the operating system. Trying to resume recording.")
                 state_full_recording()
             }
-//            schedule_heartbeat_alarm()
+            //schedule_heartbeat_alarm()
             return START_STICKY
         }
         else if (intent.action == Keys.ACTION_START_SERVICE)
         {
             // START_STICKY is used for services that are explicitly started and stopped as needed
-//            schedule_heartbeat_alarm()
+            //schedule_heartbeat_alarm()
             return START_STICKY
         }
         else if (intent.action == Keys.ACTION_STOP_SERVICE)
@@ -781,8 +783,10 @@ class TrackerService: Service()
 
     fun gentle_stop(): Boolean
     {
+        Log.i("VOUSSOIR", "TrackerService.gentle_stop")
         if (tracking_state_recordable)
         {
+            Log.i("VOUSSOIR", "TrackerService.gentle_stop: Not stopping because recording active.")
             return false
         }
         Log.i("VOUSSOIR", "TrackerService.gentle_stop: stopSelf")
@@ -809,6 +813,7 @@ class TrackerService: Service()
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
         handler.removeCallbacks(background_watchdog)
         unregisterReceiver(charging_broadcast_receiver)
+        unregisterReceiver(heartbeat_alarm_receiver)
     }
 
     private val database_changed_listener = object: DatabaseChangedListener {
@@ -885,81 +890,78 @@ class TrackerService: Service()
         return plugged
     }
 
-//    private val heartbeat_alarm_receiver = object : BroadcastReceiver() {
-//        @Override
-//        override fun onReceive(context: Context, intent: Intent)
-//        {
-//            Log.i("VOUSSOIR", "TrackerService.heartbeat_alarm_receiver ${Build.VERSION.SDK_INT >= Build.VERSION_CODES.R}")
-//            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-//            if (intent.action != Keys.ACTION_HEARTBEAT_SERVICE)
-//            {
-//                return
-//            }
-//            val has_location_permission = ContextCompat.checkSelfPermission(this@TrackerService, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-//            if (! has_location_permission)
-//            {
-//                return
-//            }
-//            if (gpsLocationListenerRegistered)
-//            {
-//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-//                    location_manager.getCurrentLocation(
-//                        LocationManager.GPS_PROVIDER,
-//                        null,
-//                        Executors.newSingleThreadExecutor(),
-//                    ) { location ->
-//                        vibrator.vibrate(100)
-//                        gpsLocationListener.onLocationChanged(location)
-//                    }
-//                }
-//            }
-//            if (networkLocationListenerRegistered)
-//            {
-//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-//                    location_manager.getCurrentLocation(
-//                        LocationManager.NETWORK_PROVIDER,
-//                        null,
-//                        Executors.newSingleThreadExecutor(),
-//                    ) { location ->
-//                        networkLocationListener.onLocationChanged(location)
-//                    }
-//                }
-//            }
-//            last_alarm = System.currentTimeMillis()
-//            schedule_heartbeat_alarm()
-//        }
-//    }
-//
-//    private fun schedule_heartbeat_alarm()
-//    {
-//        Log.i("VOUSSOIR", "TrackerService.schedule_heartbeat_alarm")
-//        val intent = Intent(Keys.ACTION_HEARTBEAT_SERVICE)
-//        val pendingintent = PendingIntent.getBroadcast(
-//            this,
-//            Keys.TRACKER_SERVICE_HEARTBEAT_ALARM_ID,
-//            intent,
-//            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-//        )
-//
-//        val interval = 16 * 1000
-////        val interval = 16 * Keys.ONE_MINUTE_IN_MILLISECONDS
-//        val trigger_time = SystemClock.elapsedRealtime() + interval
-//        next_alarm = System.currentTimeMillis() + interval
-//
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-//            alarm_manager?.setExactAndAllowWhileIdle(
-//                AlarmManager.ELAPSED_REALTIME_WAKEUP,
-//                trigger_time,
-//                pendingintent!!
-//            )
-//        } else {
-//            alarm_manager?.setExact(
-//                AlarmManager.ELAPSED_REALTIME_WAKEUP,
-//                trigger_time,
-//                pendingintent!!
-//            )
-//        }
-//    }
+    private val heartbeat_alarm_receiver = object : BroadcastReceiver() {
+        @Override
+        override fun onReceive(context: Context, intent: Intent)
+        {
+            Log.i("VOUSSOIR", "TrackerService.heartbeat_alarm_receiver")
+            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            if (intent.action != Keys.ACTION_HEARTBEAT_SERVICE)
+            {
+                return
+            }
+            val has_location_permission = ContextCompat.checkSelfPermission(this@TrackerService, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            if (! has_location_permission)
+            {
+                return
+            }
+            start_wakelock(10 * Keys.ONE_SECOND_IN_MILLISECONDS)
+            vibrator.vibrate(100)
+            //load_tracking_state()
+            //if (gpsLocationListenerRegistered)
+            //{
+            //    LocationManagerCompat.getCurrentLocation(
+            //        location_manager,
+            //        LocationManager.GPS_PROVIDER,
+            //        null,
+            //        Executors.newSingleThreadExecutor(),
+            //    ) { location ->
+            //        Log.i("VOUSSOIR", "hearbeat alarm received location: ${location}.")
+            //        vibrator.vibrate(100)
+            //        gpsLocationListener.onLocationChanged(location)
+            //    }
+            //}
+            //if (networkLocationListenerRegistered)
+            //{
+            //    LocationManagerCompat.getCurrentLocation(
+            //        location_manager,
+            //        LocationManager.NETWORK_PROVIDER,
+            //        null,
+            //        Executors.newSingleThreadExecutor(),
+            //    ) { location ->
+            //        vibrator.vibrate(100)
+            //        gpsLocationListener.onLocationChanged(location)
+            //    }
+            //}
+            last_alarm = System.currentTimeMillis()
+            //schedule_heartbeat_alarm()
+            //stop_wakelock()
+        }
+    }
+
+    private fun schedule_heartbeat_alarm()
+    {
+        Log.i("VOUSSOIR", "TrackerService.schedule_heartbeat_alarm")
+        val intent = Intent(Keys.ACTION_HEARTBEAT_SERVICE)
+        val pendingintent = PendingIntent.getBroadcast(
+            this,
+            Keys.TRACKER_SERVICE_HEARTBEAT_ALARM_ID,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        //val interval = 30 * 1000
+        val interval = 16 * Keys.ONE_MINUTE_IN_MILLISECONDS
+        val trigger_time = SystemClock.elapsedRealtime() + interval
+        next_alarm = System.currentTimeMillis() + interval
+
+        AlarmManagerCompat.setExactAndAllowWhileIdle(
+            alarm_manager,
+            AlarmManager.ELAPSED_REALTIME_WAKEUP,
+            trigger_time,
+            pendingintent!!
+        )
+    }
 
     val background_watchdog: Runnable = object : Runnable
     {
