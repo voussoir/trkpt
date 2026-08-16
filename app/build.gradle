@@ -38,6 +38,11 @@ android {
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+        alpha {
+            minifyEnabled true
+            shrinkResources true
+            applicationIdSuffix '.alpha'
+        }
         debug {
             applicationIdSuffix '.debug'
 
