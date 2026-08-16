@@ -29,7 +29,6 @@ class Database(val trackbook: Trackbook)
         this.connection = openOrCreateDatabase(file, null)
         this.initialize_tables()
         this.ready_at = System.currentTimeMillis()
-        Log.i("VOUSSOIR", "Database.open: Calling all listeners")
     }
 
     fun begin_transaction()

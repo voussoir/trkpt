@@ -113,6 +113,7 @@ class Trackbook : Application()
             Log.i("VOUSSOIR", "Trackbook.load_database: lacking WRITE_EXTERNAL_STORAGE permission.")
             this.database.ready_at = 0
         }
+        Log.i("VOUSSOIR", "Trackbook.load_database: Calling all listeners")
         this.call_database_changed_listeners()
         database_mutex.unlock()
     }
