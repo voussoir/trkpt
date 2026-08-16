@@ -71,7 +71,7 @@ class Database(val trackbook: Trackbook)
 
     fun insert_trkpt(trkpt: Trkpt)
     {
-        Log.i("VOUSSOIR", "Database.insert_trkpt")
+        Log.i("VOUSSOIR", "Database.insert_trkpt ${trkpt}")
         val values = ContentValues().apply {
             put("device_id", trkpt.device_id)
             put("time", trkpt.time)
