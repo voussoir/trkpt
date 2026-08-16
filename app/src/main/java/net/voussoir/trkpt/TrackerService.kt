@@ -34,12 +34,12 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.AlarmManagerCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.core.location.GnssStatusCompat
 import androidx.core.location.LocationManagerCompat
 import net.voussoir.trkpt.helpers.*
 import org.osmdroid.util.GeoPoint
 import java.lang.ref.WeakReference
 import java.util.*
-import java.util.concurrent.Executors
 
 class TrackerService: Service()
 {
@@ -89,6 +89,8 @@ class TrackerService: Service()
     private lateinit var location_manager: LocationManager
     private lateinit var gpsLocationListener: LocationListener
     private lateinit var networkLocationListener: LocationListener
+    var satellites_in_fix: Int = 0
+    var satellites_known: Int = 0
 
     var use_gps_location: Boolean = false
     var use_network_location: Boolean = false
@@ -131,6 +133,13 @@ class TrackerService: Service()
             0f,
             gpsLocationListener,
         )
+
+        LocationManagerCompat.registerGnssStatusCallback(
+            location_manager,
+            gnss_status_listener,
+            handler
+        )
+
         gpsLocationListenerRegistered = true
         Log.i("VOUSSOIR", "Added GPS location listener.")
         return true
@@ -168,6 +177,10 @@ class TrackerService: Service()
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
         {
             location_manager.removeUpdates(gpsLocationListener)
+            LocationManagerCompat.unregisterGnssStatusCallback(
+                location_manager,
+                gnss_status_listener
+            )
             gpsLocationListenerRegistered = false
             Log.i("VOUSSOIR", "Removed GPS location listener.")
         }
@@ -339,6 +352,8 @@ class TrackerService: Service()
     fun reset_location_listeners(interval: Long)
     {
         Log.i("VOUSSOIR", "TrackerService.reset_location_listeners")
+        satellites_in_fix = 0
+        satellites_known = 0
         if (use_gps_location && interval != Keys.LOCATION_INTERVAL_STOP)
         {
             add_gps_location_listener(interval)
@@ -365,6 +380,33 @@ class TrackerService: Service()
             listeners_enabled_at = 0
         }
         displayNotification()
+    }
+
+    val gnss_status_listener = object : GnssStatusCompat.Callback() {
+        override fun onSatelliteStatusChanged(status: GnssStatusCompat)
+        {
+            satellites_known = status.satelliteCount
+            satellites_in_fix = 0
+            for (index in 0 until satellites_known)
+            {
+                if (status.usedInFix(index))
+                {
+                    satellites_in_fix += 1
+                }
+            }
+        }
+
+        override fun onStarted()
+        {
+            super.onStarted()
+            Log.i("VOUSSOIR", "GNSS status listener started.")
+        }
+
+        override fun onStopped()
+        {
+            super.onStopped()
+            Log.i("VOUSSOIR", "GNSS status listener stopped.")
+        }
     }
 
     private fun createLocationListener(): LocationListener

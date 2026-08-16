@@ -584,6 +584,7 @@ class RecordFragment : Fragment()
                 power: ${tracker.device_is_charging}
              wakelock: ${tracker.wakelock.isHeld}
              accuracy: ${accuracy_text} m
+           satellites: ${tracker.satellites_in_fix}/${tracker.satellites_known}
             """.trimIndent()
         }
         else
