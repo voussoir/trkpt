@@ -14,6 +14,8 @@ class Database(val trackbook: Trackbook)
     lateinit var file: File
     lateinit var connection: SQLiteDatabase
 
+    // DATABASE CONNECTION METHODS /////////////////////////////////////////////////////////////////
+
     fun close()
     {
         Log.i("VOUSSOIR", "Database.close")
@@ -54,36 +56,28 @@ class Database(val trackbook: Trackbook)
         this.connection.endTransaction()
     }
 
-    fun delete_trkpt(trkpt: Trkpt)
+    private fun initialize_tables()
     {
-        Log.i("VOUSSOIR", "Database.delete_trkpt")
+        Log.i("VOUSSOIR", "Database.initialize_tables")
         begin_transaction()
-        connection.delete("trkpt", "device_id = ? AND time = ?", arrayOf(trkpt.device_id, trkpt.time.toString()))
+        this.connection.execSQL("CREATE TABLE IF NOT EXISTS meta(name TEXT PRIMARY KEY, value TEXT)")
+        this.connection.execSQL("CREATE TABLE IF NOT EXISTS trkpt(device_id INTEGER NOT NULL, time INTEGER NOT NULL, lat REAL NOT NULL, lon REAL NOT NULL, provider TEXT, accuracy REAL, ele INTEGER, sat INTEGER, PRIMARY KEY(device_id, time))")
+        this.connection.execSQL("CREATE TABLE IF NOT EXISTS homepoints(id INTEGER PRIMARY KEY, lat REAL NOT NULL, lon REAL NOT NULL, radius REAL NOT NULL, name TEXT)")
+        this.connection.execSQL("CREATE INDEX IF NOT EXISTS index_trkpt_device_id_time on trkpt(device_id, time)")
+        // The pragmas don't seem to execute unless you call moveToNext.
+        var cursor: Cursor
+        cursor = this.connection.rawQuery("PRAGMA journal_mode = DELETE", null)
+        cursor.moveToNext()
+        cursor.close()
+        cursor = this.connection.rawQuery("PRAGMA user_version = ${Keys.DATABASE_VERSION}", null)
+        cursor.moveToNext()
+        cursor.close()
+        // Not using this.commit because this.ready is not true yet.
+        this.connection.setTransactionSuccessful()
+        this.connection.endTransaction()
     }
 
-    fun delete_trkpt_start_end(device_id: String, start_time: Long, end_time: Long)
-    {
-        Log.i("VOUSSOIR", "Track.delete ${device_id} ${start_time} -- ${end_time}.")
-        this.begin_transaction()
-        this.connection.delete("trkpt", "device_id = ? AND time >= ? AND time <= ?", arrayOf(device_id, start_time.toString(), end_time.toString()))
-    }
-
-    fun insert_trkpt(trkpt: Trkpt)
-    {
-        Log.i("VOUSSOIR", "Database.insert_trkpt ${trkpt}")
-        val values = ContentValues().apply {
-            put("device_id", trkpt.device_id)
-            put("time", trkpt.time)
-            put("lat", trkpt.latitude)
-            put("lon", trkpt.longitude)
-            put("provider", trkpt.provider)
-            put("accuracy", trkpt.accuracy)
-            put("sat", trkpt.numberSatellites)
-            put("ele", trkpt.altitude)
-        }
-        begin_transaction()
-        connection.insert("trkpt", null, values)
-    }
+    // TRKPT METHODS ///////////////////////////////////////////////////////////////////////////////
 
     fun select_trkpt_start_end(device_id: String, start_time: Long, end_time: Long, max_accuracy: Float=Keys.DEFAULT_MAX_ACCURACY, order: String="ASC"): Iterator<Trkpt>
     {
@@ -128,7 +122,53 @@ class Database(val trackbook: Trackbook)
         }
     }
 
-    fun _trkpt_generator(cursor: Cursor) = iterator<Trkpt>
+    fun insert_trkpt(trkpt: Trkpt)
+    {
+        Log.i("VOUSSOIR", "Database.insert_trkpt ${trkpt}")
+        val values = ContentValues().apply {
+            put("device_id", trkpt.device_id)
+            put("time", trkpt.time)
+            put("lat", trkpt.latitude)
+            put("lon", trkpt.longitude)
+            put("provider", trkpt.provider)
+            put("accuracy", trkpt.accuracy)
+            put("sat", trkpt.numberSatellites)
+            put("ele", trkpt.altitude)
+        }
+        begin_transaction()
+        connection.insert("trkpt", null, values)
+    }
+
+    fun update_trkpt(trkpt: Trkpt)
+    {
+        Log.i("VOUSSOIR", "Database.update_trkpt")
+        val values = ContentValues().apply {
+            put("lat", trkpt.latitude)
+            put("lon", trkpt.longitude)
+            put("provider", trkpt.provider)
+            put("accuracy", trkpt.accuracy)
+            put("sat", trkpt.numberSatellites)
+            put("ele", trkpt.altitude)
+        }
+        begin_transaction()
+        connection.update("trkpt", values, "device_id = ? AND time = ?", arrayOf(trkpt.device_id, trkpt.time.toString()))
+    }
+
+    fun delete_trkpt(trkpt: Trkpt)
+    {
+        Log.i("VOUSSOIR", "Database.delete_trkpt")
+        begin_transaction()
+        connection.delete("trkpt", "device_id = ? AND time = ?", arrayOf(trkpt.device_id, trkpt.time.toString()))
+    }
+
+    fun delete_trkpt_start_end(device_id: String, start_time: Long, end_time: Long)
+    {
+        Log.i("VOUSSOIR", "Track.delete ${device_id} ${start_time} -- ${end_time}.")
+        this.begin_transaction()
+        this.connection.delete("trkpt", "device_id = ? AND time >= ? AND time <= ?", arrayOf(device_id, start_time.toString(), end_time.toString()))
+    }
+
+    private fun _trkpt_generator(cursor: Cursor) = iterator<Trkpt>
     {
         val COLUMN_DEVICE = cursor.getColumnIndex("device_id")
         val COLUMN_LAT = cursor.getColumnIndex("lat")
@@ -161,11 +201,43 @@ class Database(val trackbook: Trackbook)
         }
     }
 
-    fun delete_homepoint(id: Long)
+    // HOMEPOINT METHODS ///////////////////////////////////////////////////////////////////////////
+
+    fun select_homepoints() = iterator<Homepoint>
     {
-        Log.i("VOUSSOIR", "Database.delete_homepoint")
-        begin_transaction()
-        connection.delete("homepoints", "id = ?", arrayOf(id.toString()))
+        if (! ready)
+        {
+            Log.i("VOUSSOIR", "Trackbook.homepoint_generator: database is not ready.")
+            return@iterator
+        }
+        val cursor: Cursor = connection.rawQuery(
+            "SELECT id, lat, lon, radius, name FROM homepoints",
+            arrayOf()
+        )
+        Log.i("VOUSSOIR", "Trackbook.homepoint_generator: Got ${cursor.count} homepoints.")
+        val COLUMN_ID = cursor.getColumnIndex("id")
+        val COLUMN_LAT = cursor.getColumnIndex("lat")
+        val COLUMN_LON = cursor.getColumnIndex("lon")
+        val COLUMN_RADIUS = cursor.getColumnIndex("radius")
+        val COLUMN_NAME = cursor.getColumnIndex("name")
+        try
+        {
+            while (cursor.moveToNext())
+            {
+                val homepoint = Homepoint(
+                    id=cursor.getLong(COLUMN_ID),
+                    latitude=cursor.getDouble(COLUMN_LAT),
+                    longitude=cursor.getDouble(COLUMN_LON),
+                    radius=cursor.getDouble(COLUMN_RADIUS),
+                    name=cursor.getString(COLUMN_NAME),
+                )
+                yield(homepoint)
+            }
+        }
+        finally
+        {
+            cursor.close()
+        }
     }
 
     fun insert_homepoint(id: Long, name: String, latitude: Double, longitude: Double, radius: Double)
@@ -193,39 +265,10 @@ class Database(val trackbook: Trackbook)
         connection.update("homepoints", values, "id = ?", arrayOf(id.toString()))
     }
 
-    fun update_trkpt(trkpt: Trkpt)
+    fun delete_homepoint(id: Long)
     {
-        Log.i("VOUSSOIR", "Database.update_trkpt")
-        val values = ContentValues().apply {
-            put("lat", trkpt.latitude)
-            put("lon", trkpt.longitude)
-            put("provider", trkpt.provider)
-            put("accuracy", trkpt.accuracy)
-            put("sat", trkpt.numberSatellites)
-            put("ele", trkpt.altitude)
-        }
+        Log.i("VOUSSOIR", "Database.delete_homepoint")
         begin_transaction()
-        connection.update("trkpt", values, "device_id = ? AND time = ?", arrayOf(trkpt.device_id, trkpt.time.toString()))
-    }
-
-    private fun initialize_tables()
-    {
-        Log.i("VOUSSOIR", "Database.initialize_tables")
-        begin_transaction()
-        this.connection.execSQL("CREATE TABLE IF NOT EXISTS meta(name TEXT PRIMARY KEY, value TEXT)")
-        this.connection.execSQL("CREATE TABLE IF NOT EXISTS trkpt(device_id INTEGER NOT NULL, time INTEGER NOT NULL, lat REAL NOT NULL, lon REAL NOT NULL, provider TEXT, accuracy REAL, ele INTEGER, sat INTEGER, PRIMARY KEY(device_id, time))")
-        this.connection.execSQL("CREATE TABLE IF NOT EXISTS homepoints(id INTEGER PRIMARY KEY, lat REAL NOT NULL, lon REAL NOT NULL, radius REAL NOT NULL, name TEXT)")
-        this.connection.execSQL("CREATE INDEX IF NOT EXISTS index_trkpt_device_id_time on trkpt(device_id, time)")
-        // The pragmas don't seem to execute unless you call moveToNext.
-        var cursor: Cursor
-        cursor = this.connection.rawQuery("PRAGMA journal_mode = DELETE", null)
-        cursor.moveToNext()
-        cursor.close()
-        cursor = this.connection.rawQuery("PRAGMA user_version = ${Keys.DATABASE_VERSION}", null)
-        cursor.moveToNext()
-        cursor.close()
-        // Not using this.commit because this.ready is not true yet.
-        this.connection.setTransactionSuccessful()
-        this.connection.endTransaction()
+        connection.delete("homepoints", "id = ?", arrayOf(id.toString()))
     }
 }

@@ -23,7 +23,6 @@ package net.voussoir.trkpt
 import android.Manifest
 import android.app.Application
 import android.content.pm.PackageManager
-import android.database.Cursor
 import android.util.Log
 import com.google.android.material.color.DynamicColors
 import kotlinx.coroutines.sync.Mutex
@@ -122,44 +121,7 @@ class Trackbook : Application()
     {
         Log.i("VOUSSOIR", "Trackbook.load_homepoints")
         this.homepoints.clear()
-        homepoint_generator().forEach { homepoint -> this.homepoints.add(homepoint) }
-    }
-
-    fun homepoint_generator() = iterator<Homepoint>
-    {
-        if (! database.ready)
-        {
-            Log.i("VOUSSOIR", "Trackbook.homepoint_generator: database is not ready.")
-            return@iterator
-        }
-        val cursor: Cursor = database.connection.rawQuery(
-            "SELECT id, lat, lon, radius, name FROM homepoints",
-            arrayOf()
-        )
-        Log.i("VOUSSOIR", "Trackbook.homepoint_generator: Got ${cursor.count} homepoints.")
-        val COLUMN_ID = cursor.getColumnIndex("id")
-        val COLUMN_LAT = cursor.getColumnIndex("lat")
-        val COLUMN_LON = cursor.getColumnIndex("lon")
-        val COLUMN_RADIUS = cursor.getColumnIndex("radius")
-        val COLUMN_NAME = cursor.getColumnIndex("name")
-        try
-        {
-            while (cursor.moveToNext())
-            {
-                val homepoint = Homepoint(
-                    id=cursor.getLong(COLUMN_ID),
-                    latitude=cursor.getDouble(COLUMN_LAT),
-                    longitude=cursor.getDouble(COLUMN_LON),
-                    radius=cursor.getDouble(COLUMN_RADIUS),
-                    name=cursor.getString(COLUMN_NAME),
-                )
-                yield(homepoint)
-            }
-        }
-        finally
-        {
-            cursor.close()
-        }
+        database.select_homepoints().forEach { homepoint -> this.homepoints.add(homepoint) }
     }
 
     override fun onTerminate()
