@@ -4,7 +4,7 @@
     <string name="app_name">Trackbook</string>
     <!-- please do not translate app_name - transcription into different alphabet types is fine though -->
     <!-- tabs -->
-    <string name="tab_map">Kaart</string>
+    <string name="tab_record">Kaart</string>
     <!-- notification -->
     <string name="notification_title_trackbook_running">Trackbook is actief</string>
     <string name="notification_title_trackbook_not_running">Trackbook is niet actief</string>
@@ -52,7 +52,7 @@
     <string name="descr_button_resume">Opname hervatten</string>
     <string name="descr_statistics_sheet_delete_button">Route verwijderen</string>
     <string name="descr_statistics_sheet_save_button">Opslaan als GPX</string>
-    <string name="tab_tracks">Routes</string>
+    <string name="tab_history">Routes</string>
     <string name="tab_settings">Instellingen</string>
     <string name="snackbar_message_location_permission_denied">Toegangsrecht tot locatie is niet verleend. Trackbook zal niet werken.</string>
     <string name="dialog_generic_button_cancel">Annuleren</string>

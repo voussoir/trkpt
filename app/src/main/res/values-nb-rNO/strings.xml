@@ -4,7 +4,7 @@
     <string name="app_name">Trackbook</string>
     <!-- please do not translate app_name - transcription into different alphabet types is fine though -->
     <!-- tabs -->
-    <string name="tab_map">Kart</string>
+    <string name="tab_record">Kart</string>
     <!-- notification -->
     <string name="notification_title_trackbook_running">Trackbook kjører</string>
     <string name="notification_title_trackbook_not_running">Trackbook kjører ikke</string>
@@ -52,7 +52,7 @@
     <string name="descr_button_resume">Fortsett opptak</string>
     <string name="descr_statistics_sheet_delete_button">Sporslettingsknapp</string>
     <string name="descr_statistics_sheet_save_button">Delingsknapp som muliggjør eksport som GPX</string>
-    <string name="tab_tracks">Spor</string>
+    <string name="tab_history">Spor</string>
     <string name="tab_settings">Innstillinger</string>
     <string name="snackbar_message_location_permission_denied">Plasseringstilgang ikke innvilget. Trackbook vil ikke fungere.</string>
     <string name="dialog_generic_button_cancel">Avbryt</string>

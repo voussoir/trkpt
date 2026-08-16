@@ -4,8 +4,8 @@
     <string name="app_name">Trackbook</string>
     <!-- please do not translate app_name - transcription into different alphabet types is fine though -->
     <!-- Tabs -->
-    <string name="tab_map">Mappa</string>
-    <string name="tab_tracks">Tracce</string>
+    <string name="tab_record">Mappa</string>
+    <string name="tab_history">Tracce</string>
     <string name="tab_settings">Impostazioni</string>
     <!-- Notification -->
     <string name="notification_title_trackbook_running">Trackbook in esecuzione</string>

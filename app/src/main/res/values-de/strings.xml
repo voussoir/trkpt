@@ -4,7 +4,7 @@
     <string name="app_name">Trackbook</string>
     <!-- please do not translate app_name - transcription into different alphabet types is fine though -->
     <!-- tabs -->
-    <string name="tab_map">Karte</string>
+    <string name="tab_record">Karte</string>
     <!-- notification -->
     <string name="notification_title_trackbook_not_running">Trackbook ist inaktiv</string>
     <string name="notification_title_trackbook_running">Trackbook ist aktiv</string>
@@ -92,7 +92,7 @@
     <string name="descr_quick_settings_tile_title_pause">Aufnahme stoppen</string>
     <string name="quick_settings_tile_title_pause">Aufnahme stoppen</string>
     <string name="snackbar_message_location_permission_denied">Genehmigung für Standortdienste nicht erteilt. Trackbook wird nicht funktionieren.</string>
-    <string name="tab_tracks">Strecken</string>
+    <string name="tab_history">Strecken</string>
     <string name="descr_quick_settings_tile_title_start">Aufnahme starten</string>
     <string name="quick_settings_tile_title_start">Aufnahme starten</string>
     <string name="quick_settings_tile_title_default">Aufnahme</string>

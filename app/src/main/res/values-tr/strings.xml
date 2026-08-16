@@ -87,8 +87,8 @@
     <string name="notification_title_trackbook_not_running">Trackbook çalışmıyor</string>
     <string name="notification_title_trackbook_running">Trackbook çalışıyor</string>
     <string name="tab_settings">Ayarlar</string>
-    <string name="tab_tracks">Yollar</string>
-    <string name="tab_map">Harita</string>
+    <string name="tab_history">Yollar</string>
+    <string name="tab_record">Harita</string>
     <string name="app_name">Trackbook</string>
     <string name="track_list_p_element_statistics">Kaydedilen Toplam Mesafe</string>
     <string name="descr_button_location">Geçerli konuma ortala</string>

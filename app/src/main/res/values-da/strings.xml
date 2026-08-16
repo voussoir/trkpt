@@ -4,7 +4,7 @@
     <string name="app_name">Trackbook</string>
     <!-- please do not translate app_name - transcription into different alphabet types is fine though -->
     <!-- tabs -->
-    <string name="tab_map">Kort</string>
+    <string name="tab_record">Kort</string>
     <!-- notification -->
     <string name="notification_title_trackbook_running">Trackbook kører</string>
     <string name="notification_title_trackbook_not_running">Trackbook kører ikke</string>
@@ -72,7 +72,7 @@
     <string name="dialog_generic_button_okay">OK</string>
     <string name="tab_settings">Indstillinger</string>
     <string name="dialog_generic_details_button">Vis detaljer</string>
-    <string name="tab_tracks">Sporer</string>
+    <string name="tab_history">Sporer</string>
     <string name="dialog_generic_button_cancel">Annuller</string>
     <string name="pref_advanced_title">Avanceret</string>
     <string name="descr_mark_starred_button">Markér som stjerneknap</string>

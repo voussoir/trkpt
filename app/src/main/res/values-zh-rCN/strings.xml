@@ -4,8 +4,8 @@
     <string name="app_name">Trackbook</string>
     <!-- please do not translate app_name - transcription into different alphabet types is fine though -->
     <!-- Tabs -->
-    <string name="tab_map">地图</string>
-    <string name="tab_tracks">轨迹</string>
+    <string name="tab_record">地图</string>
+    <string name="tab_history">轨迹</string>
     <string name="tab_settings">设置</string>
     <!-- Notification -->
     <string name="notification_title_trackbook_running">Trackbook 正在运行</string>

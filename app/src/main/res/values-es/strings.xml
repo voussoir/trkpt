@@ -13,12 +13,12 @@
     <string name="track_list_p_element_statistics">Distancia total grabada</string>
     <string name="abbreviation_minutes">Minutos</string>
     <string name="app_name">Trackbook</string>
-    <string name="tab_map">Mapa</string>
+    <string name="tab_record">Mapa</string>
     <string name="tab_settings">Ajustes</string>
     <string name="notification_title_trackbook_running">Trackbook en ejecución</string>
     <string name="notification_title_trackbook_not_running">Trackbook no se está ejecutando</string>
     <string name="notification_pause">Detener</string>
-    <string name="tab_tracks">Rutas</string>
+    <string name="tab_history">Rutas</string>
     <string name="notification_resume">Resumir</string>
     <string name="notification_show">Mostrar</string>
     <string name="notification_channel_recording_name">Estado de grabación de movimiento</string>

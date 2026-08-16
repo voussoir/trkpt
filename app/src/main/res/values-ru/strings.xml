@@ -43,8 +43,8 @@
     <string name="notification_title_trackbook_not_running">Trackbook не запущен</string>
     <string name="notification_title_trackbook_running">Trackbook запущен</string>
     <string name="tab_settings">Настройки</string>
-    <string name="tab_tracks">Треки</string>
-    <string name="tab_map">Карта</string>
+    <string name="tab_history">Треки</string>
+    <string name="tab_record">Карта</string>
     <string name="app_name">Trackbook</string>
     <string name="dialog_yes_no_message_delete_non_starred">Удалить все записи, не отмеченные звездочками\? Это действие нельзя отменить.</string>
     <string name="toast_message_poi_removed">Маркер точки интереса удален.</string>

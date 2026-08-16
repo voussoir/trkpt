@@ -32,7 +32,7 @@
     <string name="pref_general_title">Opće</string>
     <string name="pref_accuracy_threshold_title">Prag točnosti</string>
     <string name="pref_theme_selection_title">Tema programa</string>
-    <string name="tab_tracks">Rute</string>
+    <string name="tab_history">Rute</string>
     <string name="descr_map_last_track">Mapa zadnje rute</string>
     <string name="statistics_sheet_p_recording_start">Snimanje započeto:</string>
     <string name="statistics_sheet_p_recording_stop">Snimanje prekinuto:</string>
@@ -40,7 +40,7 @@
     <string name="pref_reset_advanced_summary">Vrati sve napredne postavke na standardne vrijednosti.</string>
     <string name="quick_settings_tile_title_default">Snima se</string>
     <string name="pref_theme_selection_mode_device_default">Isto kao uređaj</string>
-    <string name="tab_map">Karta</string>
+    <string name="tab_record">Karta</string>
     <string name="marker_description_accuracy">Točnost</string>
     <string name="snackbar_message_location_offline">Lokaliziranje je isključeno. Trackbook neće raditi.</string>
     <string name="pref_advanced_title">Napredno</string>

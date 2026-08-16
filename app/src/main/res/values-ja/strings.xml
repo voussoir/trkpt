@@ -4,7 +4,7 @@
     <string name="app_name">Trackbook</string>
     <!-- please do not translate app_name - transcription into different alphabet types is fine though -->
     <!-- tabs -->
-    <string name="tab_map">地図</string>
+    <string name="tab_record">地図</string>
     <!-- notification -->
     <string name="notification_title_trackbook_running">Trackbook 実行中</string>
     <string name="notification_title_trackbook_not_running">Trackbook は実行していません</string>

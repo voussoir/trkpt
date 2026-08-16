@@ -4,7 +4,7 @@
     <string name="app_name">Trackbook</string>
     <!-- please do not translate app_name - transcription into different alphabet types is fine though -->
     <!-- tabs -->
-    <string name="tab_map">Karta</string>
+    <string name="tab_record">Karta</string>
     <!--<string name="tab_last_tracks"></string>-->
     <!-- notification -->
     <string name="notification_title_trackbook_running">Trackbook körs</string>
@@ -143,7 +143,7 @@
     <string name="dialog_generic_details_button">Visa detaljer</string>
     <string name="dialog_generic_button_okay">OK</string>
     <string name="notification_channel_recording_name">Rörelse Inspelningsstatus</string>
-    <string name="tab_tracks">Spår</string>
+    <string name="tab_history">Spår</string>
     <string name="descr_statistics_sheet_delete_button">Knapp för radering av spår</string>
     <string name="descr_statistics_sheet_save_button">Spara som GPX-knapp</string>
     <string name="descr_quick_settings_tile_title_pause">Stoppa inspelningen</string>

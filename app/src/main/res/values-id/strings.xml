@@ -3,7 +3,7 @@
     <!-- activities -->
     <string name="app_name">Trackbook</string>
     <!-- tabs -->
-    <string name="tab_map">Peta</string>
+    <string name="tab_record">Peta</string>
     <!-- notification -->
     <string name="notification_title_trackbook_running">Trackbook aktif</string>
     <string name="notification_title_trackbook_not_running">Trackbook tidak aktif</string>
@@ -166,7 +166,7 @@
     <string name="toast_message_copied_to_clipboard">Disalin ke papan klip.</string>
     <string name="dialog_yes_no_message_delete_recording">Hapus rekaman ini\?</string>
     <string name="dialog_yes_no_message_delete_non_starred">Hapus semua rekaman yang tidak berbintang\? Tindakan ini tidak bisa dibatalkan.</string>
-    <string name="tab_tracks">Jalur</string>
+    <string name="tab_history">Jalur</string>
     <string name="descr_statistics_sheet_save_button">Simpan sebagai tombol GPX</string>
     <string name="dialog_yes_no_positive_button_delete_non_starred">Hapus</string>
     <string name="dialog_yes_no_positive_button_delete_recording">Hapus</string>

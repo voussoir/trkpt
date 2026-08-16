@@ -14,8 +14,8 @@
     <string name="notification_title_trackbook_not_running">Trackbook zatrzymany</string>
     <string name="notification_title_trackbook_running">Trackbook uruchomiony</string>
     <string name="tab_settings">Ustawienia</string>
-    <string name="tab_tracks">Trasy</string>
-    <string name="tab_map">Mapa</string>
+    <string name="tab_history">Trasy</string>
+    <string name="tab_record">Mapa</string>
     <string name="pref_theme_selection_mode_device_default">Tak jak urządzenie</string>
     <string name="descr_button_delete">Wyczyść przycisk</string>
     <string name="descr_statistics_sheet_delete_button">Przycisk usuwania ścieżki</string>
