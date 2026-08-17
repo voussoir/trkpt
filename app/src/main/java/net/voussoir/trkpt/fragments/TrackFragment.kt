@@ -116,6 +116,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     private lateinit var minAltitudeView: MaterialTextView
     private lateinit var positiveElevationView: MaterialTextView
     private lateinit var negativeElevationView: MaterialTextView
+    private lateinit var visitedHomepointsView: MaterialTextView
     private lateinit var elevationDataViews: Group
     private lateinit var track: Track
     private lateinit var track_segment_overlays: ArrayDeque<Polyline>
@@ -220,6 +221,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         minAltitudeView = rootView.findViewById(R.id.statistics_data_min_altitude)
         positiveElevationView = rootView.findViewById(R.id.statistics_data_positive_elevation)
         negativeElevationView = rootView.findViewById(R.id.statistics_data_negative_elevation)
+        visitedHomepointsView = rootView.findViewById(R.id.statistics_data_visited_homepoints)
         elevationDataViews = rootView.findViewById(R.id.elevation_data)
 
         useImperialUnits = PreferencesHelper.loadUseImperialUnits()
@@ -940,6 +942,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         minAltitudeView.text = LengthUnitHelper.convertDistanceToString(stats.min_altitude, useImperialUnits)
         positiveElevationView.text = LengthUnitHelper.convertDistanceToString(stats.total_ascent, useImperialUnits)
         negativeElevationView.text = LengthUnitHelper.convertDistanceToString(stats.total_descent, useImperialUnits)
+        visitedHomepointsView.text = (track.visited_homepoints.map {homepoint -> homepoint.name}).joinToString("\n")
 
         // inform user about possible accuracy issues with altitude measurements
         elevationDataViews.referencedIds.forEach { id ->

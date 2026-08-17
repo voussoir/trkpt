@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/statistics_view"
@@ -294,7 +293,6 @@
         android:text="@string/statistics_sheet_p_min_altitude"
         android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
         android:textColor="@color/text_lightweight"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="@+id/statistics_p_max_altitude"
         app:layout_constraintTop_toBottomOf="@+id/statistics_p_max_altitude" />
 
@@ -308,6 +306,30 @@
         app:layout_constraintBottom_toBottomOf="@+id/statistics_p_min_altitude"
         app:layout_constraintStart_toEndOf="@+id/statistics_p_min_altitude"
         app:layout_constraintTop_toTopOf="@+id/statistics_p_min_altitude"
+        tools:text="@string/sample_text_default_data" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/statistics_p_visited_homepoints"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:text="@string/statistics_sheet_p_visited_homepoints"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        android:textColor="@color/text_lightweight"
+        app:layout_constraintStart_toStartOf="@+id/statistics_p_min_altitude"
+        app:layout_constraintTop_toBottomOf="@+id/statistics_p_min_altitude" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/statistics_data_visited_homepoints"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+        android:textColor="@color/text_default"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/statistics_p_visited_homepoints"
+        app:layout_constraintTop_toBottomOf="@+id/statistics_p_visited_homepoints"
         tools:text="@string/sample_text_default_data" />
 
 

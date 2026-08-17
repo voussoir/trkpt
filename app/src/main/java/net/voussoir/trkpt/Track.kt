@@ -37,6 +37,7 @@ data class Track (
     var _start_time: Long = 0L,
     var _end_time: Long = 0L,
     val trkpts: ArrayDeque<Trkpt> = ArrayDeque<Trkpt>(),
+    val visited_homepoints: MutableSet<Homepoint> = mutableSetOf(),
     var trackFormatVersion: Int = Keys.CURRENT_TRACK_FORMAT_VERSION,
 )
 {
@@ -140,8 +141,36 @@ data class Track (
 
     fun load_trkpts(points: Iterator<Trkpt>)
     {
+        val trackbook = database.trackbook
+        val homepoints = trackbook.homepoints
+        var latest_homepoint: Homepoint? = null
         this.trkpts.clear()
-        points.forEach { trkpt -> this.trkpts.add(trkpt) }
+        this.visited_homepoints.clear()
+        for (trkpt in points)
+        {
+            this.trkpts.add(trkpt)
+            val location = trkpt.toLocation()
+            if (latest_homepoint != null && latest_homepoint.contains(location))
+            {
+                // pass
+                ;
+            }
+            else
+            {
+                for (homepoint in homepoints)
+                {
+                    if (homepoint.contains(location))
+                    {
+                        latest_homepoint = homepoint
+                        visited_homepoints.add(homepoint)
+                    }
+                }
+                // We don't reset latest_homepoint to null after leaving the homepoint, because if
+                // we leave it and return it to it without having visited any other homepoints, it
+                // would be redundant to name it twice in a row.
+                ;
+            }
+        }
         this.name = suggested_name()
     }
 
@@ -154,14 +183,10 @@ data class Track (
         val df = SimpleDateFormat("yyyy-MM-dd")
         val start_date = df.format(trkpts.first().time)
         val end_date = df.format(trkpts.last().time)
-        if (start_date == end_date)
-        {
-            return "$start_date $device_id"
-        }
-        else
-        {
-            return "$start_date--$end_date $device_id"
-        }
+        val visits = (visited_homepoints.map {homepoint -> homepoint.name}).joinToString(", ")
+        val dates = if(start_date == end_date) start_date else "${start_date}--${end_date}"
+        return "$dates $device_id".trim()
+        //return "$dates $device_id $visits".trim()
     }
 }
 
