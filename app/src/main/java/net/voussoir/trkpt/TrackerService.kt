@@ -117,14 +117,14 @@ class TrackerService: Service()
         if (! isGpsEnabled(location_manager))
         {
             Log.w("VOUSSOIR", "Device GPS is not enabled.")
-            return false
+            return gpsLocationListenerRegistered
         }
 
         val has_location_permission: Boolean = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         if (! has_location_permission)
         {
             Log.w("VOUSSOIR", "Location permission is not granted.")
-            return false
+            return gpsLocationListenerRegistered
         }
 
         location_manager.requestLocationUpdates(
@@ -142,7 +142,7 @@ class TrackerService: Service()
 
         gpsLocationListenerRegistered = true
         Log.i("VOUSSOIR", "Added GPS location listener.")
-        return true
+        return gpsLocationListenerRegistered
     }
 
     private fun add_network_location_listener(interval: Long): Boolean
@@ -151,14 +151,14 @@ class TrackerService: Service()
         if (! isNetworkEnabled(location_manager))
         {
             Log.w("VOUSSOIR", "Unable to add Network location listener.")
-            return false
+            return networkLocationListenerRegistered
         }
 
         val has_location_permission = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         if (! has_location_permission)
         {
             Log.w("VOUSSOIR", "Unable to add Network location listener. Location permission is not granted.")
-            return false
+            return networkLocationListenerRegistered
         }
 
         location_manager.requestLocationUpdates(
@@ -169,7 +169,7 @@ class TrackerService: Service()
         )
         networkLocationListenerRegistered = true
         Log.i("VOUSSOIR", "Added Network location listener.")
-        return true
+        return networkLocationListenerRegistered
     }
 
     fun remove_gps_location_listener()
