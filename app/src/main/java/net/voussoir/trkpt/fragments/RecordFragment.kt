@@ -570,7 +570,9 @@ class RecordFragment : Fragment()
         if (show_debug)
         {
             val accuracy_text: String = "%.2f".format(tracker.currentBestLocation.accuracy)
+            map_current_time.gravity = android.view.Gravity.LEFT
             map_current_time.text = """
+                ${tracker.currentBestLocation.latitude},${tracker.currentBestLocation.longitude}
                 state: ${state_name()}
                 clock: ${iso8601_local_noms(System.currentTimeMillis())}
              location: ${iso8601_local_noms(tracker.currentBestLocation.time)}
@@ -578,8 +580,6 @@ class RecordFragment : Fragment()
             listeners: ${iso8601_local_noms(tracker.listeners_enabled_at)}
                motion: ${iso8601_local_noms(tracker.last_significant_motion)}
              watchdog: ${iso8601_local_noms(tracker.last_watchdog)}
-                alarm: ${iso8601_local_noms(tracker.last_alarm)}
-           next alarm: ${iso8601_local_noms(tracker.next_alarm)}
                  home: ${iso8601_local_noms(tracker.arrived_at_home)}
                  died: ${iso8601_local_noms(tracker.dead_at)}
                 power: ${tracker.device_is_charging}
@@ -587,10 +587,16 @@ class RecordFragment : Fragment()
              accuracy: ${accuracy_text} m
            satellites: ${tracker.satellites_in_fix}/${tracker.satellites_known}
             """.trimIndent()
+            //alarm: ${iso8601_local_noms(tracker.last_alarm)}
+            //next alarm: ${iso8601_local_noms(tracker.next_alarm)}
         }
         else
         {
-            map_current_time.text = iso8601_local_noms(tracker.currentBestLocation.time)
+            map_current_time.gravity = android.view.Gravity.CENTER
+            map_current_time.text = """
+                ${iso8601_local_noms(tracker.currentBestLocation.time)}
+                ${tracker.currentBestLocation.latitude},${tracker.currentBestLocation.longitude}
+            """.trimIndent()
         }
 
         mapView.invalidate()
