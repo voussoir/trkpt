@@ -1,8 +1,13 @@
 package net.voussoir.trkpt
 import android.location.Location
-import java.util.*
 
-data class Homepoint(val id: Long, val latitude: Double, val longitude: Double, val radius: Double, val name: String)
+data class Homepoint(
+    val id: Long,
+    val latitude: Double,
+    val longitude: Double,
+    val radius: Double,
+    val name: String
+)
 {
     val location: Location = this.to_location()
 
@@ -15,5 +20,10 @@ data class Homepoint(val id: Long, val latitude: Double, val longitude: Double, 
         location.accuracy = radius.toFloat()
         location.time = System.currentTimeMillis()
         return location
+    }
+
+    fun contains(other_location: Location): Boolean
+    {
+        return this.location.distanceTo(other_location) < this.radius
     }
 }

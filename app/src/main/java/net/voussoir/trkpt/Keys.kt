@@ -110,7 +110,7 @@ object Keys {
     const val DEFAULT_ALTITUDE: Double = 0.0
     const val DEFAULT_TIME: Long = 0L
     const val COMMIT_INTERVAL: Long = 30 * ONE_SECOND_IN_MILLISECONDS
-    const val DEFAULT_THRESHOLD_LOCATION_AGE: Long = 5_000_000_000L             // 5s in nanoseconds
+    const val DEFAULT_THRESHOLD_LOCATION_AGE: Long = 5 * ONE_SECOND_IN_MILLISECONDS
     const val DEFAULT_THRESHOLD_DISTANCE: Float = 15f                           // 15 meters
     const val DEFAULT_ZOOM_LEVEL: Double = 16.0
     const val DEFAULT_OMIT_RESTS: Boolean = true

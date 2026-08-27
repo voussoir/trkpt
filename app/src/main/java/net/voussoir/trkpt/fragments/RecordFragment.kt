@@ -329,7 +329,8 @@ class RecordFragment : Fragment()
         }
         val tracker = main_activity.tracker_service!!
 
-        val locationIsOld: Boolean = !(isRecentEnough(tracker.currentBestLocation))
+        val now = System.currentTimeMillis()
+        val locationIsOld: Boolean = (now - tracker.currentBestLocation.time) > (Keys.DEFAULT_THRESHOLD_LOCATION_AGE)
 
         val newMarker: Drawable
         val radiuscolor: Int

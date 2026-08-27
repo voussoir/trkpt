@@ -125,13 +125,6 @@ fun isNetworkEnabled(locationManager: LocationManager): Boolean
     }
 }
 
-/* Checks if given location is new */
-fun isRecentEnough(location: Location): Boolean
-{
-    val locationAge: Long = SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos
-    return locationAge < Keys.DEFAULT_THRESHOLD_LOCATION_AGE
-}
-
 /* Checks if given location is accurate */
 fun isAccurateEnough(location: Location, locationAccuracyThreshold: Int): Boolean
 {

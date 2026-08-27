@@ -77,10 +77,22 @@ class TrackerService: Service()
     val TIME_UNTIL_SLEEP: Long = 5 * Keys.ONE_MINUTE_IN_MILLISECONDS
     val TIME_UNTIL_DEAD: Long = 3 * Keys.ONE_MINUTE_IN_MILLISECONDS
     val WATCHDOG_INTERVAL: Long = 61 * Keys.ONE_SECOND_IN_MILLISECONDS
-    private val RECENT_TRKPT_COUNT = 3600
+
     private val DISPLACEMENT_LOCATION_COUNT = 5
     lateinit var recent_displacement_locations: Deque<Location>
+
+    // When we arrive at a homepoint, we will continue recording points for one minute. While we are
+    // within the homepoint, we will keep a rolling window of the past one minute, and when we exit
+    // the homepoint, we will add the last minute to the track. This allows the track to contain
+    // arrivals and departures from homepoints while still eliminating the cloud of points from
+    // staying at home, and without treating the homepoint as an absolute black hole of no points.
+    private val KEEP_HOME_SECONDS = 60
+    lateinit var recent_home_trkpts: Deque<Trkpt>
+
+    // Would rather use a Deque here too, but not compatible with current_track_overlay.setPoints.
+    private val RECENT_TRKPT_COUNT = 3600
     lateinit var recent_trackpoints_for_mapview: MutableList<GeoPoint>
+
     private val binder = TrackerServiceBinder(this)
 
     private lateinit var notification_manager: NotificationManager
@@ -95,6 +107,7 @@ class TrackerService: Service()
     var use_gps_location: Boolean = false
     var use_network_location: Boolean = false
 
+    var _current_location_listener_interval: Long = Keys.LOCATION_INTERVAL_STOP
     var gpsLocationListenerRegistered: Boolean = false
     var networkLocationListenerRegistered: Boolean = false
     val anyLocationListenerRegistered: Boolean
@@ -229,6 +242,7 @@ class TrackerService: Service()
         reset_location_listeners(Keys.LOCATION_INTERVAL_STOP)
         trackbook.database.commit()
         recent_displacement_locations.clear()
+        recent_home_trkpts.clear()
         arrived_at_home = 0
         dead_at = 0
         dead_reason = ""
@@ -237,33 +251,22 @@ class TrackerService: Service()
     }
     fun state_full_recording()
     {
-        // This state is the only one that will record points into the database.
-        // Location is tracked at full power. A wakelock is used to resist Android's doze.
         // This state should be active while out and about.
         val try_id = random_int()
         Log.i("VOUSSOIR", "TrackerService.trying state_full_power ${try_id}")
+        tracking_state = Keys.STATE_FULL_RECORDING
 
         // Reloading the database can help if the file handle has become invalid while the app was
         // in a different state. For example, when at home and the database is being synced with
         // Syncthing. In my case, I had edited the database on my computer which synced back to the
         // phone, but when I left the house the next day, points did not record.
         // So reloading the database whenever switching to full power is a harmless security net.
-        // However, I add a 10 second check because this call will close the current database
-        // connection, triggering our database_changed_listener which would set us to dead, then
-        // load the new database connection, triggering this call in an infinite loop.
         if (System.currentTimeMillis() - trackbook.database.ready_at > 10 * Keys.ONE_SECOND_IN_MILLISECONDS)
         {
             trackbook.load_database()
         }
 
-        if (! trackbook.database.ready)
-        {
-            state_dead("Database not ready")
-            return
-        }
-
         Log.i("VOUSSOIR", "TrackerService.state_full_power ${try_id}")
-        tracking_state = Keys.STATE_FULL_RECORDING
         PreferencesHelper.saveTrackingState(tracking_state)
         reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
         arrived_at_home = 0
@@ -326,6 +329,9 @@ class TrackerService: Service()
         tracking_state = Keys.STATE_MAPVIEW
         PreferencesHelper.saveTrackingState(tracking_state)
         reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
+        trackbook.database.commit()
+        recent_home_trkpts.clear()
+        recent_displacement_locations.clear()
         arrived_at_home = 0
         dead_at = 0
         dead_reason = ""
@@ -349,11 +355,16 @@ class TrackerService: Service()
         }
     }
 
-    fun reset_location_listeners(interval: Long)
+    fun reset_location_listeners(interval: Long, force: Boolean=false)
     {
-        Log.i("VOUSSOIR", "TrackerService.reset_location_listeners")
+        if (interval == _current_location_listener_interval && !force)
+        {
+            return
+        }
+        _current_location_listener_interval = interval
         satellites_in_fix = 0
         satellites_known = 0
+        Log.i("VOUSSOIR", "TrackerService.reset_location_listeners with interval ${interval}.")
         if (use_gps_location && interval != Keys.LOCATION_INTERVAL_STOP)
         {
             add_gps_location_listener(interval)
@@ -419,26 +430,25 @@ class TrackerService: Service()
                 // The very bottom of this function actually adds the point to the track.
                 Log.i("VOUSSOIR", "Processing point ${location.time} ${location.latitude}, ${location.longitude}.")
 
-                if (location.time <= currentBestLocation.time)
-                {
-                    return
-                }
-
-                currentBestLocation = location
-
-                if (!tracking_state_recordable)
-                {
-                    return
-                }
+                val now = System.currentTimeMillis()
 
                 if(! trackbook.database.ready)
                 {
-                    Log.i("VOUSSOIR", "TrackerService.onLocationChanged: database is not ready!!.")
-                    state_dead(dead_reason="Database not ready")
+                    Log.i("VOUSSOIR", "TrackerService.onLocationChanged: database is not ready!")
                     return
                 }
 
-                displayNotification()
+                if (location.time <= currentBestLocation.time)
+                {
+                    Log.i("VOUSSOIR", "Omitting due to <= currentBestLocation.")
+                    return
+                }
+
+                if ((now - location.time) > Keys.DEFAULT_THRESHOLD_LOCATION_AGE)
+                {
+                    Log.i("VOUSSOIR", "Omitting due to not recent enough.")
+                    return
+                }
 
                 if (location.latitude == 0.0 || location.longitude == 0.0)
                 {
@@ -446,62 +456,64 @@ class TrackerService: Service()
                     return
                 }
 
-                // The Homepoint checks need to come before the other checks because if there
-                // is even the slightest chance that the user has left the homepoint, we want to
-                // wake back up to full power. We do not want to put this below the isAccurateEnough
-                // or isRecentEnough checks because we already know that the sleeping GPS produces
-                // very inaccurate points so if those bail early we'd stay in sleep mode.
-                for ((index, homepoint) in trackbook.homepoints.withIndex())
+                currentBestLocation = location
+                val trkpt = Trkpt(device_id=device_id, location=location)
+                displayNotification()
+
+                if (!tracking_state_recordable)
                 {
-                    if (homepoint.location.distanceTo(location) > homepoint.radius)
+                    return
+                }
+
+                var homepoint: Homepoint? = null
+                for ((index, check_homepoint) in trackbook.homepoints.withIndex())
+                {
+                    if (!check_homepoint.contains(location))
                     {
                         continue
                     }
+
+                    // We are within the homepoint.
+                    homepoint = check_homepoint
 
                     // Move this homepoint to the front of the list so that on subsequent location
                     // updates it hits on the first loop. I'm sure this is a trivial amount of
                     // savings but oh well.
                     if (index > 0)
                     {
-                        trackbook.homepoints.remove(homepoint)
-                        trackbook.homepoints.addFirst(homepoint)
+                        trackbook.homepoints.remove(check_homepoint)
+                        trackbook.homepoints.addFirst(check_homepoint)
                     }
-                    if (tracking_state != Keys.STATE_ARRIVED_AT_HOME && tracking_state != Keys.STATE_SLEEP)
+                    break
+                }
+                if (homepoint != null)
+                {
+                    if (tracking_state == Keys.STATE_SLEEP)
                     {
-                        Log.i("VOUSSOIR", "Arrived at home.")
-                        state_arrived_at_home()
+                        Log.i("VOUSSOIR", "Staying asleep at homepoint ${homepoint.id} ${homepoint.name}.")
                     }
                     else if (
+                        tracking_state == Keys.STATE_ARRIVED_AT_HOME &&
                         allow_sleep &&
                         has_motion_sensor &&
-                        tracking_state == Keys.STATE_ARRIVED_AT_HOME &&
-                        (System.currentTimeMillis() - arrived_at_home) > TIME_UNTIL_SLEEP &&
-                        (System.currentTimeMillis() - last_significant_motion) > TIME_UNTIL_SLEEP
+                        (now - arrived_at_home) > TIME_UNTIL_SLEEP &&
+                        (now - last_significant_motion) > TIME_UNTIL_SLEEP
                     )
                     {
-                        Log.i("VOUSSOIR", "Staying at home, sleeping.")
+                        Log.i("VOUSSOIR", "Going to sleep at homepoint ${homepoint.id} ${homepoint.name}.")
                         state_sleep()
                     }
-                    Log.i("VOUSSOIR", "Omitting due to homepoint ${homepoint.id} ${homepoint.name}.")
-                    return
+                    else if (tracking_state == Keys.STATE_ARRIVED_AT_HOME)
+                    {
+                        Log.i("VOUSSOIR", "Staying at homepoint ${homepoint.id} ${homepoint.name}.")
+                    }
+                    else
+                    {
+                        Log.i("VOUSSOIR", "Arrived at homepoint ${homepoint.id} ${homepoint.name}.")
+                        state_arrived_at_home()
+                    }
                 }
 
-                // All of the homepoint checks failed so we have left home and it's time to wake up.
-                // In practice we expect that the accelerometers would have triggered this change
-                // already, but this acts as a backup in case you somehow leave home without too
-                // much movement (maybe you sat in the car for several minutes before finally
-                // driving away or something).
-                if (tracking_state == Keys.STATE_ARRIVED_AT_HOME || tracking_state == Keys.STATE_SLEEP)
-                {
-                    Log.i("VOUSSOIR", "Leaving home.")
-                    state_full_recording()
-                }
-
-                if (! isRecentEnough(location))
-                {
-                    Log.i("VOUSSOIR", "Omitting due to not recent enough.")
-                    return
-                }
                 if (recent_displacement_locations.isEmpty())
                 {
                     // pass
@@ -517,10 +529,52 @@ class TrackerService: Service()
                     return
                 }
 
-                val trkpt = Trkpt(device_id=device_id, location=location)
-                trackbook.database.insert_trkpt(trkpt)
+                if (homepoint != null)
+                {
+                    if ((now - arrived_at_home) > (KEEP_HOME_SECONDS * Keys.ONE_SECOND_IN_MILLISECONDS))
+                    {
+                        // While we are at home, we will continue keeping some recent points in this
+                        // list, so that when we leave home we can add the last one minute of points
+                        // before departure into the track.
+                        recent_home_trkpts.add(trkpt)
+                        while ((now - recent_home_trkpts.first.time) > (KEEP_HOME_SECONDS * Keys.ONE_SECOND_IN_MILLISECONDS))
+                        {
+                            recent_home_trkpts.removeFirst()
+                        }
+                        Log.i("VOUSSOIR", "Omitting due to homepoint ${homepoint.id} ${homepoint.name}.")
+                        return
+                    }
+                }
+                else // homepoint == null
+                {
+                    // All of the homepoint checks failed so we have left home and it's time to wake up.
+                    // In practice we expect that the accelerometers would have triggered this change
+                    // already, but this acts as a backup in case you somehow leave home without too
+                    // much movement (maybe you sat in the car for several minutes before finally
+                    // driving away or something).
+                    if (tracking_state != Keys.STATE_FULL_RECORDING)
+                    {
+                        Log.i("VOUSSOIR", "Leaving home.")
+                        state_full_recording()
+                    }
+                    while (recent_home_trkpts.size > 0 && (now - recent_home_trkpts.first.time) > (KEEP_HOME_SECONDS * Keys.ONE_SECOND_IN_MILLISECONDS))
+                    {
+                        recent_home_trkpts.removeFirst()
+                    }
+                    while (recent_home_trkpts.size > 0)
+                    {
+                        Log.i("VOUSSOIR", "Retroactively adding ${recent_home_trkpts.first}.")
+                        recent_displacement_locations.add(recent_home_trkpts.first.toLocation())
+                        recent_trackpoints_for_mapview.add(recent_home_trkpts.first)
+                        trackbook.database.insert_trkpt(recent_home_trkpts.first)
+                        recent_home_trkpts.removeFirst()
+                    }
+                }
 
-                if (trkpt.accuracy <= max_accuracy)
+                // YOU PASSED THE CHECKS ///////////////////////////////////////////////////////////
+                // DEQUE MANAGEMENT ////////////////////////////////////////////////////////////////
+
+                if (location.accuracy <= max_accuracy)
                 {
                     recent_trackpoints_for_mapview.add(trkpt)
                 }
@@ -535,6 +589,9 @@ class TrackerService: Service()
                     recent_displacement_locations.removeFirst()
                 }
 
+                // ACTUALLY COMMIT THE POINT ///////////////////////////////////////////////////////
+
+                trackbook.database.insert_trkpt(trkpt)
                 if ((location.time - last_commit) > Keys.COMMIT_INTERVAL)
                 {
                     trackbook.database.commit()
@@ -664,7 +721,8 @@ class TrackerService: Service()
         Log.i("VOUSSOIR", "TrackerService.onCreate")
         trackbook = (applicationContext as Trackbook)
         trackbook.load_homepoints()
-        recent_displacement_locations = ArrayDeque<Location>(5)
+        recent_displacement_locations = ArrayDeque<Location>()
+        recent_home_trkpts = ArrayDeque<Trkpt>()
         recent_trackpoints_for_mapview = mutableListOf()
         use_gps_location = PreferencesHelper.load_location_gps()
         use_network_location = PreferencesHelper.load_location_network()
@@ -862,13 +920,9 @@ class TrackerService: Service()
         override fun database_changed()
         {
             Log.i("VOUSSOIR", "TrackerService.database_changed_listener: database_ready changed to ${trackbook.database.ready}")
-            if (trackbook.database.ready && tracking_state_recordable)
+            if (trackbook.database.ready && tracking_state_recordable && tracking_state != Keys.STATE_FULL_RECORDING)
             {
                 state_full_recording()
-            }
-            else if (tracking_state_recordable)
-            {
-                state_dead("Database not ready")
             }
         }
     }
@@ -879,12 +933,12 @@ class TrackerService: Service()
             Keys.PREF_LOCATION_GPS ->
             {
                 use_gps_location = PreferencesHelper.load_location_gps()
-                load_tracking_state()
+                reset_location_listeners(_current_location_listener_interval, force=true)
             }
             Keys.PREF_LOCATION_NETWORK ->
             {
                 use_network_location = PreferencesHelper.load_location_network()
-                load_tracking_state()
+                reset_location_listeners(_current_location_listener_interval, force=true)
             }
             Keys.PREF_USE_IMPERIAL_UNITS ->
             {
