@@ -57,7 +57,7 @@ def import_gpx_argparse(args):
     sql.commit()
     return 0
 
-@vlogging.main_decorator
+@vlogging.main_decorator(log=log)
 def main(argv):
     parser = argparse.ArgumentParser(
         description='''
