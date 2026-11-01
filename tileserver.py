@@ -13,7 +13,9 @@ import typing
 from voussoirkit import betterhelp
 from voussoirkit import dotdict
 from voussoirkit import operatornotify
+from voussoirkit import pathclass
 from voussoirkit import pipeable
+from voussoirkit import progressbars
 from voussoirkit import vlogging
 
 log = vlogging.getLogger(__name__, 'trkpt_tileserver')
@@ -65,10 +67,18 @@ HEATMAP_SCALE = {
 }
 
 def tms_x_to_lon(x: float, zoom: int) -> float:
-    return (x / (2.0 ** zoom)) * 360.0 - 180.0
+    return (x / (2 ** zoom)) * 360.0 - 180.0
 
 def tms_y_to_lat(y: float, zoom: int) -> float:
-    return math.degrees(math.atan(math.sinh(math.pi * (2.0 * y / (2.0 ** zoom) - 1.0))))
+    return math.degrees(math.atan(math.sinh(math.pi * (2.0 * y / (2 ** zoom) - 1.0))))
+
+def lon_to_tms_x(lon: float, zoom: int) -> float:
+    return (2 ** zoom) * ((lon + 180.0) / 360.0)
+
+def lat_to_tms_y(lat: float, zoom: int) -> float:
+    y = (2 ** zoom) * (0.5 + math.asinh(math.tan(math.radians(lat))) / (2.0 * math.pi))
+    y = (2 ** zoom) - 1 - y
+    return y
 
 def tms_to_bbox(x: int, y: int, zoom: int):
     y = (2 ** zoom) - 1 - y
@@ -106,16 +116,47 @@ def trkpts_to_image(trkpts, zoom, bbox, color, heatmap=True):
         (y, x) = divmod(index, 256)
         if heatmap:
             heatlog = math.log(heat + 1, HEATMAP_SCALE[zoom])
-            thiscolor = (color[0], color[1], color[2], int(color[3] * heatlog))
-            # if heat > 2:
+            thiscolor = (*color, int(255 * heatlog))
+            # if heat > 0:
             #     print(heat, heatlog, thiscolor)
             image.putpixel((x, y), thiscolor)
         elif heat > 0:
-            image.putpixel((x, y), color)
+            image.putpixel((x, y), (*color, 255))
         elif vlogging.ARGV_LEVEL <= vlogging.DEBUG:
             # This helps see boundaries of each tile when debugging.
             image.putpixel( (x, y), (0, random.randint(0, 256), random.randint(0, 256), 60))
     return image
+
+def select_by_bbox(sql, bbox, modulus=1):
+    query = '''
+        SELECT trkpt.lat, trkpt.lon
+        FROM trkpt
+        JOIN trkpt_rtree ON trkpt.id = trkpt_rtree.id
+        WHERE   trkpt_rtree.max_lon >= ?
+            AND trkpt_rtree.min_lon <= ?
+            AND trkpt_rtree.max_lat >= ?
+            AND trkpt_rtree.min_lat <= ?
+            AND trkpt.lon >= ?
+            AND trkpt.lon <= ?
+            AND trkpt.lat >= ?
+            AND trkpt.lat <= ?
+            AND trkpt.deleted = 0
+            AND trkpt.accuracy < 10
+            AND trkpt.id % ? = 0
+    '''
+    bindings = [
+        bbox.west,
+        bbox.east,
+        bbox.south,
+        bbox.north,
+        bbox.west,
+        bbox.east,
+        bbox.south,
+        bbox.north,
+        modulus,
+    ]
+    trkpts = sql.execute(query, bindings).fetchall()
+    return trkpts
 
 def server_argparse(args):
     site = flask.Flask(__name__)
@@ -129,41 +170,13 @@ def server_argparse(args):
     blank_bio.seek(0)
     blank_bytes = blank_bio.read()
     color = hex_to_rgb(args.color)
-    color = (*color, 255)
 
     @site.route('/tms/<int:zoom>/<int:x>/<int:y>.png')
     def tile_tms(zoom, x, y):
         if (zoom, x, y) in cache:
             return cache[(zoom, x, y)]
         bbox = tms_to_bbox(x=x, y=y, zoom=zoom)
-        query = '''
-            SELECT trkpt.lat, trkpt.lon
-            FROM trkpt
-            JOIN trkpt_rtree ON trkpt.id = trkpt_rtree.id
-            WHERE   trkpt_rtree.max_lon >= ?
-                AND trkpt_rtree.min_lon <= ?
-                AND trkpt_rtree.max_lat >= ?
-                AND trkpt_rtree.min_lat <= ?
-                AND trkpt.lon >= ?
-                AND trkpt.lon <= ?
-                AND trkpt.lat >= ?
-                AND trkpt.lat <= ?
-                AND trkpt.deleted = 0
-                AND trkpt.accuracy < 10
-                AND trkpt.id % ? = 0
-        '''
-        bindings = [
-            bbox.west,
-            bbox.east,
-            bbox.south,
-            bbox.north,
-            bbox.west,
-            bbox.east,
-            bbox.south,
-            bbox.north,
-            SELECT_MODULUS[zoom],
-        ]
-        trkpts = sql.execute(query, bindings).fetchall()
+        trkpts = select_by_bbox(sql=sql, bbox=bbox, modulus=SELECT_MODULUS[zoom])
         if len(trkpts) > 1_000_000:
             raise ValueError()
         log.info(f'{zoom=}, {x=}, {y=} found {len(trkpts)} points.')
@@ -192,6 +205,43 @@ def server_argparse(args):
     return 0
 
 def export_argparse(args):
+    (lat1, lon1, lat2, lon2) = args.bbox.replace('/', ',').split(',')
+    # print(lat1, lon1, lat2, lon2)
+
+    sql = sqlite3.connect(args.database)
+    sql.row_factory = sqlite3.Row
+    color = hex_to_rgb(args.color)
+    y1 = math.ceil(lat_to_tms_y(float(lat1), zoom=args.zoom))
+    x1 = math.floor(lon_to_tms_x(float(lon1), zoom=args.zoom))
+    y2 = math.ceil(lat_to_tms_y(float(lat2), zoom=args.zoom))
+    x2 = math.floor(lon_to_tms_x(float(lon2), zoom=args.zoom))
+
+    tiles_x = ((x2 - x1) + 1)
+    tiles_y = ((y2 - y1) + 1)
+    progressbar = (progressbars.Bar1 if vlogging.ARGV_LEVEL > vlogging.DEBUG else progressbars.DoNothing)(total=tiles_x * tiles_y)
+
+    final_width = tiles_x * 256
+    final_height = tiles_y * 256
+    final_image = PIL.Image.new('RGBA', (final_width, final_height), color=(0, 0, 0, 0))
+
+    for (index_x, x) in enumerate(range(x1, x2+1)):
+        for (index_y, y) in enumerate(range(y1, y2+1)):
+            progressbar.set_topic(f'{x},{y}')
+            progressbar.step((index_x * tiles_x) + index_y)
+            bbox = tms_to_bbox(x=x, y=y, zoom=args.zoom)
+            trkpts = select_by_bbox(sql=sql, bbox=bbox, modulus=1)
+            image = trkpts_to_image(trkpts, zoom=args.zoom, bbox=bbox, color=color, heatmap=args.heatmap)
+            final_image.paste(image, (index_x * 256, index_y * 256))
+
+    progressbar.done()
+
+    if args.output:
+        output_path = pathclass.Path(args.output)
+    else:
+        output_name = f'{args.zoom},{x1},{y1},{x2},{y2}.png'
+        output_path = pathclass.cwd().with_child(output_name)
+    final_image.save(output_path)
+    pipeable.stdout(output_path.absolute_path)
     return 0
 
 @operatornotify.main_decorator(subject='trkpt_tileserver')
@@ -217,6 +267,10 @@ def main(argv):
     p_export.add_argument(
         'bbox',
         help='''
+        Should be given as Lat1,Lon1,Lat2,Lon2 where Lat1,Lon1 is the northwest
+        (upper left) and Lat2,Lon2 is the southeast (lower right) corner of your
+        desired bounding box.
+        For your numpad convenience, you may also use / instead of comma.
         ''',
     )
     p_export.add_argument(
