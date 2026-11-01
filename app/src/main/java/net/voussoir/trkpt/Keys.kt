@@ -32,7 +32,7 @@ object Keys {
 
     // version numbers
     const val CURRENT_TRACK_FORMAT_VERSION: Int = 4
-    const val DATABASE_VERSION: Int = 1
+    const val DATABASE_VERSION: Int = 2
 
     // intent actions
     const val ACTION_START_SERVICE: String = "net.voussoir.trkpt.action.START_SERVICE"

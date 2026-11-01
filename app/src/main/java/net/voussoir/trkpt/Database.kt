@@ -29,7 +29,15 @@ class Database(val trackbook: Trackbook)
         Log.i("VOUSSOIR", "Database.connect: " + file.absolutePath)
         this.file = file
         this.connection = openOrCreateDatabase(file, null)
-        this.initialize_tables()
+        Log.i("VOUSSOIR", "Database.connect: Current version is ${this.connection.version}")
+        if (this.connection.version == 0)
+        {
+            this.initialize_tables()
+        }
+        else if (this.connection.version < Keys.DATABASE_VERSION)
+        {
+            this.upgrade_schemas()
+        }
         this.ready_at = System.currentTimeMillis()
     }
 
@@ -56,22 +64,85 @@ class Database(val trackbook: Trackbook)
         this.connection.endTransaction()
     }
 
+    fun execute_script(script: String)
+    {
+        val lines = script.split(Regex(";(:?\n|$)")).map { it.trim() }.filter { it.isNotEmpty() }
+        for (line in lines)
+        {
+            Log.i("VOUSSOIR", "Database.${line}")
+            this.connection.execSQL(line)
+        }
+    }
+
     private fun initialize_tables()
     {
         Log.i("VOUSSOIR", "Database.initialize_tables")
         begin_transaction()
-        this.connection.execSQL("CREATE TABLE IF NOT EXISTS meta(name TEXT PRIMARY KEY, value TEXT)")
-        this.connection.execSQL("CREATE TABLE IF NOT EXISTS trkpt(device_id INTEGER NOT NULL, time INTEGER NOT NULL, lat REAL NOT NULL, lon REAL NOT NULL, provider TEXT, accuracy REAL, ele INTEGER, sat INTEGER, PRIMARY KEY(device_id, time))")
-        this.connection.execSQL("CREATE TABLE IF NOT EXISTS homepoints(id INTEGER PRIMARY KEY, lat REAL NOT NULL, lon REAL NOT NULL, radius REAL NOT NULL, name TEXT)")
-        this.connection.execSQL("CREATE INDEX IF NOT EXISTS index_trkpt_device_id_time on trkpt(device_id, time)")
+        this.execute_script("""
+        CREATE TABLE meta(name TEXT PRIMARY KEY, value TEXT);
+
+        CREATE TABLE trkpt(
+            id INTEGER PRIMARY KEY,
+            device_id TEXT NOT NULL,
+            time INTEGER NOT NULL,
+            lat REAL NOT NULL,
+            lon REAL NOT NULL,
+            provider TEXT,
+            accuracy REAL,
+            ele INTEGER,
+            sat INTEGER,
+            deleted INTEGER DEFAULT 0,
+            UNIQUE (device_id, time)
+        );
+        CREATE INDEX index_trkpt_device_id_time on trkpt(device_id, time);
+
+        CREATE TABLE homepoints(
+            id INTEGER PRIMARY KEY,
+            lat REAL NOT NULL,
+            lon REAL NOT NULL,
+            radius REAL NOT NULL,
+            name TEXT
+        );
+        """)
+
+        //this.connection.execSQL("""
+        //    CREATE VIRTUAL TABLE trkpt_rtree USING rtree(
+        //        id,
+        //        min_lon, max_lon,
+        //        min_lat, max_lat,
+        //        min_time, max_time
+        //    );
+        //""")
+        //this.connection.execSQL("""
+        //    CREATE TRIGGER trkpt_rtree_insert AFTER INSERT ON trkpt BEGIN
+        //    INSERT INTO trkpt_rtree(id, min_lon, max_lon, min_lat, max_lat, min_time, max_time)
+        //    VALUES (new.id, new.lon, new.lon, new.lat, new.lat, new.time, new.time);
+        //    END;
+        //""")
+        //this.connection.execSQL("""
+        //    CREATE TRIGGER trkpt_rtree_update AFTER UPDATE ON trkpt BEGIN
+        //    UPDATE trkpt_rtree SET
+        //        min_lon=new.lon,
+        //        max_lon=new.lon,
+        //        min_lat=new.lat,
+        //        max_lat=new.lat,
+        //        min_time=new.time,
+        //        max_time=new.time
+        //    WHERE id = old.id;
+        //    END;
+        //""")
+        //this.connection.execSQL("""
+        //    CREATE TRIGGER trkpt_rtree_delete AFTER DELETE ON trkpt BEGIN
+        //    DELETE FROM trkpt_rtree WHERE id = old.id;
+        //    END;
+        //""")
+
         // The pragmas don't seem to execute unless you call moveToNext.
         var cursor: Cursor
         cursor = this.connection.rawQuery("PRAGMA journal_mode = DELETE", null)
         cursor.moveToNext()
         cursor.close()
-        cursor = this.connection.rawQuery("PRAGMA user_version = ${Keys.DATABASE_VERSION}", null)
-        cursor.moveToNext()
-        cursor.close()
+        this.connection.version = Keys.DATABASE_VERSION
         // Not using this.commit because this.ready is not true yet.
         this.connection.setTransactionSuccessful()
         this.connection.endTransaction()
@@ -270,5 +341,22 @@ class Database(val trackbook: Trackbook)
         Log.i("VOUSSOIR", "Database.delete_homepoint")
         begin_transaction()
         connection.delete("homepoints", "id = ?", arrayOf(id.toString()))
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    fun upgrade_schemas()
+    {
+        Log.i("VOUSSOIR", "Database.upgrade_schemas")
+        if (this.connection.version < 2)
+        {
+            this.upgrade_1_to_2()
+        }
+    }
+
+    fun upgrade_1_to_2()
+    {
+        Log.i("VOUSSOIR", "Database.upgrade_1_to_2")
+        //this.connection.version = 2
     }
 }
