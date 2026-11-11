@@ -87,34 +87,42 @@ class Trackbook : Application()
             Log.i("VOUSSOIR", "Trackbook.load_database: mutex already locked")
             return
         }
-        if (this.database.ready)
+        try
         {
-            Log.i("VOUSSOIR", "Trackbook.load_database: closing and re-opening.")
-            this.database.commit()
-            this.database.close()
+            if (this.database.ready)
+            {
+                Log.i("VOUSSOIR", "Trackbook.load_database: closing and re-opening.")
+                this.database.commit()
+                this.database.close()
+            }
+            val folder = PreferencesHelper.load_database_folder()
+            if (folder == "")
+            {
+                Log.i("VOUSSOIR", "Trackbook.load_database: folder came up blank.")
+                this.database.ready_at = 0
+                return
+            }
+            if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
+            {
+                val device_id = PreferencesHelper.load_device_id()
+                this.database.connect(File(folder + "/trkpt_${device_id}.db"))
+                this.load_homepoints()
+            }
+            else
+            {
+                Log.i(
+                    "VOUSSOIR",
+                    "Trackbook.load_database: lacking WRITE_EXTERNAL_STORAGE permission."
+                )
+                this.database.ready_at = 0
+            }
+            Log.i("VOUSSOIR", "Trackbook.load_database: Calling all listeners")
+            this.call_database_changed_listeners()
         }
-        val folder = PreferencesHelper.load_database_folder()
-        if (folder == "")
+        finally
         {
-            Log.i("VOUSSOIR", "Trackbook.load_database: folder came up blank.")
-            this.database.ready_at = 0
             database_mutex.unlock()
-            return
         }
-        if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
-        {
-            val device_id = PreferencesHelper.load_device_id()
-            this.database.connect(File(folder + "/trkpt_${device_id}.db"))
-            this.load_homepoints()
-        }
-        else
-        {
-            Log.i("VOUSSOIR", "Trackbook.load_database: lacking WRITE_EXTERNAL_STORAGE permission.")
-            this.database.ready_at = 0
-        }
-        Log.i("VOUSSOIR", "Trackbook.load_database: Calling all listeners")
-        this.call_database_changed_listeners()
-        database_mutex.unlock()
     }
 
     fun load_homepoints()
