@@ -8,46 +8,81 @@ import java.io.File
 
 class Database(val trackbook: Trackbook)
 {
+    private var _connection: SQLiteDatabase? = null
+    val connection: SQLiteDatabase
+        get() = _connection ?: throw IllegalStateException("Database not ready, call connect() first.")
+
     var ready_at: Long = 0
     val ready: Boolean
-        get() = ready_at > 0
+        get() = this._connection != null
     lateinit var file: File
-    lateinit var connection: SQLiteDatabase
 
     // DATABASE CONNECTION METHODS /////////////////////////////////////////////////////////////////
 
     fun close()
     {
         Log.i("VOUSSOIR", "Database.close")
-        this.connection.close()
+        if (this._connection == null)
+        {
+            Log.i("VOUSSOIR", "Database.close but the connection is already null.")
+            return
+        }
+        val connection = this.connection
+        this._connection = null
         this.ready_at = 0
-        this.trackbook.call_database_changed_listeners()
+        try
+        {
+            connection.close()
+        }
+        catch (exc: Exception)
+        {
+            Log.e("VOUSSOIR", "Database.close: raised ${exc}")
+        }
+        finally
+        {
+            this.trackbook.call_database_changed_listeners()
+        }
     }
 
     fun connect(file: File)
     {
         Log.i("VOUSSOIR", "Database.connect: " + file.absolutePath)
         this.file = file
-        this.connection = openOrCreateDatabase(file, null)
-        // The pragmas don't seem to execute unless you call moveToNext.
-        val cursor: Cursor = this.connection.rawQuery("PRAGMA journal_mode = DELETE", null)
-        cursor.moveToNext()
-        cursor.close()
 
-        Log.i("VOUSSOIR", "Database.connect: Current version is ${this.connection.version}")
-        if (this.connection.version == 0)
+        this.close()
+
+        // We hold this temporary connection variable before assigning it back to self, so that if
+        // anything goes wrong during its creation we are not left with half of a connection.
+        val connection = openOrCreateDatabase(file, null)
+
+        try
         {
-            this.initialize_tables()
+            // The pragmas don't seem to execute unless you call moveToNext.
+            val cursor: Cursor = connection.rawQuery("PRAGMA journal_mode = DELETE", null)
+            cursor.moveToNext()
+            cursor.close()
+
+            Log.i("VOUSSOIR", "Database.connect: Current version is ${connection.version}.")
+            if (connection.version == 0)
+            {
+                initialize_tables(connection)
+            }
+            else if (connection.version < Keys.DATABASE_VERSION)
+            {
+                upgrade_schemas(connection)
+            }
+            else
+            {
+                Log.i("VOUSSOIR", "Database.connect: No schema upgrades necessary.")
+            }
+            this._connection = connection
+            this.ready_at = System.currentTimeMillis()
         }
-        else if (this.connection.version < Keys.DATABASE_VERSION)
+        catch (exc: Exception)
         {
-            this.upgrade_schemas()
+            connection.close()
+            throw exc
         }
-        else
-        {
-            Log.i("VOUSSOIR", "Database.connect: No schema upgrades necessary.")
-        }
-        this.ready_at = System.currentTimeMillis()
     }
 
     fun begin_transaction()
@@ -69,87 +104,6 @@ class Database(val trackbook: Trackbook)
             return
         }
         Log.i("VOUSSOIR", "Committing.")
-        this.connection.setTransactionSuccessful()
-        this.connection.endTransaction()
-    }
-
-    fun execute_script(script: String)
-    {
-        val lines = script.split(Regex(";(:?\n|$)")).map { it.trim() }.filter { it.isNotEmpty() }
-        for (line in lines)
-        {
-            Log.i("VOUSSOIR", "Database.${line}")
-            this.connection.execSQL(line)
-        }
-    }
-
-    private fun initialize_tables()
-    {
-        Log.i("VOUSSOIR", "Database.initialize_tables")
-        begin_transaction()
-        this.execute_script("""
-        CREATE TABLE meta(name TEXT PRIMARY KEY, value TEXT);
-
-        CREATE TABLE trkpt(
-            id INTEGER PRIMARY KEY,
-            device_id TEXT NOT NULL,
-            time INTEGER NOT NULL,
-            lat REAL NOT NULL,
-            lon REAL NOT NULL,
-            provider TEXT,
-            accuracy REAL,
-            ele INTEGER,
-            sat INTEGER,
-            deleted INTEGER DEFAULT 0,
-            UNIQUE (device_id, time)
-        );
-        CREATE INDEX index_trkpt_device_id_time on trkpt(device_id, time);
-
-        CREATE TABLE homepoints(
-            id INTEGER PRIMARY KEY,
-            lat REAL NOT NULL,
-            lon REAL NOT NULL,
-            radius REAL NOT NULL,
-            name TEXT NOT NULL CHECK (length(trim(name)) > 0),
-            prune_level INTEGER NOT NULL CHECK (prune_level IN (0, 1, 2))
-        );
-
-        CREATE VIRTUAL TABLE trkpt_rtree USING rtree(
-            id,
-            min_lon, max_lon,
-            min_lat, max_lat,
-            min_time, max_time
-        );
-        """)
-
-        this.connection.execSQL("""
-        CREATE TRIGGER trkpt_rtree_insert AFTER INSERT ON trkpt BEGIN
-            INSERT INTO trkpt_rtree(id, min_lon, max_lon, min_lat, max_lat, min_time, max_time)
-            VALUES (new.id, new.lon, new.lon, new.lat, new.lat, new.time, new.time);
-        END;
-        """)
-
-        this.connection.execSQL("""
-        CREATE TRIGGER trkpt_rtree_update AFTER UPDATE ON trkpt BEGIN
-        UPDATE trkpt_rtree SET
-            min_lon=new.lon,
-            max_lon=new.lon,
-            min_lat=new.lat,
-            max_lat=new.lat,
-            min_time=new.time,
-            max_time=new.time
-        WHERE id = old.id;
-        END;
-        """)
-
-        this.connection.execSQL("""
-        CREATE TRIGGER trkpt_rtree_delete AFTER DELETE ON trkpt BEGIN
-            DELETE FROM trkpt_rtree WHERE id = old.id;
-        END;
-        """)
-
-        this.connection.version = Keys.DATABASE_VERSION
-        // Not using this.commit because this.ready is not true yet.
         this.connection.setTransactionSuccessful()
         this.connection.endTransaction()
     }
@@ -402,152 +356,237 @@ class Database(val trackbook: Trackbook)
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
+}
 
-    private fun migrator(
-        new_version: Int,
-        block: () -> Unit
-    )
+fun execute_script(connection: SQLiteDatabase, script: String)
+{
+    val lines = script.split(Regex(";(:?\n|$)")).map { it.trim() }.filter { it.isNotEmpty() }
+    for (line in lines)
     {
-        if (this.connection.version >= new_version)
-        {
-            return
-        }
-        Log.i("VOUSSOIR", "Database.migrator ${new_version}")
-        if (this.connection.inTransaction())
-        {
-            throw IllegalStateException("Cannot start migrator inside a transaction.")
-        }
+        Log.i("VOUSSOIR", "Database.${line}")
+        connection.execSQL(line)
+    }
+}
 
-        val had_foreign_keys = this.pragma_foreign_keys()
+private fun initialize_tables(connection: SQLiteDatabase)
+{
+    Log.i("VOUSSOIR", "Database.initialize_tables")
+    connection.beginTransaction()
+    execute_script(connection, """
+        CREATE TABLE meta(name TEXT PRIMARY KEY, value TEXT);
+
+        CREATE TABLE trkpt(
+            id INTEGER PRIMARY KEY,
+            device_id TEXT NOT NULL,
+            time INTEGER NOT NULL,
+            lat REAL NOT NULL,
+            lon REAL NOT NULL,
+            provider TEXT,
+            accuracy REAL,
+            ele INTEGER,
+            sat INTEGER,
+            deleted INTEGER DEFAULT 0,
+            UNIQUE (device_id, time)
+        );
+        CREATE INDEX index_trkpt_device_id_time on trkpt(device_id, time);
+
+        CREATE TABLE homepoints(
+            id INTEGER PRIMARY KEY,
+            lat REAL NOT NULL,
+            lon REAL NOT NULL,
+            radius REAL NOT NULL,
+            name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+            prune_level INTEGER NOT NULL CHECK (prune_level IN (0, 1, 2))
+        );
+
+        CREATE VIRTUAL TABLE trkpt_rtree USING rtree(
+            id,
+            min_lon, max_lon,
+            min_lat, max_lat,
+            min_time, max_time
+        );
+        """)
+
+    connection.execSQL("""
+        CREATE TRIGGER trkpt_rtree_insert AFTER INSERT ON trkpt BEGIN
+            INSERT INTO trkpt_rtree(id, min_lon, max_lon, min_lat, max_lat, min_time, max_time)
+            VALUES (new.id, new.lon, new.lon, new.lat, new.lat, new.time, new.time);
+        END;
+        """)
+
+    connection.execSQL("""
+        CREATE TRIGGER trkpt_rtree_update AFTER UPDATE ON trkpt BEGIN
+        UPDATE trkpt_rtree SET
+            min_lon=new.lon,
+            max_lon=new.lon,
+            min_lat=new.lat,
+            max_lat=new.lat,
+            min_time=new.time,
+            max_time=new.time
+        WHERE id = old.id;
+        END;
+        """)
+
+    connection.execSQL("""
+        CREATE TRIGGER trkpt_rtree_delete AFTER DELETE ON trkpt BEGIN
+            DELETE FROM trkpt_rtree WHERE id = old.id;
+        END;
+        """)
+
+    connection.version = Keys.DATABASE_VERSION
+    connection.setTransactionSuccessful()
+    connection.endTransaction()
+}
+
+
+private fun migrator(
+    connection: SQLiteDatabase,
+    new_version: Int,
+    block: () -> Unit
+)
+{
+    if (connection.version >= new_version)
+    {
+        return
+    }
+    Log.i("VOUSSOIR", "Database.migrator ${new_version}")
+    if (connection.inTransaction())
+    {
+        throw IllegalStateException("Cannot start migrator inside a transaction.")
+    }
+
+    val had_foreign_keys = pragma_foreign_keys(connection)
+    if (had_foreign_keys)
+    {
+        connection.execSQL("PRAGMA foreign_keys = OFF")
+    }
+
+    try
+    {
+        connection.beginTransaction()
+        try
+        {
+            block()
+
+            // Check once, after every table rebuild for this version is finished.
+            if (had_foreign_keys && pragma_foreign_key_check(connection))
+            {
+                throw IllegalStateException(
+                    "Migration to ${new_version} left foreign key violations."
+                )
+            }
+
+            connection.version = new_version
+            connection.setTransactionSuccessful()
+        }
+        finally
+        {
+            connection.endTransaction()
+        }
+    }
+    finally
+    {
         if (had_foreign_keys)
         {
-            this.connection.execSQL("PRAGMA foreign_keys = OFF")
-        }
-
-        try
-        {
-            this.connection.beginTransaction()
-            try
-            {
-                block()
-
-                // Check once, after every table rebuild for this version is finished.
-                if (had_foreign_keys && this.pragma_foreign_key_check())
-                {
-                    throw IllegalStateException(
-                        "Migration to ${new_version} left foreign key violations."
-                    )
-                }
-
-                this.connection.version = new_version
-                this.connection.setTransactionSuccessful()
-            }
-            finally
-            {
-                this.connection.endTransaction()
-            }
-        }
-        finally
-        {
-            if (had_foreign_keys)
-            {
-                this.connection.execSQL("PRAGMA foreign_keys = ON")
-            }
+            connection.execSQL("PRAGMA foreign_keys = ON")
         }
     }
-    private fun rebuild_table(
-        table_name: String,
-        create_sql: String,
-        transfer_sql: String,
-    )
+}
+private fun rebuild_table(
+    connection: SQLiteDatabase,
+    table_name: String,
+    create_sql: String,
+    transfer_sql: String,
+)
+{
+    val temp_table_name = "${table_name}__rebuild"
+    val table_name_escaped = sql_escape(table_name)
+    val temp_table_name_escaped = sql_escape(temp_table_name)
+
+    val indexes_triggers = get_indexes_triggers(connection, table_name)
+
+    connection.execSQL(create_sql.replace("{table}", temp_table_name_escaped))
+    connection.execSQL(transfer_sql.replace("{table}", temp_table_name_escaped))
+    connection.execSQL("DROP TABLE ${table_name_escaped}")
+    connection.execSQL("ALTER TABLE ${temp_table_name_escaped} RENAME TO ${table_name_escaped}")
+
+    for (sql in indexes_triggers)
     {
-        val temp_table_name = "${table_name}__rebuild"
-        val table_name_escaped = sql_escape(table_name)
-        val temp_table_name_escaped = sql_escape(temp_table_name)
-
-        val indexes_triggers = get_indexes_triggers(table_name)
-
-        this.connection.execSQL(create_sql.replace("{table}", temp_table_name_escaped))
-        this.connection.execSQL(transfer_sql.replace("{table}", temp_table_name_escaped))
-        this.connection.execSQL("DROP TABLE ${table_name_escaped}")
-        this.connection.execSQL("ALTER TABLE ${temp_table_name_escaped} RENAME TO ${table_name_escaped}")
-
-        for (sql in indexes_triggers)
-        {
-            this.connection.execSQL(sql)
-        }
+        connection.execSQL(sql)
     }
+}
 
-    private fun pragma_foreign_keys(): Boolean
+private fun pragma_foreign_keys(connection: SQLiteDatabase): Boolean
+{
+    val cursor = connection.rawQuery("PRAGMA foreign_keys", null)
+    try
     {
-        val cursor = this.connection.rawQuery("PRAGMA foreign_keys", null)
-        try
-        {
-            return cursor.moveToFirst() && cursor.getInt(0) != 0
-        }
-        finally
-        {
-            cursor.close()
-        }
+        return cursor.moveToFirst() && cursor.getInt(0) != 0
     }
-
-    private fun pragma_foreign_key_check(): Boolean
+    finally
     {
-        val cursor = this.connection.rawQuery("PRAGMA foreign_key_check", null)
-        try
-        {
-            return cursor.count > 0
-        }
-        finally
-        {
-            cursor.close()
-        }
+        cursor.close()
     }
+}
 
-    private fun get_indexes_triggers(table_name: String): ArrayList<String>
+private fun pragma_foreign_key_check(connection: SQLiteDatabase): Boolean
+{
+    val cursor = connection.rawQuery("PRAGMA foreign_key_check", null)
+    try
     {
-        val indexes_triggers = ArrayList<String>()
-        val cursor = this.connection.rawQuery("""
+        return cursor.count > 0
+    }
+    finally
+    {
+        cursor.close()
+    }
+}
+
+private fun get_indexes_triggers(connection: SQLiteDatabase, table_name: String): ArrayList<String>
+{
+    val indexes_triggers = ArrayList<String>()
+    val cursor = connection.rawQuery("""
             SELECT sql
             FROM sqlite_master
             WHERE tbl_name = ? AND type IN ('index', 'trigger') AND sql IS NOT NULL
             ORDER BY type, name
             """,
-            arrayOf(table_name)
-        )
-        try
+        arrayOf(table_name)
+    )
+    try
+    {
+        while (cursor.moveToNext())
         {
-            while (cursor.moveToNext())
-            {
-                indexes_triggers.add(cursor.getString(0))
-            }
+            indexes_triggers.add(cursor.getString(0))
         }
-        finally
-        {
-            cursor.close()
-        }
-        return indexes_triggers
     }
-
-    private fun sql_escape(identifier: String): String
+    finally
     {
-        return "\"" + identifier.replace("\"", "\"\"") + "\""
+        cursor.close()
     }
+    return indexes_triggers
+}
 
-    fun upgrade_schemas()
-    {
-        Log.i("VOUSSOIR", "Database.upgrade_schemas")
-        migrator(new_version=2, { this.upgrade_1_to_2() })
-        migrator(new_version=3, { this.upgrade_2_to_3() })
-    }
+private fun sql_escape(identifier: String): String
+{
+    return "\"" + identifier.replace("\"", "\"\"") + "\""
+}
 
-    fun upgrade_1_to_2()
-    {
-        Log.i("VOUSSOIR", "Database.upgrade_1_to_2")
+fun upgrade_schemas(connection: SQLiteDatabase)
+{
+    Log.i("VOUSSOIR", "Database.upgrade_schemas")
+    migrator(connection, new_version=2, { upgrade_1_to_2(connection) })
+    migrator(connection, new_version=3, { upgrade_2_to_3(connection) })
+}
 
-        rebuild_table(
-            table_name="homepoints",
-            create_sql="""
+fun upgrade_1_to_2(connection: SQLiteDatabase)
+{
+    Log.i("VOUSSOIR", "Database.upgrade_1_to_2")
+
+    rebuild_table(
+        connection,
+        table_name="homepoints",
+        create_sql="""
             CREATE TABLE {table} (
                 id INTEGER PRIMARY KEY,
                 lat REAL NOT NULL,
@@ -557,7 +596,7 @@ class Database(val trackbook: Trackbook)
                 prune_level INTEGER NOT NULL CHECK (prune_level IN (0, 1, 2))
             )
             """,
-            transfer_sql="""
+        transfer_sql="""
             INSERT INTO {table} (
                 id,
                 lat,
@@ -578,16 +617,17 @@ class Database(val trackbook: Trackbook)
                 0
             FROM homepoints
             """,
-        )
-    }
+    )
+}
 
-    fun upgrade_2_to_3()
-    {
-        Log.i("VOUSSOIR", "Database.upgrade_2_to_3")
+fun upgrade_2_to_3(connection: SQLiteDatabase)
+{
+    Log.i("VOUSSOIR", "Database.upgrade_2_to_3")
 
-        rebuild_table(
-            table_name="trkpt",
-            create_sql="""
+    rebuild_table(
+        connection,
+        table_name="trkpt",
+        create_sql="""
             CREATE TABLE {table}(
                 id INTEGER PRIMARY KEY,
                 device_id TEXT NOT NULL,
@@ -602,7 +642,7 @@ class Database(val trackbook: Trackbook)
                 UNIQUE (device_id, time)
             )
             """,
-            transfer_sql="""
+        transfer_sql="""
             INSERT INTO {table} (
                 id,
                 device_id,
@@ -628,44 +668,43 @@ class Database(val trackbook: Trackbook)
                 0
             FROM trkpt
             """
-        )
+    )
 
-        this.execute_script("""
-        CREATE VIRTUAL TABLE trkpt_rtree USING rtree(
-            id,
-            min_lon, max_lon,
-            min_lat, max_lat,
-            min_time, max_time
-        );
+    execute_script(connection, """
+    CREATE VIRTUAL TABLE trkpt_rtree USING rtree(
+        id,
+        min_lon, max_lon,
+        min_lat, max_lat,
+        min_time, max_time
+    );
 
+    INSERT INTO trkpt_rtree(id, min_lon, max_lon, min_lat, max_lat, min_time, max_time)
+    SELECT id, lon, lon, lat, lat, time, time FROM trkpt;
+    """)
+
+    connection.execSQL("""
+    CREATE TRIGGER trkpt_rtree_insert AFTER INSERT ON trkpt BEGIN
         INSERT INTO trkpt_rtree(id, min_lon, max_lon, min_lat, max_lat, min_time, max_time)
-        SELECT id, lon, lon, lat, lat, time, time FROM trkpt;
-        """)
+        VALUES (new.id, new.lon, new.lon, new.lat, new.lat, new.time, new.time);
+    END;
+    """)
 
-        this.connection.execSQL("""
-        CREATE TRIGGER trkpt_rtree_insert AFTER INSERT ON trkpt BEGIN
-            INSERT INTO trkpt_rtree(id, min_lon, max_lon, min_lat, max_lat, min_time, max_time)
-            VALUES (new.id, new.lon, new.lon, new.lat, new.lat, new.time, new.time);
-        END;
-        """)
+    connection.execSQL("""
+    CREATE TRIGGER trkpt_rtree_update AFTER UPDATE ON trkpt BEGIN
+    UPDATE trkpt_rtree SET
+        min_lon=new.lon,
+        max_lon=new.lon,
+        min_lat=new.lat,
+        max_lat=new.lat,
+        min_time=new.time,
+        max_time=new.time
+    WHERE id = old.id;
+    END;
+    """)
 
-        this.connection.execSQL("""
-        CREATE TRIGGER trkpt_rtree_update AFTER UPDATE ON trkpt BEGIN
-        UPDATE trkpt_rtree SET
-            min_lon=new.lon,
-            max_lon=new.lon,
-            min_lat=new.lat,
-            max_lat=new.lat,
-            min_time=new.time,
-            max_time=new.time
-        WHERE id = old.id;
-        END;
-        """)
-
-        this.connection.execSQL("""
-        CREATE TRIGGER trkpt_rtree_delete AFTER DELETE ON trkpt BEGIN
-            DELETE FROM trkpt_rtree WHERE id = old.id;
-        END;
-        """)
-    }
+    connection.execSQL("""
+    CREATE TRIGGER trkpt_rtree_delete AFTER DELETE ON trkpt BEGIN
+        DELETE FROM trkpt_rtree WHERE id = old.id;
+    END;
+    """)
 }

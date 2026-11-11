@@ -265,6 +265,10 @@ class TrackerService: Service()
         {
             trackbook.load_database()
         }
+        if (! trackbook.database.ready)
+        {
+            state_dead("Database not ready.")
+        }
 
         Log.i("VOUSSOIR", "TrackerService.state_full_power ${try_id}")
         PreferencesHelper.saveTrackingState(tracking_state)

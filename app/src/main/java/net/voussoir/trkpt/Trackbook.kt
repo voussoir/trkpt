@@ -99,7 +99,6 @@ class Trackbook : Application()
             if (folder == "")
             {
                 Log.i("VOUSSOIR", "Trackbook.load_database: folder came up blank.")
-                this.database.ready_at = 0
                 return
             }
             if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED)
@@ -114,13 +113,17 @@ class Trackbook : Application()
                     "VOUSSOIR",
                     "Trackbook.load_database: lacking WRITE_EXTERNAL_STORAGE permission."
                 )
-                this.database.ready_at = 0
             }
-            Log.i("VOUSSOIR", "Trackbook.load_database: Calling all listeners")
-            this.call_database_changed_listeners()
+        }
+        catch (exc: Exception)
+        {
+            Log.e("VOUSSOIR", "Trackbook.load_database: failed with ${exc}")
+            this.database.close()
         }
         finally
         {
+            Log.i("VOUSSOIR", "Trackbook.load_database: Calling all listeners")
+            this.call_database_changed_listeners()
             database_mutex.unlock()
         }
     }
