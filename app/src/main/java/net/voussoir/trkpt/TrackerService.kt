@@ -910,12 +910,17 @@ class TrackerService: Service()
         // SERVICE RESTART (via START_STICKY)
         if (intent == null)
         {
-            if (tracking_state_recordable)
+            if (! tracking_state_recordable)
             {
-                Log.w("VOUSSOIR", "Trackbook has been killed by the operating system. Trying to resume recording.")
-                state_full_recording()
+                // The process was killed while the user was not recording. There is no activity
+                // attached, so tear down instead of leaving the service running in the background.
+                Log.i("VOUSSOIR", "TrackerService.onStartCommand: not resuming because not recording.")
+                state_stop()
+                gentle_stop()
+                return START_NOT_STICKY
             }
-            //schedule_heartbeat_alarm()
+            // load_tracking_state has already restored the recording state in onCreate.
+            Log.w("VOUSSOIR", "Trackbook has been killed by the operating system. Trying to resume recording.")
             return START_STICKY
         }
         else if (intent.action == Keys.ACTION_START_SERVICE)
@@ -935,7 +940,7 @@ class TrackerService: Service()
                 return START_STICKY
             }
         }
-        return START_NOT_STICKY
+        return START_STICKY
     }
 
     fun gentle_stop(): Boolean
