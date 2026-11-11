@@ -978,6 +978,12 @@ class TrackerService: Service()
         handler.removeCallbacks(background_watchdog)
         unregisterReceiver(charging_broadcast_receiver)
         unregisterReceiver(heartbeat_alarm_receiver)
+
+        trackbook.database.commit()
+        if (! tracking_state_recordable)
+        {
+            trackbook.database.close()
+        }
     }
 
     private val database_changed_listener = object: DatabaseChangedListener {
