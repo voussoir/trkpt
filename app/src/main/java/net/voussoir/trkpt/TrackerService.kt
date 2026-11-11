@@ -279,7 +279,7 @@ class TrackerService: Service()
         //start_wakelock()
         displayNotification()
     }
-    fun state_arrived_at_home()
+    fun state_arrived_at_home(use_time: Long? = null)
     {
         // This state is activated when the user enters the radius of a homepoint. The GPS will
         // remain at full power for a few minutes before we transition to sleep.
@@ -288,7 +288,7 @@ class TrackerService: Service()
         PreferencesHelper.saveTrackingState(tracking_state)
         reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
         trackbook.database.commit()
-        arrived_at_home = System.currentTimeMillis()
+        arrived_at_home = use_time ?: System.currentTimeMillis()
         dead_at = 0
         dead_reason = ""
         stop_wakelock()
@@ -424,6 +424,28 @@ class TrackerService: Service()
         }
     }
 
+    fun homepoint_containing_location(location: Location): Homepoint?
+    {
+        for ((index, check_homepoint) in trackbook.homepoints.withIndex())
+        {
+            if (!check_homepoint.contains(location))
+            {
+                continue
+            }
+
+            // Move this homepoint to the front of the list so that on subsequent location
+            // updates it hits on the first loop. I'm sure this is a trivial amount of
+            // savings but oh well.
+            if (index > 0)
+            {
+                trackbook.homepoints.remove(check_homepoint)
+                trackbook.homepoints.addFirst(check_homepoint)
+            }
+            return check_homepoint
+        }
+        return null
+    }
+
     private fun createLocationListener(): LocationListener
     {
         return object : LocationListener
@@ -432,7 +454,7 @@ class TrackerService: Service()
             {
                 // The early returns from this function mean the point will be discarded.
                 // The very bottom of this function actually adds the point to the track.
-                Log.i("VOUSSOIR", "Processing point ${location.time} ${location.latitude}, ${location.longitude}.")
+                Log.i("VOUSSOIR", "Processing point ${location.time} ${location.latitude}, ${location.longitude} in state ${tracking_state}.")
 
                 val now = System.currentTimeMillis()
 
@@ -469,35 +491,18 @@ class TrackerService: Service()
                     return
                 }
 
-                var homepoint: Homepoint? = null
-                for ((index, check_homepoint) in trackbook.homepoints.withIndex())
-                {
-                    if (!check_homepoint.contains(location))
-                    {
-                        continue
-                    }
+                // ARRIVED AT HOMEPOINT CHECK //////////////////////////////////////////////////////
 
-                    // We are within the homepoint.
-                    homepoint = check_homepoint
-
-                    // Move this homepoint to the front of the list so that on subsequent location
-                    // updates it hits on the first loop. I'm sure this is a trivial amount of
-                    // savings but oh well.
-                    if (index > 0)
-                    {
-                        trackbook.homepoints.remove(check_homepoint)
-                        trackbook.homepoints.addFirst(check_homepoint)
-                    }
-                    break
-                }
+                var homepoint: Homepoint? = homepoint_containing_location(location)
                 if (homepoint != null)
                 {
-                    if (tracking_state == Keys.STATE_SLEEP)
+                    if (tracking_state == Keys.STATE_SLEEP && homepoint.prune_level != Keys.HOMEPOINT_KEEP_ALL)
                     {
                         Log.i("VOUSSOIR", "Staying asleep at homepoint ${homepoint.id} ${homepoint.name}.")
                     }
                     else if (
                         tracking_state == Keys.STATE_ARRIVED_AT_HOME &&
+                        homepoint.prune_level != Keys.HOMEPOINT_KEEP_ALL &&
                         allow_sleep &&
                         has_motion_sensor &&
                         (now - arrived_at_home) > TIME_UNTIL_SLEEP &&
@@ -518,6 +523,8 @@ class TrackerService: Service()
                     }
                 }
 
+                // OMIT RESTS CHECKS ///////////////////////////////////////////////////////////////
+
                 if (recent_displacement_locations.isEmpty())
                 {
                     // pass
@@ -533,25 +540,33 @@ class TrackerService: Service()
                     return
                 }
 
-                if (homepoint != null)
+                // HOMEPOINT PRUNE_LEVEL CHECKS ////////////////////////////////////////////////////
+
+                if (homepoint != null && homepoint.prune_level == Keys.HOMEPOINT_KEEP_ALL)
                 {
-                    if ((now - arrived_at_home) > (KEEP_HOME_SECONDS * Keys.ONE_SECOND_IN_MILLISECONDS))
-                    {
-                        // While we are at home, we will continue keeping some recent points in this
-                        // list, so that when we leave home we can add the last one minute of points
-                        // before departure into the track.
-                        recent_home_trkpts.add(trkpt)
-                        while ((now - recent_home_trkpts.first.time) > (KEEP_HOME_SECONDS * Keys.ONE_SECOND_IN_MILLISECONDS))
-                        {
-                            recent_home_trkpts.removeFirst()
-                        }
-                        Log.i("VOUSSOIR", "Omitting due to homepoint ${homepoint.id} ${homepoint.name}.")
-                        return
-                    }
+                    // pass
                 }
-                else // homepoint == null
+                else if (homepoint != null && homepoint.prune_level == Keys.HOMEPOINT_PRUNE_ALL)
                 {
-                    // All of the homepoint checks failed so we have left home and it's time to wake up.
+                    Log.i("VOUSSOIR", "Omitting due to homepoint ${homepoint.id} ${homepoint.name} PRUNE_ALL.")
+                    return
+                }
+                else if (homepoint != null && homepoint.prune_level == Keys.HOMEPOINT_PRUNE_STAYS && (now - arrived_at_home) > (KEEP_HOME_SECONDS * Keys.ONE_SECOND_IN_MILLISECONDS))
+                {
+                    // While we are at home, we will continue keeping some recent points in this
+                    // list, so that when we leave home we can add the last one minute of points
+                    // before departure into the track.
+                    recent_home_trkpts.add(trkpt)
+                    while ((now - recent_home_trkpts.first.time) > (KEEP_HOME_SECONDS * Keys.ONE_SECOND_IN_MILLISECONDS))
+                    {
+                        recent_home_trkpts.removeFirst()
+                    }
+                    Log.i("VOUSSOIR", "Omitting due to homepoint ${homepoint.id} ${homepoint.name}.")
+                    return
+                }
+                else if (homepoint == null)
+                {
+                    // We have left home and it's time to wake up.
                     // In practice we expect that the accelerometers would have triggered this change
                     // already, but this acts as a backup in case you somehow leave home without too
                     // much movement (maybe you sat in the car for several minutes before finally
@@ -561,6 +576,8 @@ class TrackerService: Service()
                         Log.i("VOUSSOIR", "Leaving home.")
                         state_full_recording()
                     }
+
+                    // Commit the points for the minute prior to this departure.
                     while (recent_home_trkpts.size > 0 && (now - recent_home_trkpts.first.time) > (KEEP_HOME_SECONDS * Keys.ONE_SECOND_IN_MILLISECONDS))
                     {
                         recent_home_trkpts.removeFirst()
@@ -776,7 +793,14 @@ class TrackerService: Service()
                         {
                             vibrator.vibrate(100)
                         }
-                        state_full_recording()
+                        if (tracking_state == Keys.STATE_SLEEP)
+                        {
+                            state_arrived_at_home(use_time=arrived_at_home)
+                        }
+                        else if (tracking_state == Keys.STATE_DEAD)
+                        {
+                            state_full_recording()
+                        }
                     }
                     sensor_manager.requestTriggerSensor(this, significant_motion_sensor)
                 }
@@ -799,7 +823,14 @@ class TrackerService: Service()
                         {
                             vibrator.vibrate(100)
                         }
-                        state_full_recording()
+                        if (tracking_state == Keys.STATE_SLEEP)
+                        {
+                            state_arrived_at_home(use_time=arrived_at_home)
+                        }
+                        else if (tracking_state == Keys.STATE_DEAD)
+                        {
+                            state_full_recording()
+                        }
                     }
                 }
 
@@ -823,7 +854,11 @@ class TrackerService: Service()
                 {
                     device_is_charging = false
                 }
-                if (tracking_state == Keys.STATE_SLEEP || tracking_state == Keys.STATE_DEAD)
+                if (tracking_state == Keys.STATE_SLEEP)
+                {
+                    state_arrived_at_home(use_time=arrived_at_home)
+                }
+                else if (tracking_state == Keys.STATE_DEAD)
                 {
                     state_full_recording()
                 }
