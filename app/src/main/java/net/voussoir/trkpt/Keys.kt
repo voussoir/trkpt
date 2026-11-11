@@ -83,6 +83,7 @@ object Keys {
     // Track view
     const val SELECTION_MODE_STARTSTOP = 1
     const val SELECTION_MODE_SPATIAL = 2
+    const val POLYLINE_THICKNESS = 4F
 
     const val HOMEPOINT_KEEP_ALL: Int = 0
     const val HOMEPOINT_PRUNE_STAYS: Int = 1
@@ -126,6 +127,4 @@ object Keys {
     const val TRACKER_SERVICE_NOTIFICATION_ID: Int = 1
     const val NOTIFICATION_CHANNEL_RECORDING: String = "notificationChannelIdRecordingChannel"
     const val TRACKER_SERVICE_HEARTBEAT_ALARM_ID: Int = 1
-
-    const val POLYLINE_THICKNESS = 4F
 }
