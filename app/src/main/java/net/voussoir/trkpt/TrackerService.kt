@@ -957,8 +957,8 @@ class TrackerService: Service()
             return false
         }
         Log.i("VOUSSOIR", "TrackerService.gentle_stop: stopSelf")
-        displayNotification()
-        stopForeground(Service.STOP_FOREGROUND_DETACH)
+        stopForeground(Service.STOP_FOREGROUND_REMOVE)
+        notification_manager.cancel(Keys.TRACKER_SERVICE_NOTIFICATION_ID)
         foreground_started = false
         stopSelf()
         return true
@@ -995,6 +995,7 @@ class TrackerService: Service()
             sensor_manager.unregisterListener(step_counter_listener!!)
         }
         stop_wakelock()
+        notification_manager.cancel(Keys.TRACKER_SERVICE_NOTIFICATION_ID)
 
         trackbook.remove_database_changed_listener(database_changed_listener)
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
