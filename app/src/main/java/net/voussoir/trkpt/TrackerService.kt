@@ -97,6 +97,7 @@ class TrackerService: Service()
 
     private lateinit var notification_manager: NotificationManager
     private lateinit var notification_builder: NotificationCompat.Builder
+    private var foreground_started: Boolean = false
 
     private lateinit var location_manager: LocationManager
     private lateinit var gpsLocationListener: LocationListener
@@ -631,6 +632,17 @@ class TrackerService: Service()
         }
     }
 
+    private fun start_foreground()
+    {
+        if (foreground_started)
+        {
+            return
+        }
+        Log.i("VOUSSOIR", "TrackerService.start_foreground")
+        startForeground(Keys.TRACKER_SERVICE_NOTIFICATION_ID, displayNotification())
+        foreground_started = true
+    }
+
     fun displayNotification(): Notification
     {
         notification_builder.setWhen(System.currentTimeMillis())
@@ -774,6 +786,10 @@ class TrackerService: Service()
         networkLocationListener = createLocationListener()
         currentBestLocation = getLastKnownLocation(this)
 
+        // The service has to start foreground by itself, within a few seconds of
+        // startForegroundService(). The activity might be destroyed before it can bind.
+        start_foreground()
+
         trackbook.add_database_changed_listener(database_changed_listener)
 
         PreferencesHelper.registerPreferenceChangeListener(sharedPreferenceChangeListener)
@@ -889,6 +905,7 @@ class TrackerService: Service()
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int
     {
         Log.i("VOUSSOIR", "TrackerService.onStartCommand " + intent?.action)
+        start_foreground()
 
         // SERVICE RESTART (via START_STICKY)
         if (intent == null)
@@ -933,6 +950,7 @@ class TrackerService: Service()
         Log.i("VOUSSOIR", "TrackerService.gentle_stop: stopSelf")
         displayNotification()
         stopForeground(Service.STOP_FOREGROUND_DETACH)
+        foreground_started = false
         stopSelf()
         return true
     }

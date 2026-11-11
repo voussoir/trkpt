@@ -116,7 +116,6 @@ class MainActivity: AppCompatActivity()
             }
             bindService(Intent(this.applicationContext, TrackerService::class.java), tracker_service_connection, Context.BIND_AUTO_CREATE)
             ContextCompat.startForegroundService(this, intent)
-            tracker_service?.displayNotification()
         }
     }
 
@@ -192,8 +191,6 @@ class MainActivity: AppCompatActivity()
                 return
             }
             tracker_service = serviceref
-            tracker_service!!.startForeground(Keys.TRACKER_SERVICE_NOTIFICATION_ID, tracker_service!!.displayNotification())
-            tracker_service!!.displayNotification()
         }
         override fun onServiceDisconnected(arg0: ComponentName)
         {
