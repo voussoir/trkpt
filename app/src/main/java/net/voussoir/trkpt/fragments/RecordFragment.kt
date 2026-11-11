@@ -33,6 +33,7 @@ import android.view.WindowManager
 import android.widget.*
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -136,6 +137,13 @@ class RecordFragment : Fragment()
                 create_pruning_spinner(pruning_spinner, Keys.HOMEPOINT_KEEP_ALL)
                 val cancel_button: Button = dialog.findViewById(R.id.homepoint_delete_cancel_button)
                 val save_button: Button = dialog.findViewById(R.id.homepoint_save_button)
+                name_input.doAfterTextChanged {
+                    update_homepoint_save_button(save_button, name_input, radius_input)
+                }
+                radius_input.doAfterTextChanged {
+                    update_homepoint_save_button(save_button, name_input, radius_input)
+                }
+                update_homepoint_save_button(save_button, name_input, radius_input)
                 cancel_button.text = "Cancel"
                 cancel_button.setOnClickListener {
                     dialog.cancel()
@@ -430,6 +438,11 @@ class RecordFragment : Fragment()
         homepoints_overlays.clear()
     }
 
+    fun update_homepoint_save_button(save_button: Button, name_input: EditText, radius_input: EditText)
+    {
+        save_button.isEnabled = !name_input.text.isNullOrBlank() && !radius_input.text.isNullOrBlank()
+    }
+
     fun create_pruning_spinner(spinner: Spinner, prune_level: Int)
     {
         val adapter = ArrayAdapter.createFromResource(
@@ -492,6 +505,13 @@ class RecordFragment : Fragment()
                         create_pruning_spinner(pruning_spinner, homepoint.prune_level)
                         val delete_button: Button = dialog.findViewById(R.id.homepoint_delete_cancel_button)
                         val save_button: Button = dialog.findViewById(R.id.homepoint_save_button)
+                        name_input.doAfterTextChanged {
+                            update_homepoint_save_button(save_button, name_input, radius_input)
+                        }
+                        radius_input.doAfterTextChanged {
+                            update_homepoint_save_button(save_button, name_input, radius_input)
+                        }
+                        update_homepoint_save_button(save_button, name_input, radius_input)
                         delete_button.text = "Delete"
                         delete_button.setOnClickListener {
                             trackbook.database.delete_homepoint(homepoint.id)
