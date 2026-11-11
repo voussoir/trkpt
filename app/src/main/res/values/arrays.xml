@@ -3,8 +3,8 @@
     <!-- Homepoint pruning levels. The item positions correspond to the prune_level
          values stored in the homepoints table: 0 = keep all, 1 = prune stays, 2 = prune all. -->
     <string-array name="homepoint_pruning_levels">
-        <item>Keep all</item>
-        <item>Prune stays</item>
-        <item>Prune all</item>
+        <item>Keep all, no sleep</item>
+        <item>Prune stays, can sleep</item>
+        <item>Prune all, can sleep</item>
     </string-array>
 </resources>
