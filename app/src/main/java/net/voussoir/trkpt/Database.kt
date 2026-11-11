@@ -290,7 +290,7 @@ class Database(val trackbook: Trackbook)
             put("deleted", 1)
         }
         this.begin_transaction()
-        this.connection.update("update", values, "device_id = ? AND time >= ? AND time <= ?", arrayOf(device_id, start_time.toString(), end_time.toString()))
+        this.connection.update("trkpt", values, "device_id = ? AND time >= ? AND time <= ?", arrayOf(device_id, start_time.toString(), end_time.toString()))
     }
 
     private fun _trkpt_generator(cursor: Cursor) = iterator<Trkpt>
