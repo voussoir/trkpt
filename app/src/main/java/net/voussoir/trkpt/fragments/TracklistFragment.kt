@@ -150,7 +150,7 @@ class TracklistAdapter(val fragment: Fragment, val database: Database) : Recycle
         }
         val max_accuracy = PreferencesHelper.load_max_accuracy()
         val cursor: Cursor = database.connection.rawQuery(
-            "SELECT distinct(date(time/1000, 'unixepoch', 'localtime')) as thedate, device_id FROM trkpt WHERE accuracy <= ? ORDER BY thedate DESC",
+            "SELECT distinct(date(time/1000, 'unixepoch', 'localtime')) as thedate, device_id FROM trkpt WHERE accuracy <= ? AND deleted = 0 ORDER BY thedate DESC",
             arrayOf(max_accuracy.toString())
         )
         try

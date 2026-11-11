@@ -80,5 +80,8 @@ dependencies {
     // OpenStreetMap
     implementation 'org.osmdroid:osmdroid-android:6.1.14'
 
+    // Requery's SQLite includes RTREE support.
+    implementation 'com.github.requery:sqlite-android:3.39.2'
+    implementation 'androidx.sqlite:sqlite:2.2.0'
 //    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.10'
 }

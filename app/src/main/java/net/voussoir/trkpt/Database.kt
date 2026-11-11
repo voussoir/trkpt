@@ -1,8 +1,8 @@
 package net.voussoir.trkpt
 import android.content.ContentValues
 import android.database.Cursor
-import android.database.sqlite.SQLiteDatabase
-import android.database.sqlite.SQLiteDatabase.openOrCreateDatabase
+import io.requery.android.database.sqlite.SQLiteDatabase
+import io.requery.android.database.sqlite.SQLiteDatabase.openOrCreateDatabase
 import android.util.Log
 import java.io.File
 
@@ -29,6 +29,11 @@ class Database(val trackbook: Trackbook)
         Log.i("VOUSSOIR", "Database.connect: " + file.absolutePath)
         this.file = file
         this.connection = openOrCreateDatabase(file, null)
+        // The pragmas don't seem to execute unless you call moveToNext.
+        val cursor: Cursor = this.connection.rawQuery("PRAGMA journal_mode = DELETE", null)
+        cursor.moveToNext()
+        cursor.close()
+
         Log.i("VOUSSOIR", "Database.connect: Current version is ${this.connection.version}")
         if (this.connection.version == 0)
         {
@@ -108,45 +113,41 @@ class Database(val trackbook: Trackbook)
             name TEXT NOT NULL CHECK (length(trim(name)) > 0),
             prune_level INTEGER NOT NULL CHECK (prune_level IN (0, 1, 2))
         );
+
+        CREATE VIRTUAL TABLE trkpt_rtree USING rtree(
+            id,
+            min_lon, max_lon,
+            min_lat, max_lat,
+            min_time, max_time
+        );
         """)
 
-        //this.connection.execSQL("""
-        //    CREATE VIRTUAL TABLE trkpt_rtree USING rtree(
-        //        id,
-        //        min_lon, max_lon,
-        //        min_lat, max_lat,
-        //        min_time, max_time
-        //    );
-        //""")
-        //this.connection.execSQL("""
-        //    CREATE TRIGGER trkpt_rtree_insert AFTER INSERT ON trkpt BEGIN
-        //    INSERT INTO trkpt_rtree(id, min_lon, max_lon, min_lat, max_lat, min_time, max_time)
-        //    VALUES (new.id, new.lon, new.lon, new.lat, new.lat, new.time, new.time);
-        //    END;
-        //""")
-        //this.connection.execSQL("""
-        //    CREATE TRIGGER trkpt_rtree_update AFTER UPDATE ON trkpt BEGIN
-        //    UPDATE trkpt_rtree SET
-        //        min_lon=new.lon,
-        //        max_lon=new.lon,
-        //        min_lat=new.lat,
-        //        max_lat=new.lat,
-        //        min_time=new.time,
-        //        max_time=new.time
-        //    WHERE id = old.id;
-        //    END;
-        //""")
-        //this.connection.execSQL("""
-        //    CREATE TRIGGER trkpt_rtree_delete AFTER DELETE ON trkpt BEGIN
-        //    DELETE FROM trkpt_rtree WHERE id = old.id;
-        //    END;
-        //""")
+        this.connection.execSQL("""
+        CREATE TRIGGER trkpt_rtree_insert AFTER INSERT ON trkpt BEGIN
+            INSERT INTO trkpt_rtree(id, min_lon, max_lon, min_lat, max_lat, min_time, max_time)
+            VALUES (new.id, new.lon, new.lon, new.lat, new.lat, new.time, new.time);
+        END;
+        """)
 
-        // The pragmas don't seem to execute unless you call moveToNext.
-        var cursor: Cursor
-        cursor = this.connection.rawQuery("PRAGMA journal_mode = DELETE", null)
-        cursor.moveToNext()
-        cursor.close()
+        this.connection.execSQL("""
+        CREATE TRIGGER trkpt_rtree_update AFTER UPDATE ON trkpt BEGIN
+        UPDATE trkpt_rtree SET
+            min_lon=new.lon,
+            max_lon=new.lon,
+            min_lat=new.lat,
+            max_lat=new.lat,
+            min_time=new.time,
+            max_time=new.time
+        WHERE id = old.id;
+        END;
+        """)
+
+        this.connection.execSQL("""
+        CREATE TRIGGER trkpt_rtree_delete AFTER DELETE ON trkpt BEGIN
+            DELETE FROM trkpt_rtree WHERE id = old.id;
+        END;
+        """)
+
         this.connection.version = Keys.DATABASE_VERSION
         // Not using this.commit because this.ready is not true yet.
         this.connection.setTransactionSuccessful()
@@ -162,7 +163,7 @@ class Database(val trackbook: Trackbook)
             """
             SELECT device_id, lat, lon, time, provider, ele, accuracy, sat
             FROM trkpt
-            WHERE device_id = ? AND time >= ? AND time <= ? AND accuracy <= ?
+            WHERE device_id = ? AND time >= ? AND time <= ? AND accuracy <= ? AND deleted = 0
             ORDER BY time ${order}
             """,
             arrayOf(device_id, start_time.toString(), end_time.toString(), max_accuracy.toString())
@@ -176,24 +177,66 @@ class Database(val trackbook: Trackbook)
         {
             return _trkpt_generator(this.connection.rawQuery(
                 """
-            SELECT device_id, lat, lon, time, provider, ele, accuracy, sat
-            FROM trkpt
-            WHERE lat >= ? AND lat <= ? AND lon >= ? AND lon <= ? AND accuracy <= ?
-            ORDER BY device_id ASC, time ASC
-            """,
-                arrayOf(south.toString(), north.toString(), west.toString(), east.toString(), max_accuracy.toString())
+                SELECT trkpt.device_id, trkpt.lat, trkpt.lon, trkpt.time, trkpt.provider, trkpt.ele, trkpt.accuracy, trkpt.sat
+                FROM trkpt
+                JOIN trkpt_rtree ON trkpt.id = trkpt_rtree.id
+                WHERE   trkpt_rtree.max_lon >= ?
+                    AND trkpt_rtree.min_lon <= ?
+                    AND trkpt_rtree.max_lat >= ?
+                    AND trkpt_rtree.min_lat <= ?
+                    AND trkpt.lon >= ?
+                    AND trkpt.lon <= ?
+                    AND trkpt.lat >= ?
+                    AND trkpt.lat <= ?
+                    AND trkpt.deleted = 0
+                    AND trkpt.accuracy < ?
+                ORDER BY device_id ASC, time ASC
+                """,
+                arrayOf(
+                    west.toString(),
+                    east.toString(),
+                    south.toString(),
+                    north.toString(),
+                    west.toString(),
+                    east.toString(),
+                    south.toString(),
+                    north.toString(),
+                    max_accuracy.toString()
+                )
             ))
         }
         else
         {
             return _trkpt_generator(this.connection.rawQuery(
                 """
-            SELECT device_id, lat, lon, time, provider, ele, accuracy, sat
-            FROM trkpt
-            WHERE device_id = ? AND lat >= ? AND lat <= ? AND lon >= ? AND lon <= ? AND accuracy <= ?
-            ORDER BY time ASC
-            """,
-                arrayOf(device_id, south.toString(), north.toString(), west.toString(), east.toString(), max_accuracy.toString())
+                SELECT trkpt.device_id, trkpt.lat, trkpt.lon, trkpt.time, trkpt.provider, trkpt.ele, trkpt.accuracy, trkpt.sat
+                FROM trkpt
+                JOIN trkpt_rtree ON trkpt.id = trkpt_rtree.id
+                WHERE   device_id = ?
+                    AND trkpt_rtree.max_lon >= ?
+                    AND trkpt_rtree.min_lon <= ?
+                    AND trkpt_rtree.max_lat >= ?
+                    AND trkpt_rtree.min_lat <= ?
+                    AND trkpt.lon >= ?
+                    AND trkpt.lon <= ?
+                    AND trkpt.lat >= ?
+                    AND trkpt.lat <= ?
+                    AND trkpt.deleted = 0
+                    AND trkpt.accuracy < ?
+                ORDER BY time ASC
+                """,
+                arrayOf(
+                    device_id,
+                    west.toString(),
+                    east.toString(),
+                    south.toString(),
+                    north.toString(),
+                    west.toString(),
+                    east.toString(),
+                    south.toString(),
+                    north.toString(),
+                    max_accuracy.toString()
+                )
             ))
         }
     }
@@ -233,15 +276,21 @@ class Database(val trackbook: Trackbook)
     fun delete_trkpt(trkpt: Trkpt)
     {
         Log.i("VOUSSOIR", "Database.delete_trkpt")
+        val values = ContentValues().apply {
+            put("deleted", 1)
+        }
         begin_transaction()
-        connection.delete("trkpt", "device_id = ? AND time = ?", arrayOf(trkpt.device_id, trkpt.time.toString()))
+        connection.update("trkpt", values, "device_id = ? AND time = ?", arrayOf(trkpt.device_id, trkpt.time.toString()))
     }
 
     fun delete_trkpt_start_end(device_id: String, start_time: Long, end_time: Long)
     {
         Log.i("VOUSSOIR", "Track.delete ${device_id} ${start_time} -- ${end_time}.")
+        val values = ContentValues().apply {
+            put("deleted", 1)
+        }
         this.begin_transaction()
-        this.connection.delete("trkpt", "device_id = ? AND time >= ? AND time <= ?", arrayOf(device_id, start_time.toString(), end_time.toString()))
+        this.connection.update("update", values, "device_id = ? AND time >= ? AND time <= ?", arrayOf(device_id, start_time.toString(), end_time.toString()))
     }
 
     private fun _trkpt_generator(cursor: Cursor) = iterator<Trkpt>
@@ -489,15 +538,16 @@ class Database(val trackbook: Trackbook)
     {
         Log.i("VOUSSOIR", "Database.upgrade_schemas")
         migrator(new_version=2, { this.upgrade_1_to_2() })
+        migrator(new_version=3, { this.upgrade_2_to_3() })
     }
 
-    fun upgrade_1_to_2(): Unit
+    fun upgrade_1_to_2()
     {
         Log.i("VOUSSOIR", "Database.upgrade_1_to_2")
 
         rebuild_table(
-            table_name = "homepoints",
-            create_sql = """
+            table_name="homepoints",
+            create_sql="""
             CREATE TABLE {table} (
                 id INTEGER PRIMARY KEY,
                 lat REAL NOT NULL,
@@ -507,7 +557,7 @@ class Database(val trackbook: Trackbook)
                 prune_level INTEGER NOT NULL CHECK (prune_level IN (0, 1, 2))
             )
             """,
-            transfer_sql = """
+            transfer_sql="""
             INSERT INTO {table} (
                 id,
                 lat,
@@ -529,5 +579,93 @@ class Database(val trackbook: Trackbook)
             FROM homepoints
             """,
         )
+    }
+
+    fun upgrade_2_to_3()
+    {
+        Log.i("VOUSSOIR", "Database.upgrade_2_to_3")
+
+        rebuild_table(
+            table_name="trkpt",
+            create_sql="""
+            CREATE TABLE {table}(
+                id INTEGER PRIMARY KEY,
+                device_id TEXT NOT NULL,
+                time INTEGER NOT NULL,
+                lat REAL NOT NULL,
+                lon REAL NOT NULL,
+                provider TEXT,
+                accuracy REAL,
+                ele INTEGER,
+                sat INTEGER,
+                deleted INTEGER DEFAULT 0,
+                UNIQUE (device_id, time)
+            )
+            """,
+            transfer_sql="""
+            INSERT INTO {table} (
+                id,
+                device_id,
+                time,
+                lat,
+                lon,
+                provider,
+                accuracy,
+                ele,
+                sat,
+                deleted
+            )
+            SELECT
+                rowid,
+                device_id,
+                time,
+                lat,
+                lon,
+                provider,
+                accuracy,
+                ele,
+                sat,
+                0
+            FROM trkpt
+            """
+        )
+
+        this.execute_script("""
+        CREATE VIRTUAL TABLE trkpt_rtree USING rtree(
+            id,
+            min_lon, max_lon,
+            min_lat, max_lat,
+            min_time, max_time
+        );
+
+        INSERT INTO trkpt_rtree(id, min_lon, max_lon, min_lat, max_lat, min_time, max_time)
+        SELECT id, lon, lon, lat, lat, time, time FROM trkpt;
+        """)
+
+        this.connection.execSQL("""
+        CREATE TRIGGER trkpt_rtree_insert AFTER INSERT ON trkpt BEGIN
+            INSERT INTO trkpt_rtree(id, min_lon, max_lon, min_lat, max_lat, min_time, max_time)
+            VALUES (new.id, new.lon, new.lon, new.lat, new.lat, new.time, new.time);
+        END;
+        """)
+
+        this.connection.execSQL("""
+        CREATE TRIGGER trkpt_rtree_update AFTER UPDATE ON trkpt BEGIN
+        UPDATE trkpt_rtree SET
+            min_lon=new.lon,
+            max_lon=new.lon,
+            min_lat=new.lat,
+            max_lat=new.lat,
+            min_time=new.time,
+            max_time=new.time
+        WHERE id = old.id;
+        END;
+        """)
+
+        this.connection.execSQL("""
+        CREATE TRIGGER trkpt_rtree_delete AFTER DELETE ON trkpt BEGIN
+            DELETE FROM trkpt_rtree WHERE id = old.id;
+        END;
+        """)
     }
 }
