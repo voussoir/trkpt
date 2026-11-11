@@ -132,6 +132,8 @@ class RecordFragment : Fragment()
 
                 val name_input: EditText = dialog.findViewById(R.id.homepoint_name_input)
                 val radius_input: EditText = dialog.findViewById(R.id.homepoint_radius_input)
+                val pruning_spinner: Spinner = dialog.findViewById(R.id.homepoint_pruning_spinner)
+                create_pruning_spinner(pruning_spinner, Keys.HOMEPOINT_KEEP_ALL)
                 val cancel_button: Button = dialog.findViewById(R.id.homepoint_delete_cancel_button)
                 val save_button: Button = dialog.findViewById(R.id.homepoint_save_button)
                 cancel_button.text = "Cancel"
@@ -146,6 +148,7 @@ class RecordFragment : Fragment()
                         latitude=point.latitude,
                         longitude=point.longitude,
                         radius=radius,
+                        prune_level=pruning_spinner.selectedItemPosition,
                     )
                     trackbook.database.commit()
                     trackbook.load_homepoints()
@@ -427,6 +430,18 @@ class RecordFragment : Fragment()
         homepoints_overlays.clear()
     }
 
+    fun create_pruning_spinner(spinner: Spinner, prune_level: Int)
+    {
+        val adapter = ArrayAdapter.createFromResource(
+            requireContext(),
+            R.array.homepoint_pruning_levels,
+            android.R.layout.simple_spinner_item
+        )
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinner.adapter = adapter
+        spinner.setSelection(prune_level)
+    }
+
     fun create_homepoint_overlays()
     {
         Log.i("VOUSSOIR", "MapFragmentLayoutHolder.createHomepointOverlays")
@@ -473,6 +488,8 @@ class RecordFragment : Fragment()
                         name_input.setText(homepoint.name)
                         val radius_input: EditText = dialog.findViewById(R.id.homepoint_radius_input)
                         radius_input.setText(homepoint.radius.toString())
+                        val pruning_spinner: Spinner = dialog.findViewById(R.id.homepoint_pruning_spinner)
+                        create_pruning_spinner(pruning_spinner, homepoint.prune_level)
                         val delete_button: Button = dialog.findViewById(R.id.homepoint_delete_cancel_button)
                         val save_button: Button = dialog.findViewById(R.id.homepoint_save_button)
                         delete_button.text = "Delete"
@@ -485,7 +502,7 @@ class RecordFragment : Fragment()
                         }
                         save_button.setOnClickListener {
                             val radius = radius_input.text.toString().toDoubleOrNull() ?: 25.0
-                            trackbook.database.update_homepoint(homepoint.id, name=name_input.text.toString(), radius=radius)
+                            trackbook.database.update_homepoint(homepoint.id, name=name_input.text.toString(), radius=radius, prune_level=pruning_spinner.selectedItemPosition)
                             trackbook.database.commit()
                             trackbook.load_homepoints()
                             create_homepoint_overlays()

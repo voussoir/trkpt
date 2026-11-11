@@ -38,6 +38,10 @@ class Database(val trackbook: Trackbook)
         {
             this.upgrade_schemas()
         }
+        else
+        {
+            Log.i("VOUSSOIR", "Database.connect: No schema upgrades necessary.")
+        }
         this.ready_at = System.currentTimeMillis()
     }
 
@@ -101,7 +105,8 @@ class Database(val trackbook: Trackbook)
             lat REAL NOT NULL,
             lon REAL NOT NULL,
             radius REAL NOT NULL,
-            name TEXT
+            name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+            prune_level INTEGER NOT NULL CHECK (prune_level IN (0, 1, 2))
         );
         """)
 
@@ -282,7 +287,7 @@ class Database(val trackbook: Trackbook)
             return@iterator
         }
         val cursor: Cursor = connection.rawQuery(
-            "SELECT id, lat, lon, radius, name FROM homepoints",
+            "SELECT id, lat, lon, radius, name, prune_level FROM homepoints",
             arrayOf()
         )
         Log.i("VOUSSOIR", "Trackbook.homepoint_generator: Got ${cursor.count} homepoints.")
@@ -291,6 +296,7 @@ class Database(val trackbook: Trackbook)
         val COLUMN_LON = cursor.getColumnIndex("lon")
         val COLUMN_RADIUS = cursor.getColumnIndex("radius")
         val COLUMN_NAME = cursor.getColumnIndex("name")
+        val COLUMN_PRUNE_LEVEL = cursor.getColumnIndex("prune_level")
         try
         {
             while (cursor.moveToNext())
@@ -301,6 +307,7 @@ class Database(val trackbook: Trackbook)
                     longitude=cursor.getDouble(COLUMN_LON),
                     radius=cursor.getDouble(COLUMN_RADIUS),
                     name=cursor.getString(COLUMN_NAME),
+                    prune_level=cursor.getInt(COLUMN_PRUNE_LEVEL),
                 )
                 yield(homepoint)
             }
@@ -311,7 +318,7 @@ class Database(val trackbook: Trackbook)
         }
     }
 
-    fun insert_homepoint(id: Long, name: String, latitude: Double, longitude: Double, radius: Double)
+    fun insert_homepoint(id: Long, name: String, latitude: Double, longitude: Double, radius: Double, prune_level: Int)
     {
         Log.i("VOUSSOIR", "Database.insert_homepoint")
         val values = ContentValues().apply {
@@ -320,17 +327,19 @@ class Database(val trackbook: Trackbook)
             put("lon", longitude)
             put("radius", radius)
             put("name", name)
+            put("prune_level", prune_level)
         }
         begin_transaction()
         connection.insert("homepoints", null, values)
     }
 
-    fun update_homepoint(id: Long, name: String, radius: Double)
+    fun update_homepoint(id: Long, name: String, radius: Double, prune_level: Int)
     {
         Log.i("VOUSSOIR", "Database.update_homepoint")
         val values = ContentValues().apply {
             put("name", name)
             put("radius", radius)
+            put("prune_level", prune_level)
         }
         begin_transaction()
         connection.update("homepoints", values, "id = ?", arrayOf(id.toString()))
@@ -345,18 +354,180 @@ class Database(val trackbook: Trackbook)
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    fun upgrade_schemas()
+    private fun migrator(
+        new_version: Int,
+        block: () -> Unit
+    )
     {
-        Log.i("VOUSSOIR", "Database.upgrade_schemas")
-        if (this.connection.version < 2)
+        if (this.connection.version >= new_version)
         {
-            this.upgrade_1_to_2()
+            return
+        }
+        Log.i("VOUSSOIR", "Database.migrator ${new_version}")
+        if (this.connection.inTransaction())
+        {
+            throw IllegalStateException("Cannot start migrator inside a transaction.")
+        }
+
+        val had_foreign_keys = this.pragma_foreign_keys()
+        if (had_foreign_keys)
+        {
+            this.connection.execSQL("PRAGMA foreign_keys = OFF")
+        }
+
+        try
+        {
+            this.connection.beginTransaction()
+            try
+            {
+                block()
+
+                // Check once, after every table rebuild for this version is finished.
+                if (had_foreign_keys && this.pragma_foreign_key_check())
+                {
+                    throw IllegalStateException(
+                        "Migration to ${new_version} left foreign key violations."
+                    )
+                }
+
+                this.connection.version = new_version
+                this.connection.setTransactionSuccessful()
+            }
+            finally
+            {
+                this.connection.endTransaction()
+            }
+        }
+        finally
+        {
+            if (had_foreign_keys)
+            {
+                this.connection.execSQL("PRAGMA foreign_keys = ON")
+            }
+        }
+    }
+    private fun rebuild_table(
+        table_name: String,
+        create_sql: String,
+        transfer_sql: String,
+    )
+    {
+        val temp_table_name = "${table_name}__rebuild"
+        val table_name_escaped = sql_escape(table_name)
+        val temp_table_name_escaped = sql_escape(temp_table_name)
+
+        val indexes_triggers = get_indexes_triggers(table_name)
+
+        this.connection.execSQL(create_sql.replace("{table}", temp_table_name_escaped))
+        this.connection.execSQL(transfer_sql.replace("{table}", temp_table_name_escaped))
+        this.connection.execSQL("DROP TABLE ${table_name_escaped}")
+        this.connection.execSQL("ALTER TABLE ${temp_table_name_escaped} RENAME TO ${table_name_escaped}")
+
+        for (sql in indexes_triggers)
+        {
+            this.connection.execSQL(sql)
         }
     }
 
-    fun upgrade_1_to_2()
+    private fun pragma_foreign_keys(): Boolean
+    {
+        val cursor = this.connection.rawQuery("PRAGMA foreign_keys", null)
+        try
+        {
+            return cursor.moveToFirst() && cursor.getInt(0) != 0
+        }
+        finally
+        {
+            cursor.close()
+        }
+    }
+
+    private fun pragma_foreign_key_check(): Boolean
+    {
+        val cursor = this.connection.rawQuery("PRAGMA foreign_key_check", null)
+        try
+        {
+            return cursor.count > 0
+        }
+        finally
+        {
+            cursor.close()
+        }
+    }
+
+    private fun get_indexes_triggers(table_name: String): ArrayList<String>
+    {
+        val indexes_triggers = ArrayList<String>()
+        val cursor = this.connection.rawQuery("""
+            SELECT sql
+            FROM sqlite_master
+            WHERE tbl_name = ? AND type IN ('index', 'trigger') AND sql IS NOT NULL
+            ORDER BY type, name
+            """,
+            arrayOf(table_name)
+        )
+        try
+        {
+            while (cursor.moveToNext())
+            {
+                indexes_triggers.add(cursor.getString(0))
+            }
+        }
+        finally
+        {
+            cursor.close()
+        }
+        return indexes_triggers
+    }
+
+    private fun sql_escape(identifier: String): String
+    {
+        return "\"" + identifier.replace("\"", "\"\"") + "\""
+    }
+
+    fun upgrade_schemas()
+    {
+        Log.i("VOUSSOIR", "Database.upgrade_schemas")
+        migrator(new_version=2, { this.upgrade_1_to_2() })
+    }
+
+    fun upgrade_1_to_2(): Unit
     {
         Log.i("VOUSSOIR", "Database.upgrade_1_to_2")
-        //this.connection.version = 2
+
+        rebuild_table(
+            table_name = "homepoints",
+            create_sql = """
+            CREATE TABLE {table} (
+                id INTEGER PRIMARY KEY,
+                lat REAL NOT NULL,
+                lon REAL NOT NULL,
+                radius REAL NOT NULL,
+                name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+                prune_level INTEGER NOT NULL CHECK (prune_level IN (0, 1, 2))
+            )
+            """,
+            transfer_sql = """
+            INSERT INTO {table} (
+                id,
+                lat,
+                lon,
+                radius,
+                name,
+                prune_level
+            )
+            SELECT
+                id,
+                lat,
+                lon,
+                radius,
+                CASE
+                    WHEN name IS NULL OR length(trim(name)) = 0 THEN 'untitled'
+                    ELSE name
+                END,
+                0
+            FROM homepoints
+            """,
+        )
     }
 }

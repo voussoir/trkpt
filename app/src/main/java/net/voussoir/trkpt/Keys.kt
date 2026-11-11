@@ -84,6 +84,10 @@ object Keys {
     const val SELECTION_MODE_STARTSTOP = 1
     const val SELECTION_MODE_SPATIAL = 2
 
+    const val HOMEPOINT_KEEP_ALL: Int = 0
+    const val HOMEPOINT_PRUNE_STAYS: Int = 1
+    const val HOMEPOINT_PRUNE_ALL: Int = 2
+
     // dialog types
     const val DIALOG_DELETE_TRACK: Int = 1
 

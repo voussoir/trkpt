@@ -6,7 +6,8 @@ data class Homepoint(
     val latitude: Double,
     val longitude: Double,
     val radius: Double,
-    val name: String
+    val name: String,
+    val prune_level: Int
 )
 {
     val location: Location = this.to_location()
