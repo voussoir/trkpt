@@ -45,6 +45,7 @@ class MainActivity: AppCompatActivity()
 {
     lateinit var trackbook: Trackbook
     var tracker_service: TrackerService? = null
+    private var is_bound: Boolean = false
 
     private lateinit var navHostFragment: NavHostFragment
     private lateinit var bottomNavigationView: BottomNavigationView
@@ -114,7 +115,11 @@ class MainActivity: AppCompatActivity()
             val intent = Intent(this.applicationContext, TrackerService::class.java).apply {
                 action = Keys.ACTION_START_SERVICE
             }
-            bindService(Intent(this.applicationContext, TrackerService::class.java), tracker_service_connection, Context.BIND_AUTO_CREATE)
+            if (! is_bound)
+            {
+                val bind_intent = Intent(this.applicationContext, TrackerService::class.java)
+                is_bound = bindService(bind_intent, tracker_service_connection, Context.BIND_AUTO_CREATE)
+            }
             ContextCompat.startForegroundService(this, intent)
         }
     }
@@ -148,11 +153,17 @@ class MainActivity: AppCompatActivity()
         Log.i("VOUSSOIR", "MainActivity.onDestroy")
         super.onDestroy()
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
-        val stopIntent = Intent(this, TrackerService::class.java).apply {
-            action = Keys.ACTION_STOP_SERVICE
+        // A configuration change destroys this activity but not the service. The next activity
+        // will bind to the same service and restore the UI state.
+        if (isFinishing && ! isChangingConfigurations)
+        {
+            tracker_service?.gentle_stop()
         }
-        startService(stopIntent)
-        unbindService(tracker_service_connection)
+        if (is_bound)
+        {
+            unbindService(tracker_service_connection)
+            is_bound = false
+        }
         trackbook.database.commit()
     }
 
