@@ -121,6 +121,7 @@ class TrackerService: Service()
     var device_is_charging: Boolean = false
     private var charging_broadcast_receiver: BroadcastReceiver? = null
 
+    lateinit var powermanager: PowerManager
     lateinit var wakelock: PowerManager.WakeLock
     lateinit var alarm_manager: AlarmManager
 
@@ -276,7 +277,7 @@ class TrackerService: Service()
         arrived_at_home = 0
         dead_at = 0
         dead_reason = ""
-        //start_wakelock()
+        start_wakelock(10 * Keys.ONE_SECOND_IN_MILLISECONDS)
         displayNotification()
     }
     fun state_arrived_at_home(use_time: Long? = null)
@@ -869,7 +870,7 @@ class TrackerService: Service()
         charging_intent_filter.addAction(Intent.ACTION_POWER_DISCONNECTED)
         registerReceiver(charging_broadcast_receiver, charging_intent_filter)
 
-        val powermanager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        powermanager = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakelock = powermanager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "trkpt::wakelock")
 
         alarm_manager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -1120,6 +1121,8 @@ class TrackerService: Service()
                 // When the user interacts with the device and it leaves doze, it's better to come
                 // from sleep state than dead state.
                 tracking_state == Keys.STATE_FULL_RECORDING &&
+                // If the device is in doze, the lack of incoming points is not our fault.
+                !powermanager.isDeviceIdleMode &&
                 (now - listeners_enabled_at) > TIME_UNTIL_DEAD &&
                 (now - currentBestLocation.time) > TIME_UNTIL_DEAD &&
                 (now - last_significant_motion) > TIME_UNTIL_DEAD
