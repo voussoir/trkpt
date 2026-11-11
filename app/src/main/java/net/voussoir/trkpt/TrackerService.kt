@@ -884,6 +884,7 @@ class TrackerService: Service()
     fun gentle_stop(): Boolean
     {
         Log.i("VOUSSOIR", "TrackerService.gentle_stop")
+        trackbook.database.commit()
         if (tracking_state_recordable)
         {
             Log.i("VOUSSOIR", "TrackerService.gentle_stop: Not stopping because recording active.")

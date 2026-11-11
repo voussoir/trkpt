@@ -154,7 +154,7 @@ class MainActivity: AppCompatActivity()
         }
         startService(stopIntent)
         unbindService(tracker_service_connection)
-        trackbook.database.close()
+        trackbook.database.commit()
     }
 
     /*
