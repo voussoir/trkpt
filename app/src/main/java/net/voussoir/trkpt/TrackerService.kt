@@ -563,7 +563,7 @@ class TrackerService: Service()
                     {
                         recent_home_trkpts.removeFirst()
                     }
-                    Log.i("VOUSSOIR", "Omitting due to homepoint ${homepoint.id} ${homepoint.name}.")
+                    Log.i("VOUSSOIR", "Omitting due to homepoint ${homepoint.id} ${homepoint.name} PRUNE_STAYS.")
                     return
                 }
                 else if (homepoint == null)
