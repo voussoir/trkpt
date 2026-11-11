@@ -116,7 +116,9 @@ class TrackerService: Service()
 
     private lateinit var sensor_manager: SensorManager
     private var significant_motion_sensor: Sensor? = null
+    private var significant_motion_listener: TriggerEventListener? = null
     private var step_counter_sensor: Sensor? = null
+    private var step_counter_listener: SensorEventListener? = null
     var has_motion_sensor: Boolean = false
 
     var device_is_charging: Boolean = false
@@ -822,6 +824,7 @@ class TrackerService: Service()
                     sensor_manager.requestTriggerSensor(this, significant_motion_sensor)
                 }
             }
+            this.significant_motion_listener = significant_motion_listener
             Log.i("VOUSSOIR", "Got significant motion sensor.")
             sensor_manager.requestTriggerSensor(significant_motion_listener, significant_motion_sensor)
             has_motion_sensor = true
@@ -854,6 +857,7 @@ class TrackerService: Service()
                 override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
                 }
             }
+            this.step_counter_listener = step_counter_listener
             Log.i("VOUSSOIR", "Got step count sensor.")
             sensor_manager.registerListener(step_counter_listener, step_counter_sensor, 5_000_000, 5_000_000)
             has_motion_sensor = true
@@ -973,6 +977,25 @@ class TrackerService: Service()
     {
         Log.i("VOUSSOIR", "TrackerService.onDestroy.")
         super.onDestroy()
+
+        if (gpsLocationListenerRegistered)
+        {
+            remove_gps_location_listener()
+        }
+        if (networkLocationListenerRegistered)
+        {
+            remove_network_location_listener()
+        }
+        if (significant_motion_listener != null && significant_motion_sensor != null)
+        {
+            sensor_manager.cancelTriggerSensor(significant_motion_listener!!, significant_motion_sensor!!)
+        }
+        if (step_counter_listener != null)
+        {
+            sensor_manager.unregisterListener(step_counter_listener!!)
+        }
+        stop_wakelock()
+
         trackbook.remove_database_changed_listener(database_changed_listener)
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
         handler.removeCallbacks(background_watchdog)
