@@ -90,6 +90,12 @@ class RecordFragment : Fragment()
 
         rootView = inflater.inflate(R.layout.fragment_record, container, false)
         mapView = rootView.findViewById(R.id.map)
+        // Take over the map's destruction. By default osmdroid destroys a MapView as soon as its view
+        // is detached from the window (MapView.onDetachedFromWindow calls onDetach), but a fragment
+        // transition can detach a view and then re-attach the very same one. That left a destroyed
+        // MapView in use, whose overlays and repository are gone, so Polyline/InfoWindow threw NPEs.
+        // The map is released explicitly in onDestroyView instead.
+        mapView.setDestroyMode(false)
         currentLocationButton = rootView.findViewById(R.id.location_button)
         zoom_in_button = rootView.findViewById(R.id.zoom_in_button)
         zoom_out_button = rootView.findViewById(R.id.zoom_out_button)
@@ -285,6 +291,9 @@ class RecordFragment : Fragment()
         PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
         trackbook.remove_database_changed_listener(database_changed_listener)
         handler.removeCallbacks(redraw_runnable)
+        // Release the map only when the view is really going away. See setDestroyMode in onCreateView.
+        current_track_overlay = null
+        mapView.onDetach()
     }
 
     override fun onDestroy()
@@ -626,14 +635,14 @@ class RecordFragment : Fragment()
         }
         val tracker = main_activity.tracker_service!!
         create_current_position_overlays()
-        if (current_track_overlay == null)
+        // Only reuse the cached overlay while osmdroid still holds it. A detached overlay has its
+        // internals released, so setPoints on one would throw.
+        val existing_track_overlay = current_track_overlay
+        if (existing_track_overlay == null || !mapView.overlays.contains(existing_track_overlay))
         {
             create_track_overlay()
         }
-        else
-        {
-            current_track_overlay!!.setPoints(tracker.recent_trackpoints_for_mapview)
-        }
+        current_track_overlay!!.setPoints(tracker.recent_trackpoints_for_mapview)
 
         if (continuous_auto_center)
         {
