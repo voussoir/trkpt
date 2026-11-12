@@ -26,6 +26,7 @@
     <string name="button_not_ready_database">Database not set up.</string>
     <string name="button_not_ready_tracker">Tracker not ready.</string>
     <string name="button_not_ready_listeners">GPS/Network not set.</string>
+    <string name="button_read_only">Read-only</string>
     <!-- Dialogs -->
     <string name="dialog_delete_current_recording_message">Discard current recording?</string>
     <string name="dialog_delete_current_recording_button_discard">Discard</string>
@@ -47,6 +48,7 @@
     <string name="toast_message_poi_added">Point of interest marker added.</string>
     <string name="toast_message_poi_removed">Point of interest marker removed.</string>
     <string name="toast_message_save_gpx">Saving recording as GPX.</string>
+    <string name="toast_read_only">Read-only: this action is disabled.</string>
     <!-- Map Markers -->
     <string name="marker_description_time">Time</string>
     <string name="marker_description_accuracy">Accuracy</string>
@@ -88,6 +90,9 @@
     <string name="pref_auto_export_interval_summary">Automatically export GPX file after this many hours.</string>
     <string name="pref_device_id_summary">A unique ID to distinguish tracks recorded across multiple devices.</string>
     <string name="pref_database_folder_summary">Directory to contain your database file. You could use Syncthing to sync with your PC.</string>
+    <string name="pref_read_only_title">Read-only</string>
+    <string name="pref_read_only_summary_on">The database is read-only. All recording and editing is disabled.</string>
+    <string name="pref_read_only_summary_off">The database is writable.</string>
     <string name="pref_auto_export_interval_title">Auto Export Interval</string>
     <string name="pref_device_id">Device ID</string>
     <string name="pref_database_folder">Database directory</string>

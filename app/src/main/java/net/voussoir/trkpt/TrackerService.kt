@@ -63,6 +63,7 @@ class TrackerService: Service()
     var max_accuracy: Float = Keys.DEFAULT_MAX_ACCURACY
     var show_debug: Boolean = false
     var allow_sleep: Boolean = true
+    var read_only: Boolean = false
     var device_id: String = random_device_id()
     var currentBestLocation: Location = getDefaultLocation()
     var last_commit: Long = 0
@@ -224,6 +225,13 @@ class TrackerService: Service()
     fun load_tracking_state()
     {
         tracking_state = PreferencesHelper.loadTrackingState()
+        if (read_only && tracking_state_recordable)
+        {
+            // Never resume a recording when the database is read-only, even if the previous
+            // session was interrupted while recording.
+            Log.i("VOUSSOIR", "TrackerService.load_tracking_state: read-only, ignoring recordable state ${tracking_state}.")
+            tracking_state = Keys.STATE_MAPVIEW
+        }
         Log.i("VOUSSOIR", "TrackerService.load_tracking_state ${tracking_state}" )
         when (tracking_state)
         {
@@ -255,6 +263,11 @@ class TrackerService: Service()
     }
     fun state_full_recording()
     {
+        if (read_only)
+        {
+            state_mapview()
+            return
+        }
         // This state should be active while out and about.
         val try_id = random_int()
         Log.i("VOUSSOIR", "TrackerService.trying state_full_power ${try_id}")
@@ -272,6 +285,7 @@ class TrackerService: Service()
         if (! trackbook.database.ready)
         {
             state_dead("Database not ready.")
+            return
         }
 
         Log.i("VOUSSOIR", "TrackerService.state_full_power ${try_id}")
@@ -285,6 +299,11 @@ class TrackerService: Service()
     }
     fun state_arrived_at_home(use_time: Long? = null)
     {
+        if (read_only)
+        {
+            state_mapview()
+            return
+        }
         // This state is activated when the user enters the radius of a homepoint. The GPS will
         // remain at full power for a few minutes before we transition to sleep.
         Log.i("VOUSSOIR", "TrackerService.state_arrived_at_home")
@@ -300,6 +319,11 @@ class TrackerService: Service()
     }
     fun state_sleep()
     {
+        if (read_only)
+        {
+            state_mapview()
+            return
+        }
         // This state is activated when the user stays at a homepoint for several minutes. It will
         // be woken up again by the acceleromters or by plugging / unplugging power.
         Log.i("VOUSSOIR", "TrackerService.state_sleep")
@@ -314,6 +338,11 @@ class TrackerService: Service()
     }
     fun state_dead(dead_reason: String)
     {
+        if (read_only)
+        {
+            state_mapview()
+            return
+        }
         // This state is activated when the device is struggling to receive a GPS fix due to being
         // indoors / underground. It will be woken up again by the accelerometers or by plugging /
         // unplugging power.
@@ -495,6 +524,12 @@ class TrackerService: Service()
                     return
                 }
 
+                if (read_only)
+                {
+                    Log.i("VOUSSOIR", "Omitting due to read-only.")
+                    return
+                }
+
                 // ARRIVED AT HOMEPOINT CHECK //////////////////////////////////////////////////////
 
                 var homepoint: Homepoint? = homepoint_containing_location(location)
@@ -654,7 +689,13 @@ class TrackerService: Service()
         }
 
         val timestamp = iso8601_local_noms(currentBestLocation.time)
-        if (tracking_state == Keys.STATE_FULL_RECORDING)
+        if (read_only)
+        {
+            notification_builder.setContentTitle("${timestamp} (read only)")
+            notification_builder.setContentText(null)
+            notification_builder.setSmallIcon(R.drawable.ic_lock_24dp)
+        }
+        else if (tracking_state == Keys.STATE_FULL_RECORDING)
         {
             notification_builder.setContentTitle("${timestamp} (recording)")
             notification_builder.setContentText(null)
@@ -768,6 +809,7 @@ class TrackerService: Service()
         max_accuracy = PreferencesHelper.load_max_accuracy()
         show_debug = PreferencesHelper.loadShowDebug()
         allow_sleep = PreferencesHelper.loadAllowSleep()
+        read_only = PreferencesHelper.load_read_only()
         location_manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
         notification_manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notification_builder = NotificationCompat.Builder(this, Keys.NOTIFICATION_CHANNEL_RECORDING)
@@ -1014,6 +1056,13 @@ class TrackerService: Service()
         override fun database_changed()
         {
             Log.i("VOUSSOIR", "TrackerService.database_changed_listener: database_ready changed to ${trackbook.database.ready}")
+            // The shared preference listener may not have run yet while the activity reopens the
+            // database, so refresh the flag here before deciding to resume recording.
+            read_only = PreferencesHelper.load_read_only()
+            if (read_only)
+            {
+                return
+            }
             if (trackbook.database.ready && tracking_state_recordable && tracking_state != Keys.STATE_FULL_RECORDING)
             {
                 state_full_recording()
@@ -1063,6 +1112,15 @@ class TrackerService: Service()
                 device_id = PreferencesHelper.load_device_id()
                 trackbook.database.commit()
                 trackbook.load_database()
+            }
+            Keys.PREF_READ_ONLY ->
+            {
+                read_only = PreferencesHelper.load_read_only()
+                Log.i("VOUSSOIR", "TrackerService: read_only changed to ${read_only}.")
+                if (read_only && tracking_state_recordable)
+                {
+                    state_mapview()
+                }
             }
         }
     }

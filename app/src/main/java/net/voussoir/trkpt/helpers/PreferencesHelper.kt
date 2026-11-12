@@ -69,6 +69,11 @@ object PreferencesHelper
         sharedPreferences.edit { putString(Keys.PREF_DATABASE_DIRECTORY, path) }
     }
 
+    fun load_read_only(): Boolean
+    {
+        return sharedPreferences.getBoolean(Keys.PREF_READ_ONLY, Keys.DEFAULT_READ_ONLY)
+    }
+
     fun loadZoomLevel(): Double
     {
         return sharedPreferences.getDouble(Keys.PREF_MAP_ZOOM_LEVEL, Keys.DEFAULT_ZOOM_LEVEL)

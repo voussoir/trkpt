@@ -2,20 +2,26 @@ package net.voussoir.trkpt
 import android.content.ContentValues
 import android.database.Cursor
 import io.requery.android.database.sqlite.SQLiteDatabase
+import io.requery.android.database.sqlite.SQLiteDatabase.openDatabase
 import io.requery.android.database.sqlite.SQLiteDatabase.openOrCreateDatabase
 import android.util.Log
+import net.voussoir.trkpt.helpers.PreferencesHelper
 import java.io.File
 
 class Database(val trackbook: Trackbook)
 {
+    lateinit var file: File
     private var _connection: SQLiteDatabase? = null
+
     val connection: SQLiteDatabase
         get() = _connection ?: throw IllegalStateException("Database not ready, call connect() first.")
-
     var ready_at: Long = 0
+
     val ready: Boolean
         get() = this._connection != null
-    lateinit var file: File
+
+    var read_only: Boolean = false
+        private set
 
     // DATABASE CONNECTION METHODS /////////////////////////////////////////////////////////////////
 
@@ -29,6 +35,7 @@ class Database(val trackbook: Trackbook)
         }
         val connection = this.connection
         this._connection = null
+        this.read_only = false
         this.ready_at = 0
         try
         {
@@ -51,35 +58,73 @@ class Database(val trackbook: Trackbook)
 
         this.close()
 
+        val read_only = PreferencesHelper.load_read_only()
+
         // We hold this temporary connection variable before assigning it back to self, so that if
         // anything goes wrong during its creation we are not left with half of a connection.
-        val connection = openOrCreateDatabase(file, null)
-
-        try
+        val connection: SQLiteDatabase = try
         {
-            // The pragmas don't seem to execute unless you call moveToNext.
-            val cursor: Cursor = connection.rawQuery("PRAGMA journal_mode = DELETE", null)
-            cursor.moveToNext()
-            cursor.close()
-
-            Log.i("VOUSSOIR", "Database.connect: Current version is ${connection.version}.")
-            if (connection.version == 0)
+            if (read_only)
             {
-                initialize_tables(connection)
-            }
-            else if (connection.version < Keys.DATABASE_VERSION)
-            {
-                upgrade_schemas(connection)
+                Log.i("VOUSSOIR", "Database.connect: Opening in read-only mode.")
+                openDatabase(file.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
             }
             else
             {
-                Log.i("VOUSSOIR", "Database.connect: No schema upgrades necessary.")
+                openOrCreateDatabase(file, null)
+            }
+        }
+        catch (exc: Exception)
+        {
+            Log.e("VOUSSOIR","Database.connect: Failed to open ${file.absolutePath}: ${exc}")
+            throw exc
+        }
+
+        try
+        {
+            Log.i("VOUSSOIR", "Database.connect: Current version is ${connection.version}.")
+            if (read_only)
+            {
+                if (connection.version == 0)
+                {
+                    throw IllegalStateException("Read-only database ${file.absolutePath} is not valid.")
+                }
+                if (connection.version < Keys.DATABASE_VERSION)
+                {
+                    throw IllegalStateException("""
+                        Read-only database ${file.absolutePath} has schema version ${connection.version}
+                        but trkpt requires ${Keys.DATABASE_VERSION}. Turn off read-only mode so we
+                        can upgrade the database, then turn read-only mode back on.
+                    """.trimIndent())
+                }
+            }
+            else
+            {
+                // The pragmas don't seem to execute unless you call moveToNext.
+                val cursor: Cursor = connection.rawQuery("PRAGMA journal_mode = DELETE", null)
+                cursor.moveToNext()
+                cursor.close()
+
+                if (connection.version == 0)
+                {
+                    initialize_tables(connection)
+                }
+                else if (connection.version < Keys.DATABASE_VERSION)
+                {
+                    upgrade_schemas(connection)
+                }
+                else
+                {
+                    Log.i("VOUSSOIR", "Database.connect: No schema upgrades necessary.")
+                }
             }
             this._connection = connection
+            this.read_only = read_only
             this.ready_at = System.currentTimeMillis()
         }
         catch (exc: Exception)
         {
+            Log.e("VOUSSOIR", "Database.connect: Failed to connect ${file.absolutePath}: ${exc}")
             connection.close()
             throw exc
         }
@@ -87,6 +132,11 @@ class Database(val trackbook: Trackbook)
 
     fun begin_transaction()
     {
+        if (this.read_only)
+        {
+            Log.e("VOUSSOIR", "Database.begin_transaction: Disabled in read-only mode.")
+            return
+        }
         if (! connection.inTransaction())
         {
             connection.beginTransaction()
@@ -95,6 +145,10 @@ class Database(val trackbook: Trackbook)
 
     fun commit()
     {
+        if (this.read_only)
+        {
+            return
+        }
         if (! this.ready)
         {
             return
@@ -197,6 +251,11 @@ class Database(val trackbook: Trackbook)
 
     fun insert_trkpt(trkpt: Trkpt)
     {
+        if (this.read_only)
+        {
+            Log.e("VOUSSOIR", "Database.insert_trkpt: Disabled in read-only mode.")
+            return
+        }
         Log.i("VOUSSOIR", "Database.insert_trkpt ${trkpt}")
         val values = ContentValues().apply {
             put("device_id", trkpt.device_id)
@@ -214,6 +273,11 @@ class Database(val trackbook: Trackbook)
 
     fun update_trkpt(trkpt: Trkpt)
     {
+        if (this.read_only)
+        {
+            Log.e("VOUSSOIR", "Database.update_trkpt: Disabled in read-only mode.")
+            return
+        }
         Log.i("VOUSSOIR", "Database.update_trkpt")
         val values = ContentValues().apply {
             put("lat", trkpt.latitude)
@@ -229,6 +293,11 @@ class Database(val trackbook: Trackbook)
 
     fun delete_trkpt(trkpt: Trkpt)
     {
+        if (this.read_only)
+        {
+            Log.e("VOUSSOIR", "Database.delete_trkpt: Disabled in read-only mode.")
+            return
+        }
         Log.i("VOUSSOIR", "Database.delete_trkpt")
         val values = ContentValues().apply {
             put("deleted", 1)
@@ -239,6 +308,11 @@ class Database(val trackbook: Trackbook)
 
     fun delete_trkpt_start_end(device_id: String, start_time: Long, end_time: Long)
     {
+        if (this.read_only)
+        {
+            Log.e("VOUSSOIR", "Database.delete_trkpt_start_end: Disabled in read-only mode.")
+            return
+        }
         Log.i("VOUSSOIR", "Track.delete ${device_id} ${start_time} -- ${end_time}.")
         val values = ContentValues().apply {
             put("deleted", 1)
@@ -323,6 +397,11 @@ class Database(val trackbook: Trackbook)
 
     fun insert_homepoint(id: Long, name: String, latitude: Double, longitude: Double, radius: Double, prune_level: Int)
     {
+        if (this.read_only)
+        {
+            Log.e("VOUSSOIR", "Database.insert_homepoint: Disabled in read-only mode.")
+            return
+        }
         Log.i("VOUSSOIR", "Database.insert_homepoint")
         val values = ContentValues().apply {
             put("id", id)
@@ -338,6 +417,11 @@ class Database(val trackbook: Trackbook)
 
     fun update_homepoint(id: Long, name: String, radius: Double, prune_level: Int)
     {
+        if (this.read_only)
+        {
+            Log.e("VOUSSOIR", "Database.update_homepoint: Disabled in read-only mode.")
+            return
+        }
         Log.i("VOUSSOIR", "Database.update_homepoint")
         val values = ContentValues().apply {
             put("name", name)
@@ -350,6 +434,11 @@ class Database(val trackbook: Trackbook)
 
     fun delete_homepoint(id: Long)
     {
+        if (this.read_only)
+        {
+            Log.e("VOUSSOIR", "Database.delete_homepoint: Disabled in read-only mode.")
+            return
+        }
         Log.i("VOUSSOIR", "Database.delete_homepoint")
         begin_transaction()
         connection.delete("homepoints", "id = ?", arrayOf(id.toString()))

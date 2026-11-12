@@ -225,6 +225,17 @@ class SettingsFragment : PreferenceFragmentCompat()
         preferenceCategoryGeneral.contains(preferenceDatabaseFolder)
         screen.addPreference(preferenceDatabaseFolder)
 
+        val preferenceReadOnly = SwitchPreferenceCompat(activity as Context)
+        preferenceReadOnly.isSingleLineTitle = false
+        preferenceReadOnly.title = getString(R.string.pref_read_only_title)
+        preferenceReadOnly.setIcon(R.drawable.ic_lock_24dp)
+        preferenceReadOnly.key = Keys.PREF_READ_ONLY
+        preferenceReadOnly.summaryOn = getString(R.string.pref_read_only_summary_on)
+        preferenceReadOnly.summaryOff = getString(R.string.pref_read_only_summary_off)
+        preferenceReadOnly.setDefaultValue(Keys.DEFAULT_READ_ONLY)
+        preferenceCategoryGeneral.contains(preferenceReadOnly)
+        screen.addPreference(preferenceReadOnly)
+
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1)
         {
             val battery_optimization_button = Preference(context)

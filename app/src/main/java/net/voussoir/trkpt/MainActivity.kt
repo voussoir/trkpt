@@ -189,6 +189,12 @@ class MainActivity: AppCompatActivity()
                 Log.i("VOUSSOIR", "MainActivity: database_directory has changed.")
                 trackbook.load_database()
             }
+
+            Keys.PREF_READ_ONLY ->
+            {
+                Log.i("VOUSSOIR", "MainActivity: read_only has changed.")
+                trackbook.load_database()
+            }
         }
     }
 

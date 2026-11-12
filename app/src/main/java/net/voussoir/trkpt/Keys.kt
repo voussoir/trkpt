@@ -64,6 +64,7 @@ object Keys {
     const val PREF_SHOW_DEBUG: String = "prefShowDebug"
     const val PREF_DEVICE_ID: String = "prefDeviceID"
     const val PREF_DATABASE_DIRECTORY: String = "prefDatabaseDirectory"
+    const val PREF_READ_ONLY: String = "prefReadOnly"
     const val PREF_MAX_ACCURACY: String = "prefMaxAccuracy"
 
     // states
@@ -121,6 +122,7 @@ object Keys {
     const val DEFAULT_OMIT_RESTS: Boolean = true
     const val DEFAULT_ALLOW_SLEEP: Boolean = true
     const val DEFAULT_SHOW_DEBUG: Boolean = false
+    const val DEFAULT_READ_ONLY: Boolean = false
     const val DEFAULT_MAX_ACCURACY: Float = 30f
 
     // notification

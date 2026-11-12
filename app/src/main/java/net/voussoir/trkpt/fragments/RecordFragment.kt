@@ -124,6 +124,11 @@ class RecordFragment : Fragment()
                     Log.i("VOUSSOIR", "MapFragment.longpress: Database is not ready to add a homepoint.")
                     return false;
                 }
+                if (PreferencesHelper.load_read_only())
+                {
+                    Toast.makeText(requireContext(), R.string.toast_read_only, Toast.LENGTH_SHORT).show()
+                    return true
+                }
                 val dialog = Dialog(activity as Context)
                 dialog.setContentView(R.layout.dialog_homepoint)
                 dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -149,6 +154,11 @@ class RecordFragment : Fragment()
                     dialog.cancel()
                 }
                 save_button.setOnClickListener {
+                    if (PreferencesHelper.load_read_only())
+                    {
+                        Toast.makeText(requireContext(), R.string.toast_read_only, Toast.LENGTH_SHORT).show()
+                        return@setOnClickListener
+                    }
                     val radius = radius_input.text.toString().toDoubleOrNull() ?: 25.0
                     trackbook.database.insert_homepoint(
                         id=random_long(),
@@ -184,6 +194,10 @@ class RecordFragment : Fragment()
         }
 
         mainButton.setOnClickListener {
+            if (PreferencesHelper.load_read_only())
+            {
+                return@setOnClickListener
+            }
             if (main_activity.tracker_service == null)
             {
                 return@setOnClickListener
@@ -490,6 +504,11 @@ class RecordFragment : Fragment()
                     override fun onItemLongPress(index: Int, item: OverlayItem): Boolean
                     {
                         Log.i("VOUSSOIR", "MapFragment homepoint.longpress")
+                        if (PreferencesHelper.load_read_only())
+                        {
+                            Toast.makeText(requireContext(), R.string.toast_read_only, Toast.LENGTH_SHORT).show()
+                            return true
+                        }
                         val dialog = Dialog(activity as Context)
                         dialog.setContentView(R.layout.dialog_homepoint)
                         dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -514,6 +533,11 @@ class RecordFragment : Fragment()
                         update_homepoint_save_button(save_button, name_input, radius_input)
                         delete_button.text = "Delete"
                         delete_button.setOnClickListener {
+                            if (PreferencesHelper.load_read_only())
+                            {
+                                Toast.makeText(requireContext(), R.string.toast_read_only, Toast.LENGTH_SHORT).show()
+                                return@setOnClickListener
+                            }
                             trackbook.database.delete_homepoint(homepoint.id)
                             trackbook.database.commit()
                             trackbook.load_homepoints()
@@ -521,6 +545,11 @@ class RecordFragment : Fragment()
                             dialog.dismiss()
                         }
                         save_button.setOnClickListener {
+                            if (PreferencesHelper.load_read_only())
+                            {
+                                Toast.makeText(requireContext(), R.string.toast_read_only, Toast.LENGTH_SHORT).show()
+                                return@setOnClickListener
+                            }
                             val radius = radius_input.text.toString().toDoubleOrNull() ?: 25.0
                             trackbook.database.update_homepoint(homepoint.id, name=name_input.text.toString(), radius=radius, prune_level=pruning_spinner.selectedItemPosition)
                             trackbook.database.commit()
@@ -550,6 +579,13 @@ class RecordFragment : Fragment()
         {
             mainButton.isEnabled = false
             mainButton.text = requireContext().getString(R.string.button_not_ready_database)
+            mainButton.icon = null
+        }
+        else if (PreferencesHelper.load_read_only())
+        {
+            mainButton.isEnabled = false
+            mainButton.text = requireContext().getString(R.string.button_read_only)
+            mainButton.contentDescription = requireContext().getString(R.string.button_read_only)
             mainButton.icon = null
         }
         else if (main_activity.tracker_service == null)

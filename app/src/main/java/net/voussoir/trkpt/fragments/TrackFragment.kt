@@ -132,6 +132,9 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     var selected_trkpt: Trkpt? = null
     lateinit var selected_trkpt_marker: Marker
 
+    private val read_only: Boolean
+        get() = PreferencesHelper.load_read_only()
+
     private lateinit var locationManager: LocationManager
     private lateinit var gpsLocationListener: LocationListener
     private var gpslistenerregistered = false
@@ -175,6 +178,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         mapView = rootView.findViewById(R.id.map)
         save_track_button = rootView.findViewById(R.id.save_button)
         delete_whole_track_button = rootView.findViewById(R.id.delete_button)
+        delete_whole_track_button.isEnabled = ! read_only
+        delete_whole_track_button.alpha = if (read_only) 0.35f else 1f
         zoom_in_button = rootView.findViewById(R.id.zoom_in_button)
         zoom_out_button = rootView.findViewById(R.id.zoom_out_button)
         trackNameView = rootView.findViewById(R.id.statistics_track_name_headline)
@@ -290,6 +295,11 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         delete_selected_trkpt_button = rootView.findViewById(R.id.delete_selected_trkpt_button)
         delete_selected_trkpt_button.setOnClickListener {
             Log.i("VOUSSOIR", "delete selected trkpt button.")
+            if (read_only)
+            {
+                Toast.makeText(requireContext(), R.string.toast_read_only, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             if (track_points_overlay != null && track_points_overlay!!.selectedPoint != null)
             {
                 val selected = (track_geopoints[track_points_overlay!!.selectedPoint] as Trkpt)
@@ -448,6 +458,11 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         }
 
         delete_whole_track_button.setOnClickListener {
+            if (read_only)
+            {
+                Toast.makeText(requireContext(), R.string.toast_read_only, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             val dialogMessage = "${getString(R.string.dialog_yes_no_message_delete_recording)}\n\n${track.trkpts.size} trackpoints"
             YesNoDialog(this@TrackFragment as YesNoDialog.YesNoDialogListener).show(
                 context = activity as Context,
@@ -472,7 +487,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         selected_trkpt_marker.icon = ContextCompat.getDrawable(requireContext(),
             R.drawable.ic_marker_location_fuchsia_24dp
         )!!
-        selected_trkpt_marker.isDraggable = true
+        selected_trkpt_marker.isDraggable = ! read_only
         selected_trkpt_marker.infoWindow = null
         selected_trkpt_marker.setOnMarkerDragListener(object : Marker.OnMarkerDragListener {
             override fun onMarkerDrag(marker: Marker?)
@@ -490,6 +505,10 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             }
             override fun onMarkerDragEnd(marker: Marker?)
             {
+                if (read_only)
+                {
+                    return
+                }
                 selected_trkpt?.let {
                     trackbook.database.update_trkpt(it)
                     trackbook.database.commit()
@@ -634,9 +653,9 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         {
             mapView.overlays.add(selected_trkpt_marker)
         }
-        interpolate_points_button.visibility = View.VISIBLE
-        straighten_points_button.visibility = View.VISIBLE
-        delete_selected_trkpt_button.visibility = View.VISIBLE
+        interpolate_points_button.visibility = if (read_only) View.GONE else View.VISIBLE
+        straighten_points_button.visibility = if (read_only) View.GONE else View.VISIBLE
+        delete_selected_trkpt_button.visibility = if (read_only) View.GONE else View.VISIBLE
         use_trkpt_as_start_button.visibility = View.VISIBLE
         use_trkpt_as_end_button.visibility = View.VISIBLE
         isolate_trkseg_button.visibility = View.VISIBLE
@@ -784,7 +803,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                 }
                 var trkpt = (points[point]) as Trkpt
                 Log.i("VOUSSOIR", "Clicked ${trkpt.device_id} ${trkpt.time}")
-                if (ready_to_interpolate)
+                if (ready_to_interpolate && ! read_only)
                 {
                     val mid_location = Location("interpolated")
                     mid_location.latitude = (selected_trkpt!!.latitude + trkpt.latitude) / 2
@@ -800,7 +819,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
                     select_trkpt_by_timestamp(mid_trkpt.time)
                     return
                 }
-                else if (ready_to_straighten && selected_trkpt != null)
+                else if (ready_to_straighten && selected_trkpt != null && ! read_only)
                 {
                     straighten_points(selected_trkpt!!, trkpt)
                     deselect_trkpt()
@@ -836,6 +855,11 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
 
     fun straighten_points(a: Trkpt, b: Trkpt)
     {
+        if (read_only)
+        {
+            Log.e("VOUSSOIR", "TrackFragment.straighten_points: disabled in read-only mode.")
+            return
+        }
         val al = a.toLocation()
         val bl = b.toLocation()
         val subtrack = Track(track.database, track.device_id)
@@ -1029,6 +1053,11 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     {
         if (type == Keys.DIALOG_DELETE_TRACK && dialogResult && track.trkpts.isNotEmpty())
         {
+            if (read_only)
+            {
+                Toast.makeText(requireContext(), R.string.toast_read_only, Toast.LENGTH_SHORT).show()
+                return
+            }
             if (selection_mode == Keys.SELECTION_MODE_STARTSTOP)
             {
                 trackbook.database.delete_trkpt_start_end(
