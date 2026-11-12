@@ -47,6 +47,12 @@ class MainActivity: AppCompatActivity()
     var tracker_service: TrackerService? = null
     private var is_bound: Boolean = false
 
+    // Whether the map fragment is currently on screen. MAPVIEW is only for when the map is open, so
+    // this is the only thing that may ask the service for it. It lives here because the fragment
+    // can be resumed before the service connection is delivered (first launch), and because the
+    // activity re-binds on rotation without this instance being recreated.
+    private var map_visible: Boolean = false
+
     private lateinit var navHostFragment: NavHostFragment
     private lateinit var bottomNavigationView: BottomNavigationView
 
@@ -121,6 +127,27 @@ class MainActivity: AppCompatActivity()
                 is_bound = bindService(bind_intent, tracker_service_connection, Context.BIND_AUTO_CREATE)
             }
             ContextCompat.startForegroundService(this, intent)
+        }
+    }
+
+    fun set_map_visible(visible: Boolean)
+    {
+        Log.i("VOUSSOIR", "MainActivity.set_map_visible ${visible}")
+        map_visible = visible
+        tracker_service?.on_ui_visibility_changed(map_visible)
+    }
+
+    /* Overrides onStart from AppCompatActivity */
+    override fun onStart()
+    {
+        super.onStart()
+        // The service itself is started from onCreate. Only recover a binding that was lost while
+        // this activity was alive (for example after a service crash) instead of waiting for the
+        // activity to be recreated.
+        if (tracker_service == null && ! is_bound)
+        {
+            val bind_intent = Intent(this.applicationContext, TrackerService::class.java)
+            is_bound = bindService(bind_intent, tracker_service_connection, Context.BIND_AUTO_CREATE)
         }
     }
 
@@ -208,12 +235,26 @@ class MainActivity: AppCompatActivity()
                 return
             }
             tracker_service = serviceref
+            is_bound = true
+            // The fragment may have reported its visibility before this connection was delivered,
+            // so replay it now. See set_map_visible.
+            tracker_service?.on_ui_visibility_changed(map_visible)
         }
         override fun onServiceDisconnected(arg0: ComponentName)
         {
             // service has crashed, or was killed by the system
             Log.i("VOUSSOIR", "MainActivity.onServiceDisconnected")
             tracker_service = null
+            // Reset this so the next start_tracker_service can bind again.
+            is_bound = false
+        }
+        override fun onBindingDied(name: ComponentName)
+        {
+            // The service process died. Android does not call onServiceDisconnected in this case, so
+            // reset the same state here and let the next onStart reconnect.
+            Log.i("VOUSSOIR", "MainActivity.onBindingDied")
+            tracker_service = null
+            is_bound = false
         }
     }
 

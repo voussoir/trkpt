@@ -52,12 +52,18 @@ class TrackerService: Service()
     // clicking the stop button. This computed property simplifies conditional checks throughout the
     // app.
     val tracking_state_recordable: Boolean
-        get() = (
-            tracking_state == Keys.STATE_FULL_RECORDING ||
-            tracking_state == Keys.STATE_ARRIVED_AT_HOME ||
-            tracking_state == Keys.STATE_SLEEP ||
-            tracking_state == Keys.STATE_DEAD
+        get() = is_recordable_state(tracking_state)
+
+    private fun is_recordable_state(state: Int): Boolean
+    {
+        return (
+            state == Keys.STATE_FULL_RECORDING ||
+            state == Keys.STATE_ARRIVED_AT_HOME ||
+            state == Keys.STATE_SLEEP ||
+            state == Keys.STATE_DEAD
         )
+    }
+
     var useImperial: Boolean = false
     var omitRests: Boolean = true
     var max_accuracy: Float = Keys.DEFAULT_MAX_ACCURACY
@@ -99,6 +105,13 @@ class TrackerService: Service()
     private lateinit var notification_manager: NotificationManager
     private lateinit var notification_builder: NotificationCompat.Builder
     private var foreground_started: Boolean = false
+
+    private var map_visible: Boolean = false
+    private var destroyed: Boolean = false
+
+    // A short timeout to avoid destroying and rebuilding the listeners if the user rotates the
+    // screen or switches tabs quickly.
+    private val UI_VISIBILITY_GRACE: Long = 500
 
     private lateinit var location_manager: LocationManager
     private lateinit var gpsLocationListener: LocationListener
@@ -224,30 +237,95 @@ class TrackerService: Service()
 
     fun load_tracking_state()
     {
-        tracking_state = PreferencesHelper.loadTrackingState()
-        if (read_only && tracking_state_recordable)
+        var saved_state: Int = PreferencesHelper.loadTrackingState()
+        if (saved_state == Keys.STATE_MAPVIEW)
+        {
+            // MAPVIEW is a live UI state and must not be restored. Older builds persisted it, and a
+            // system restart of the service would otherwise turn the GPS on with no map on screen.
+            // Come up as STOP and let the map fragment ask for MAPVIEW when it is visible.
+            saved_state = Keys.STATE_STOP
+        }
+        if (read_only && is_recordable_state(saved_state))
         {
             // Never resume a recording when the database is read-only, even if the previous
             // session was interrupted while recording.
-            Log.i("VOUSSOIR", "TrackerService.load_tracking_state: read-only, ignoring recordable state ${tracking_state}.")
-            tracking_state = Keys.STATE_MAPVIEW
+            Log.i("VOUSSOIR", "TrackerService.load_tracking_state: read-only, ignoring recordable state ${saved_state}.")
+            saved_state = Keys.STATE_STOP
         }
-        Log.i("VOUSSOIR", "TrackerService.load_tracking_state ${tracking_state}" )
-        when (tracking_state)
+        Log.i("VOUSSOIR", "TrackerService.load_tracking_state ${saved_state}" )
+        when (saved_state)
         {
             Keys.STATE_STOP -> state_stop()
-            Keys.STATE_MAPVIEW -> state_mapview()
             Keys.STATE_FULL_RECORDING -> state_full_recording()
             Keys.STATE_ARRIVED_AT_HOME -> state_arrived_at_home()
             Keys.STATE_SLEEP -> state_sleep()
             Keys.STATE_DEAD -> state_dead(dead_reason="Loaded previous state")
+            else -> state_stop()
         }
     }
 
+    /*
+     * The single entry point for the UI to report whether the map is on screen. MAPVIEW is a live UI
+     * state, so this is the only thing that may enter it: binding to the service must never claim
+     * that the map is visible, because a bind also happens on rotation and when the app is restored
+     * on a tab other than the map.
+     */
+    fun on_ui_visibility_changed(visible: Boolean)
+    {
+        Log.i("VOUSSOIR", "TrackerService.on_ui_visibility_changed ${visible}")
+        if (destroyed)
+        {
+            return
+        }
+        map_visible = visible
+        handler.removeCallbacks(state_stop_if_closed)
+        // Recording always wins: if the user asked the recorder to stay active, the UI coming and
+        // going must not change the state.
+        if (tracking_state_recordable)
+        {
+            return
+        }
+        if (visible)
+        {
+            state_mapview()
+        }
+        else
+        {
+            handler.postDelayed(state_stop_if_closed, UI_VISIBILITY_GRACE)
+        }
+    }
+
+    private val state_stop_if_closed: Runnable = object : Runnable
+    {
+        override fun run()
+        {
+            if (destroyed || map_visible || tracking_state_recordable)
+            {
+                return
+            }
+            state_stop()
+        }
+    }
+
+    fun state_mapview_or_stop()
+    {
+        if (map_visible)
+        {
+            state_mapview()
+        }
+        else
+        {
+            state_stop()
+        }
+    }
     fun state_stop()
     {
         // This state is activated when the user intentionally stops the recording, or leaves the
         // RecordFragment without pressing the record button.
+        if (tracking_state == Keys.STATE_STOP)
+        {
+            return
+        }
         Log.i("VOUSSOIR", "TrackerService.state_stop")
         tracking_state = Keys.STATE_STOP
         PreferencesHelper.saveTrackingState(tracking_state)
@@ -265,7 +343,11 @@ class TrackerService: Service()
     {
         if (read_only)
         {
-            state_mapview()
+            state_mapview_or_stop()
+            return
+        }
+        if (tracking_state == Keys.STATE_FULL_RECORDING)
+        {
             return
         }
         // This state should be active while out and about.
@@ -301,7 +383,11 @@ class TrackerService: Service()
     {
         if (read_only)
         {
-            state_mapview()
+            state_mapview_or_stop()
+            return
+        }
+        if (tracking_state == Keys.STATE_ARRIVED_AT_HOME)
+        {
             return
         }
         // This state is activated when the user enters the radius of a homepoint. The GPS will
@@ -321,7 +407,11 @@ class TrackerService: Service()
     {
         if (read_only)
         {
-            state_mapview()
+            state_mapview_or_stop()
+            return
+        }
+        if (tracking_state == Keys.STATE_SLEEP)
+        {
             return
         }
         // This state is activated when the user stays at a homepoint for several minutes. It will
@@ -340,7 +430,13 @@ class TrackerService: Service()
     {
         if (read_only)
         {
-            state_mapview()
+            state_mapview_or_stop()
+            return
+        }
+        if (tracking_state == Keys.STATE_DEAD)
+        {
+            this.dead_reason = dead_reason
+            displayNotification()
             return
         }
         // This state is activated when the device is struggling to receive a GPS fix due to being
@@ -362,9 +458,22 @@ class TrackerService: Service()
     {
         // This state should be activated when the user has the app open to the mapfragment, but is
         // not recording. If the user closes the app while in this state, we can go to stop.
+        if (tracking_state == Keys.STATE_MAPVIEW)
+        {
+            if (! anyLocationListenerRegistered)
+            {
+                // We may have entered MAPVIEW while the GPS was off or the location permission was
+                // missing. Retry now that the map is visible again.
+                reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER, force=true)
+            }
+            return
+        }
         Log.i("VOUSSOIR", "TrackerService.state_mapview")
         tracking_state = Keys.STATE_MAPVIEW
-        PreferencesHelper.saveTrackingState(tracking_state)
+        // MAPVIEW must not be persisted: if the process dies while the map is open, the app has to
+        // come back as STOP and wait for the map fragment to ask for MAPVIEW again. Otherwise a
+        // restart of the service would turn the GPS on with no map on screen.
+        PreferencesHelper.saveTrackingState(Keys.STATE_STOP)
         reset_location_listeners(Keys.LOCATION_INTERVAL_FULL_POWER)
         trackbook.database.commit()
         recent_home_trkpts.clear()
@@ -754,41 +863,7 @@ class TrackerService: Service()
     override fun onBind(p0: Intent?): IBinder
     {
         Log.i("VOUSSOIR", "TrackerService.onBind")
-        if (tracking_state == Keys.STATE_STOP)
-        {
-            state_mapview()
-        }
-        displayNotification()
         return binder
-    }
-
-    /* Overrides onRebind from Service */
-    override fun onRebind(intent: Intent?)
-    {
-        Log.i("VOUSSOIR", "TrackerService.onRebind")
-        if (tracking_state == Keys.STATE_STOP)
-        {
-            state_mapview()
-        }
-        else
-        {
-            displayNotification()
-        }
-    }
-
-    /* Overrides onUnbind from Service */
-    override fun onUnbind(intent: Intent?): Boolean
-    {
-        super.onUnbind(intent)
-        Log.i("VOUSSOIR", "TrackerService.onUnbind")
-
-        // the user was only perusing the map and did not start recording, so we'll just stop.
-        if (! tracking_state_recordable)
-        {
-            state_stop()
-        }
-        // ensures onRebind is called
-        return true
     }
 
     /* Overrides onCreate from Service */
@@ -999,6 +1074,7 @@ class TrackerService: Service()
             return false
         }
         Log.i("VOUSSOIR", "TrackerService.gentle_stop: stopSelf")
+        handler.removeCallbacks(state_stop_if_closed)
         stopForeground(Service.STOP_FOREGROUND_REMOVE)
         notification_manager.cancel(Keys.TRACKER_SERVICE_NOTIFICATION_ID)
         foreground_started = false
@@ -1018,6 +1094,8 @@ class TrackerService: Service()
     override fun onDestroy()
     {
         Log.i("VOUSSOIR", "TrackerService.onDestroy.")
+        destroyed = true
+        handler.removeCallbacks(state_stop_if_closed)
         super.onDestroy()
 
         if (gpsLocationListenerRegistered)
@@ -1119,7 +1197,7 @@ class TrackerService: Service()
                 Log.i("VOUSSOIR", "TrackerService: read_only changed to ${read_only}.")
                 if (read_only && tracking_state_recordable)
                 {
-                    state_mapview()
+                    state_mapview_or_stop()
                 }
             }
         }

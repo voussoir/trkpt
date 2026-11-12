@@ -252,10 +252,10 @@ class RecordFragment : Fragment()
         super.onResume()
         handler.post(redraw_runnable)
         requireActivity().window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        if (main_activity.tracker_service?.tracking_state == Keys.STATE_STOP)
-        {
-            main_activity.tracker_service?.state_mapview()
-        }
+        // MAPVIEW is only when the map is on screen. The activity forwards it to the service and
+        // replays it when the service connection arrives, so this is safe even before the service
+        // reference exists.
+        main_activity.set_map_visible(true)
     }
 
     /* Overrides onPause from Fragment */
@@ -265,10 +265,9 @@ class RecordFragment : Fragment()
         super.onPause()
         handler.removeCallbacks(redraw_runnable)
         requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        if (main_activity.tracker_service?.tracking_state == Keys.STATE_MAPVIEW)
-        {
-            main_activity.tracker_service?.state_stop()
-        }
+        // The service ignores this while a recording is active and waits out a short grace period
+        // so that a rotation does not tear down the location listeners.
+        main_activity.set_map_visible(false)
     }
 
     /* Overrides onStop from Fragment */
