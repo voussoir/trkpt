@@ -282,6 +282,7 @@ class RecordFragment : Fragment()
     {
         Log.i("VOUSSOIR", "MapFragment.onDestroyView")
         super.onDestroyView()
+        PreferencesHelper.unregisterPreferenceChangeListener(sharedPreferenceChangeListener)
         trackbook.remove_database_changed_listener(database_changed_listener)
         handler.removeCallbacks(redraw_runnable)
     }
