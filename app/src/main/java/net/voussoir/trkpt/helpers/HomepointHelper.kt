@@ -155,7 +155,7 @@ fun show_homepoint_dialog(
     create_pruning_spinner(
         activity,
         pruning_spinner,
-        existing_homepoint?.prune_level ?: Keys.HOMEPOINT_KEEP_ALL
+        existing_homepoint?.prune_level ?: Keys.HOMEPOINT_PRUNE_STAYS
     )
 
     if (existing_homepoint != null)
