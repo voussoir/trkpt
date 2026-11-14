@@ -47,6 +47,7 @@ import org.osmdroid.views.overlay.Polygon
 import org.osmdroid.views.overlay.Polyline
 import org.osmdroid.views.overlay.TilesOverlay
 import net.voussoir.trkpt.helpers.*
+import java.util.*
 
 class RecordFragment : Fragment()
 {
@@ -555,7 +556,7 @@ class RecordFragment : Fragment()
             map_current_time.gravity = android.view.Gravity.CENTER
             map_current_time.text = """
                 ${iso8601_local_noms(tracker.currentBestLocation.time)}
-                ${tracker.currentBestLocation.latitude},${tracker.currentBestLocation.longitude}
+                ${"%.7f".format(Locale.ROOT, tracker.currentBestLocation.latitude)},${"%.7f".format(Locale.ROOT, tracker.currentBestLocation.longitude)}
                 ${tracker.satellites_in_fix} satellites
             """.trimIndent()
         }
