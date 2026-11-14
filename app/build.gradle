@@ -38,14 +38,23 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            manifestPlaceholders["applabel"] = "trkpt"
         }
-        alpha {
+        alfa {
             minifyEnabled true
             shrinkResources true
-            applicationIdSuffix '.alpha'
+            applicationIdSuffix '.alfa'
+            manifestPlaceholders["applabel"] = "trkpt.alfa"
+        }
+        bravo {
+            minifyEnabled true
+            shrinkResources true
+            applicationIdSuffix '.bravo'
+            manifestPlaceholders["applabel"] = "trkpt.bravo"
         }
         debug {
             applicationIdSuffix '.debug'
+            manifestPlaceholders["applabel"] = "trkpt.debug"
 
             // Comment out the below lines if you do not need to test resource shrinking
 //            minifyEnabled true
