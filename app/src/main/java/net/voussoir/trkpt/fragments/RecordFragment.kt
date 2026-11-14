@@ -556,6 +556,7 @@ class RecordFragment : Fragment()
             map_current_time.text = """
                 ${iso8601_local_noms(tracker.currentBestLocation.time)}
                 ${tracker.currentBestLocation.latitude},${tracker.currentBestLocation.longitude}
+                ${tracker.satellites_in_fix} satellites
             """.trimIndent()
         }
 
