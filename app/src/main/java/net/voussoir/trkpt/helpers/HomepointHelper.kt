@@ -30,6 +30,7 @@ import org.osmdroid.views.overlay.ItemizedIconOverlay
 import org.osmdroid.views.overlay.Overlay
 import org.osmdroid.views.overlay.OverlayItem
 import org.osmdroid.views.overlay.Polygon
+import java.lang.Math.floor
 
 fun create_pruning_spinner(context: Context, spinner: Spinner, prune_level: Int)
 {
@@ -160,7 +161,14 @@ fun show_homepoint_dialog(
     if (existing_homepoint != null)
     {
         name_input.setText(existing_homepoint.name)
-        radius_input.setText(existing_homepoint.radius.toString())
+        if (existing_homepoint.radius == floor(existing_homepoint.radius))
+        {
+            radius_input.setText(existing_homepoint.radius.toInt().toString())
+        }
+        else
+        {
+            radius_input.setText(existing_homepoint.radius.toString())
+        }
     }
 
     val delete_cancel_button: Button = dialog.findViewById(R.id.homepoint_delete_cancel_button)
