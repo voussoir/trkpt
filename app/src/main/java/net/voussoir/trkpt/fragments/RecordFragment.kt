@@ -19,7 +19,6 @@
 
 package net.voussoir.trkpt.fragments
 
-import android.app.Dialog
 import android.content.*
 import android.graphics.Color
 import android.graphics.drawable.Drawable
@@ -33,7 +32,6 @@ import android.view.WindowManager
 import android.widget.*
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
-import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -42,7 +40,6 @@ import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.ItemizedIconOverlay
 import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Overlay
 import org.osmdroid.views.overlay.OverlayItem
@@ -124,64 +121,14 @@ class RecordFragment : Fragment()
 
             override fun longPressHelper(point: GeoPoint): Boolean
             {
-                Log.i("VOUSSOIR", "MapFragment MapEventsReceiver.longPressHelper")
-                if(! trackbook.database.ready)
-                {
-                    Log.i("VOUSSOIR", "MapFragment.longpress: Database is not ready to add a homepoint.")
-                    return false;
-                }
-                if (PreferencesHelper.load_read_only())
-                {
-                    Toast.makeText(requireContext(), R.string.toast_read_only, Toast.LENGTH_SHORT).show()
-                    return true
-                }
-                val dialog = Dialog(activity as Context)
-                dialog.setContentView(R.layout.dialog_homepoint)
-                dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                dialog.setTitle("Homepoint")
-
-                (dialog.findViewById(R.id.homepoint_dialog_title) as TextView).text = "Add a homepoint"
-
-                val name_input: EditText = dialog.findViewById(R.id.homepoint_name_input)
-                val radius_input: EditText = dialog.findViewById(R.id.homepoint_radius_input)
-                val pruning_spinner: Spinner = dialog.findViewById(R.id.homepoint_pruning_spinner)
-                create_pruning_spinner(pruning_spinner, Keys.HOMEPOINT_KEEP_ALL)
-                val cancel_button: Button = dialog.findViewById(R.id.homepoint_delete_cancel_button)
-                val save_button: Button = dialog.findViewById(R.id.homepoint_save_button)
-                name_input.doAfterTextChanged {
-                    update_homepoint_save_button(save_button, name_input, radius_input)
-                }
-                radius_input.doAfterTextChanged {
-                    update_homepoint_save_button(save_button, name_input, radius_input)
-                }
-                update_homepoint_save_button(save_button, name_input, radius_input)
-                cancel_button.text = "Cancel"
-                cancel_button.setOnClickListener {
-                    dialog.cancel()
-                }
-                save_button.setOnClickListener {
-                    if (PreferencesHelper.load_read_only())
-                    {
-                        Toast.makeText(requireContext(), R.string.toast_read_only, Toast.LENGTH_SHORT).show()
-                        return@setOnClickListener
-                    }
-                    val radius = radius_input.text.toString().toDoubleOrNull() ?: 25.0
-                    trackbook.database.insert_homepoint(
-                        id=random_long(),
-                        name=name_input.text.toString(),
-                        latitude=point.latitude,
-                        longitude=point.longitude,
-                        radius=radius,
-                        prune_level=pruning_spinner.selectedItemPosition,
-                    )
-                    trackbook.database.commit()
-                    trackbook.load_homepoints()
-                    create_homepoint_overlays()
-                    dialog.dismiss()
-                }
-
-                dialog.show()
-                return true
+                Log.i("VOUSSOIR", "RecordFragment MapEventsReceiver.longPressHelper")
+                return show_homepoint_dialog(
+                    activity = requireActivity(),
+                    trackbook = trackbook,
+                    point = point,
+                    homepoint = null,
+                    on_changed = { refresh_homepoint_overlays() },
+                )
             }
         }
         mapView.overlays.add(MapEventsOverlay(receiver))
@@ -300,7 +247,7 @@ class RecordFragment : Fragment()
     {
         Log.i("VOUSSOIR", "MapFragment.onDestroy")
         super.onDestroy()
-        requireActivity().window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         handler.removeCallbacks(redraw_runnable)
     }
 
@@ -315,6 +262,7 @@ class RecordFragment : Fragment()
             else
             {
                 clear_homepoint_overlays()
+                mapView.invalidate()
             }
             update_main_button()
         }
@@ -413,6 +361,8 @@ class RecordFragment : Fragment()
         )
         current_location_radius.fillPaint.color = radiuscolor
         current_location_radius.outlinePaint.color = Color.argb(0, 0, 0, 0)
+        // The accuracy circle is decorative and must not consume map taps.
+        current_location_radius.setOnClickListener { _, _, _ -> false }
         current_position_overlays.add(current_location_radius)
 
         val overlayItems: java.util.ArrayList<OverlayItem> = java.util.ArrayList<OverlayItem>()
@@ -445,6 +395,8 @@ class RecordFragment : Fragment()
         pl.outlinePaint.strokeWidth = Keys.POLYLINE_THICKNESS
         pl.outlinePaint.color = requireContext().getColor(R.color.fuchsia)
         pl.infoWindow = null
+        // The track line is decorative; let taps reach the map receiver.
+        pl.setOnClickListener { _, _, _ -> false }
         mapView.overlays.add(pl)
         current_track_overlay = pl
     }
@@ -461,123 +413,49 @@ class RecordFragment : Fragment()
         homepoints_overlays.clear()
     }
 
-    fun update_homepoint_save_button(save_button: Button, name_input: EditText, radius_input: EditText)
-    {
-        save_button.isEnabled = !name_input.text.isNullOrBlank() && !radius_input.text.isNullOrBlank()
-    }
-
-    fun create_pruning_spinner(spinner: Spinner, prune_level: Int)
-    {
-        val adapter = ArrayAdapter.createFromResource(
-            requireContext(),
-            R.array.homepoint_pruning_levels,
-            android.R.layout.simple_spinner_item
-        )
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinner.adapter = adapter
-        spinner.setSelection(prune_level)
-    }
-
     fun create_homepoint_overlays()
     {
-        Log.i("VOUSSOIR", "MapFragmentLayoutHolder.createHomepointOverlays")
-
-        val context = requireContext()
-        val newMarker: Drawable = ContextCompat.getDrawable(context, R.drawable.ic_homepoint_24dp)!!
+        Log.i("VOUSSOIR", "RecordFragment.create_homepoint_overlays")
 
         clear_homepoint_overlays()
+        homepoints_overlays.addAll(build_homepoint_overlays(
+            context = requireContext(),
+            trackbook = trackbook,
+            homepoints = trackbook.homepoints,
+            on_long_press = { homepoint ->
+                show_homepoint_dialog(
+                    activity = requireActivity(),
+                    trackbook = trackbook,
+                    point = GeoPoint(homepoint.location.latitude, homepoint.location.longitude),
+                    homepoint = homepoint,
+                    on_changed = { refresh_homepoint_overlays() },
+                )
+            },
+        ))
 
-        for (homepoint in trackbook.homepoints)
+        // Keep homepoints below the current-position markers when they are already on the map.
+        var insert_index = mapView.overlays.size
+        for (ov in current_position_overlays)
         {
-            val p = Polygon()
-            p.points = Polygon.pointsAsCircle(GeoPoint(homepoint.location.latitude, homepoint.location.longitude), homepoint.location.accuracy.toDouble())
-            p.fillPaint.color = Color.argb(64, 255, 193, 7)
-            p.outlinePaint.color = Color.argb(0, 0, 0, 0)
-            homepoints_overlays.add(p)
-
-            val overlayItems: java.util.ArrayList<OverlayItem> = java.util.ArrayList<OverlayItem>()
-            val overlayItem: OverlayItem = createOverlayItem(
-                homepoint.location.latitude,
-                homepoint.location.longitude,
-                title=homepoint.name,
-                description="Radius ${homepoint.radius}"
-            )
-            overlayItem.setMarker(newMarker)
-            overlayItems.add(overlayItem)
-            val homepoint_overlay = ItemizedIconOverlay<OverlayItem>(context, overlayItems,
-                object : ItemizedIconOverlay.OnItemGestureListener<OverlayItem> {
-                    override fun onItemSingleTapUp(index: Int, item: OverlayItem): Boolean
-                    {
-                        return false
-                    }
-                    override fun onItemLongPress(index: Int, item: OverlayItem): Boolean
-                    {
-                        Log.i("VOUSSOIR", "MapFragment homepoint.longpress")
-                        if (PreferencesHelper.load_read_only())
-                        {
-                            Toast.makeText(requireContext(), R.string.toast_read_only, Toast.LENGTH_SHORT).show()
-                            return true
-                        }
-                        val dialog = Dialog(activity as Context)
-                        dialog.setContentView(R.layout.dialog_homepoint)
-                        dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                        dialog.setTitle("Homepoint")
-
-                        (dialog.findViewById(R.id.homepoint_dialog_title) as TextView).text = "Edit homepoint"
-
-                        val name_input: EditText = dialog.findViewById(R.id.homepoint_name_input)
-                        name_input.setText(homepoint.name)
-                        val radius_input: EditText = dialog.findViewById(R.id.homepoint_radius_input)
-                        radius_input.setText(homepoint.radius.toString())
-                        val pruning_spinner: Spinner = dialog.findViewById(R.id.homepoint_pruning_spinner)
-                        create_pruning_spinner(pruning_spinner, homepoint.prune_level)
-                        val delete_button: Button = dialog.findViewById(R.id.homepoint_delete_cancel_button)
-                        val save_button: Button = dialog.findViewById(R.id.homepoint_save_button)
-                        name_input.doAfterTextChanged {
-                            update_homepoint_save_button(save_button, name_input, radius_input)
-                        }
-                        radius_input.doAfterTextChanged {
-                            update_homepoint_save_button(save_button, name_input, radius_input)
-                        }
-                        update_homepoint_save_button(save_button, name_input, radius_input)
-                        delete_button.text = "Delete"
-                        delete_button.setOnClickListener {
-                            if (PreferencesHelper.load_read_only())
-                            {
-                                Toast.makeText(requireContext(), R.string.toast_read_only, Toast.LENGTH_SHORT).show()
-                                return@setOnClickListener
-                            }
-                            trackbook.database.delete_homepoint(homepoint.id)
-                            trackbook.database.commit()
-                            trackbook.load_homepoints()
-                            create_homepoint_overlays()
-                            dialog.dismiss()
-                        }
-                        save_button.setOnClickListener {
-                            if (PreferencesHelper.load_read_only())
-                            {
-                                Toast.makeText(requireContext(), R.string.toast_read_only, Toast.LENGTH_SHORT).show()
-                                return@setOnClickListener
-                            }
-                            val radius = radius_input.text.toString().toDoubleOrNull() ?: 25.0
-                            trackbook.database.update_homepoint(homepoint.id, name=name_input.text.toString(), radius=radius, prune_level=pruning_spinner.selectedItemPosition)
-                            trackbook.database.commit()
-                            trackbook.load_homepoints()
-                            create_homepoint_overlays()
-                            dialog.dismiss()
-                        }
-
-                        dialog.show()
-                        return true
-                    }
-                }
-            )
-            homepoints_overlays.add(homepoint_overlay)
+            val index = mapView.overlays.indexOf(ov)
+            if (index >= 0 && index < insert_index)
+            {
+                insert_index = index
+            }
         }
-
         for (ov in homepoints_overlays)
         {
-            mapView.overlays.add(ov)
+            mapView.overlays.add(insert_index, ov)
+            insert_index += 1
+        }
+        mapView.invalidate()
+    }
+
+    private fun refresh_homepoint_overlays()
+    {
+        if (isAdded && view != null)
+        {
+            create_homepoint_overlays()
         }
     }
 

@@ -29,7 +29,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.drawable.Drawable
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
@@ -124,6 +123,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     private var track_points_overlay: SimpleFastPointOverlay? = null
     private var current_position_overlays = ArrayList<Overlay>()
     private var homepoints_overlays = ArrayList<Overlay>()
+    private var start_end_overlays = ArrayList<Overlay>()
     // private lateinit var trkpt_infowindow: InfoWindow
     private var useImperialUnits: Boolean = false
     private val handler: Handler = Handler(Looper.getMainLooper())
@@ -134,6 +134,22 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
 
     private val read_only: Boolean
         get() = PreferencesHelper.load_read_only()
+
+    private val database_changed_listener = object: DatabaseChangedListener {
+        override fun database_changed()
+        {
+            Log.i("VOUSSOIR", "TrackFragment: database_ready changed to ${trackbook.database.ready}")
+            if (trackbook.database.ready)
+            {
+                create_homepoint_overlays()
+            }
+            else
+            {
+                clear_homepoint_overlays()
+                mapView.invalidate()
+            }
+        }
+    }
 
     private lateinit var locationManager: LocationManager
     private lateinit var gpsLocationListener: LocationListener
@@ -176,6 +192,10 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
 
         rootView = inflater.inflate(R.layout.fragment_track, container, false)
         mapView = rootView.findViewById(R.id.map)
+        // Take over the map's destruction, as RecordFragment does. osmdroid otherwise destroys
+        // the MapView when it is detached from the window, which can happen during a fragment
+        // transition before the same view is re-attached. The map is released in onDestroyView.
+        mapView.setDestroyMode(false)
         save_track_button = rootView.findViewById(R.id.save_button)
         delete_whole_track_button = rootView.findViewById(R.id.delete_button)
         delete_whole_track_button.isEnabled = ! read_only
@@ -190,6 +210,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.isVerticalMapRepetitionEnabled = false
         mapView.setMultiTouchControls(true)
+        mapView.isLongClickable = true
         mapView.zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
         if (track.trkpts.size > 0)
         {
@@ -489,6 +510,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         )!!
         selected_trkpt_marker.isDraggable = ! read_only
         selected_trkpt_marker.infoWindow = null
+        // Let taps fall through to the track-point overlay instead of panning/consuming them.
+        selected_trkpt_marker.setOnMarkerClickListener { _, _ -> false }
         selected_trkpt_marker.setOnMarkerDragListener(object : Marker.OnMarkerDragListener {
             override fun onMarkerDrag(marker: Marker?)
             {
@@ -517,6 +540,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         })
 
         track_segment_overlays = ArrayDeque<Polyline>(10)
+        trackbook.load_homepoints()
+        trackbook.add_database_changed_listener(database_changed_listener)
         render_track()
 
         return rootView
@@ -525,11 +550,20 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     override fun onDestroyView()
     {
         super.onDestroyView()
+        trackbook.remove_database_changed_listener(database_changed_listener)
+        handler.removeCallbacks(requery_and_render)
         if (gpslistenerregistered)
         {
             locationManager.removeUpdates(gpsLocationListener)
             gpslistenerregistered = false
         }
+        mapView.onDetach()
+        current_position_overlays.clear()
+        homepoints_overlays.clear()
+        start_end_overlays.clear()
+        track_segment_overlays.clear()
+        track_points_overlay = null
+        selected_trkpt = null
     }
 
     fun clear_current_position_overlays()
@@ -560,6 +594,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         )
         current_location_radius.fillPaint.color = fillcolor
         current_location_radius.outlinePaint.color = Color.argb(0, 0, 0, 0)
+        // The accuracy circle is decorative and must not consume track-point taps.
+        current_location_radius.setOnClickListener { _, _, _ -> false }
         current_position_overlays.add(current_location_radius)
 
         val overlayItems: java.util.ArrayList<OverlayItem> = java.util.ArrayList<OverlayItem>()
@@ -577,6 +613,7 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         {
             mapView.overlays.add(ov)
         }
+        mapView.invalidate()
     }
 
     fun clear_homepoint_overlays()
@@ -593,37 +630,56 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
 
     fun create_homepoint_overlays()
     {
-        Log.i("VOUSSOIR", "MapFragmentLayoutHolder.createHomepointOverlays")
-
-        val context = requireContext()
-        val newMarker: Drawable = ContextCompat.getDrawable(context, R.drawable.ic_homepoint_24dp)!!
+        Log.i("VOUSSOIR", "TrackFragment.create_homepoint_overlays")
 
         clear_homepoint_overlays()
+        homepoints_overlays.addAll(build_homepoint_overlays(
+            context = requireContext(),
+            trackbook = trackbook,
+            homepoints = trackbook.homepoints,
+            on_long_press = { homepoint ->
+                show_homepoint_dialog(
+                    activity = requireActivity(),
+                    trackbook = trackbook,
+                    point = GeoPoint(homepoint.location.latitude, homepoint.location.longitude),
+                    homepoint = homepoint,
+                    on_changed = { refresh_homepoint_overlays() },
+                )
+            },
+        ))
 
-        for (homepoint in trackbook.homepoints)
+        // Insert below the start/end and current-position markers so those stay visually on top.
+        // This also keeps the order correct when homepoints are refreshed by an edit or delete.
+        var insert_index = mapView.overlays.size
+        for (ov in start_end_overlays)
         {
-            val p = Polygon()
-            p.points = Polygon.pointsAsCircle(GeoPoint(homepoint.location.latitude, homepoint.location.longitude), homepoint.location.accuracy.toDouble())
-            p.fillPaint.color = Color.argb(64, 255, 193, 7)
-            p.outlinePaint.color = Color.argb(0, 0, 0, 0)
-            homepoints_overlays.add(p)
-
-            val overlayItems: java.util.ArrayList<OverlayItem> = java.util.ArrayList<OverlayItem>()
-            val overlayItem: OverlayItem = createOverlayItem(
-                homepoint.location.latitude,
-                homepoint.location.longitude,
-                title=homepoint.name,
-                description=homepoint.name,
-            )
-            overlayItem.setMarker(newMarker)
-            overlayItems.add(overlayItem)
-            val homepoint_overlay = createOverlay(context, overlayItems)
-            homepoints_overlays.add(homepoint_overlay)
+            val index = mapView.overlays.indexOf(ov)
+            if (index >= 0 && index < insert_index)
+            {
+                insert_index = index
+            }
         }
-
+        for (ov in current_position_overlays)
+        {
+            val index = mapView.overlays.indexOf(ov)
+            if (index >= 0 && index < insert_index)
+            {
+                insert_index = index
+            }
+        }
         for (ov in homepoints_overlays)
         {
-            mapView.overlays.add(ov)
+            mapView.overlays.add(insert_index, ov)
+            insert_index += 1
+        }
+        mapView.invalidate()
+    }
+
+    private fun refresh_homepoint_overlays()
+    {
+        if (isAdded && view != null)
+        {
+            create_homepoint_overlays()
         }
     }
 
@@ -721,7 +777,14 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
 
             override fun longPressHelper(point: GeoPoint): Boolean
             {
-                return false
+                Log.i("VOUSSOIR", "TrackFragment MapEventsReceiver.longPressHelper")
+                return show_homepoint_dialog(
+                    activity = requireActivity(),
+                    trackbook = trackbook,
+                    point = point,
+                    homepoint = null,
+                    on_changed = { refresh_homepoint_overlays() },
+                )
             }
         }
         mapView.overlays.add(MapEventsOverlay(receiver))
@@ -733,18 +796,25 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         mapView.invalidate()
         mapView.overlays.clear()
         track_segment_overlays.clear()
+        start_end_overlays.clear()
         deselect_trkpt()
 
         setupStatisticsViews()
 
-        create_homepoint_overlays()
+        // Keep the map receiver below the track layers so single taps still reach the track point
+        // overlay. It is added even for an empty track so long-press creation always works.
+        create_event_receiver_overlay()
 
         if (track.trkpts.isEmpty())
         {
+            // Keep the current-location overlay visible even when the query has no trackpoints.
+            for (ov in current_position_overlays)
+            {
+                mapView.overlays.add(ov)
+            }
+            create_homepoint_overlays()
             return
         }
-
-        create_event_receiver_overlay()
 
         Log.i("VOUSSOIR", "MapOverlayHelper.createTrackOverlay")
         track_geopoints = mutableListOf()
@@ -831,9 +901,17 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
             }
         })
 
+        // Homepoints sit above the track, but below the start/end and current-position markers.
+        create_homepoint_overlays()
+
         for (pl in track_segment_overlays)
         {
-            create_start_end_markers(requireContext(), mapView, pl.actualPoints.first() as Trkpt, pl.actualPoints.last() as Trkpt)
+            start_end_overlays.add(create_start_end_markers(
+                requireContext(),
+                mapView,
+                pl.actualPoints.first() as Trkpt,
+                pl.actualPoints.last() as Trkpt,
+            ))
         }
 
         for (ov in current_position_overlays)
@@ -848,6 +926,8 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
         pl.outlinePaint.strokeWidth = Keys.POLYLINE_THICKNESS
         pl.outlinePaint.color = requireContext().getColor(R.color.fuchsia)
         pl.infoWindow = null
+        // The track line is decorative; let taps reach the track-point overlay and map receiver.
+        pl.setOnClickListener { _, _, _ -> false }
         track_segment_overlays.add(pl)
         mapView.overlays.add(pl)
         return pl
@@ -1012,6 +1092,10 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     private val requery_and_render: Runnable = object : Runnable {
         override fun run()
         {
+            if (! isAdded || view == null)
+            {
+                return
+            }
             Log.i("VOUSSOIR", "TrackFragment.requery_and_render")
             track.load_trkpts(trackbook.database.select_trkpt_start_end(
                 track.device_id,
@@ -1051,6 +1135,10 @@ class TrackFragment : Fragment(), MapListener, YesNoDialog.YesNoDialogListener
     /* Overrides onYesNoDialog from YesNoDialogListener */
     override fun onYesNoDialog(type: Int, dialogResult: Boolean, payload: Int, payloadString: String)
     {
+        if (! isAdded)
+        {
+            return
+        }
         if (type == Keys.DIALOG_DELETE_TRACK && dialogResult && track.trkpts.isNotEmpty())
         {
             if (read_only)
